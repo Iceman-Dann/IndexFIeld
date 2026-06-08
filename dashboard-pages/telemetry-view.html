@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="telemetry-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6">
+                <div class="max-w-7xl mx-auto">
+                    <div id="telemetry-health-banner" class="system-health-banner mb-5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#22C55E] status-pulse shrink-0 mt-1"></span>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-semibold text-[#22C55E] tracking-wide">System Health: Online and Monitoring</div>
+                            <p id="telemetry-health-detail" class="text-[11px] text-light-slate mt-0.5">IndexField is active on this node. <span class="text-slate-400 text-[10px]">Awaiting asset link.</span></p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col lg:flex-row items-start justify-between gap-4 mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold flex items-center gap-3">
+                                <span id="telemetry-title-pulse" class="w-3 h-3 rounded-full bg-slate-500 status-pulse"></span>
+                                Live Monitoring
+                            </h2>
+                            <p class="text-sm text-light-slate mt-1">Real-time plant sensor data with AI-guided alerts.</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-3 lg:ml-auto lg:justify-end">
+                            <span class="text-[10px] text-light-slate px-2 py-1 bg-white/5 rounded border border-white/10" id="connected-sensors-count">Awaiting asset link</span>
+                            <div class="flex flex-col items-end gap-1">
+                                <button onclick="connectDataStream()" class="px-3 py-1.5 bg-white/5 text-white border border-white/15 rounded-md hover:bg-white/10 transition text-xs flex items-center gap-2">
+                                    <i class="fas fa-link text-[#F97316]"></i> Initiate Live Link
+                                </button>
+                                <span class="text-[9px] text-slate-500 tracking-wide">Safe Mode: Read-Only</span>
+                            </div>
+                            <div class="flex flex-col items-end gap-1">
+                                <button onclick="draftHandoverReport()" class="px-3 py-1.5 bg-white/5 text-white border border-white/10 rounded-md text-xs hover:bg-white/10 transition flex items-center gap-2">
+                                    <i class="fas fa-file-lines"></i> Draft Handover Report
+                                </button>
+                                <span class="text-[9px] text-slate-500 text-right max-w-[200px] leading-snug">Summarize shift telemetry &amp; AI findings for next shift</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <!-- Phase 2: Primary Time-Series Canvas (Full Width) -->
+                        <div class="md:col-span-2 glass-card rounded-xl p-6 border border-white/10 bg-black/80 shadow-[0_0_30px_rgba(0,0,0,0.8)]">
+                            <div class="flex items-center justify-between mb-4 border-b border-white/10 pb-4">
+                                <div>
+                                    <h3 class="font-bold text-lg text-white font-mono uppercase tracking-widest flex items-center gap-2">
+                                        <i class="fas fa-wave-square text-[#06B6D4]"></i> Plant Floor Oscilloscope
+                                    </h3>
+                                    <p class="text-[10px] text-light-slate font-mono mt-1">Multi-axis streams: VIBRATION (mm/s) &amp; TEMPERATURE (°C) — shaded band = normal operating range</p>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-3">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-3 h-0.5 bg-[#06B6D4]"></div>
+                                        <span class="text-[10px] font-mono text-light-slate uppercase">Vibration</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-3 h-0.5 bg-[#F97316]"></div>
+                                        <span class="text-[10px] font-mono text-light-slate uppercase">Temperature</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-4 h-3 rounded-sm bg-[#22C55E]/15 border border-[#22C55E]/25"></div>
+                                        <span class="text-[10px] font-mono text-slate-400 uppercase">Normal Range</span>
+                                    </div>
+                                    <span id="osc-live-badge" class="text-[10px] uppercase px-2 py-1 bg-white/5 rounded border border-white/10 font-mono text-slate-400">○ STANDING BY</span>
+                                </div>
+                            </div>
+                            <!-- Massive Time-Series Chart Container -->
+                            <div id="oscilloscope-container" class="h-64 w-full bg-[#050505] rounded-lg border border-white/5 overflow-hidden relative">
+                                <svg id="oscilloscope-skeleton" class="absolute inset-0 w-full h-full" viewBox="0 0 1000 200" preserveAspectRatio="none">
+                                    <defs>
+                                        <pattern id="osc-grid" width="50" height="40" patternUnits="userSpaceOnUse">
+                                            <path d="M 50 0 L 0 0 0 40" fill="none" class="chart-skeleton-grid"/>
+                                        </pattern>
+                                    </defs>
+                                    <rect width="1000" height="200" fill="url(#osc-grid)" />
+                                    <line x1="48" y1="8" x2="48" y2="192" class="chart-skeleton-axis" />
+                                    <line x1="48" y1="192" x2="992" y2="192" class="chart-skeleton-axis" />
+                                    <line x1="48" y1="50" x2="992" y2="50" class="chart-skeleton-grid" stroke-dasharray="4,6" />
+                                    <line x1="48" y1="100" x2="992" y2="100" class="chart-skeleton-grid" stroke-dasharray="4,6" />
+                                    <line x1="48" y1="150" x2="992" y2="150" class="chart-skeleton-grid" stroke-dasharray="4,6" />
+                                    <text x="8" y="54" class="chart-skeleton-tick">HIGH</text>
+                                    <text x="8" y="104" class="chart-skeleton-tick">MID</text>
+                                    <text x="8" y="154" class="chart-skeleton-tick">LOW</text>
+                                    <text x="120" y="198" class="chart-skeleton-tick">T-60s</text>
+                                    <text x="480" y="198" class="chart-skeleton-tick">T-30s</text>
+                                    <text x="920" y="198" class="chart-skeleton-tick">NOW</text>
+                                    <rect id="osc-normal-band" x="48" y="33" width="944" height="111" fill="rgba(148, 163, 184, 0.04)" stroke="rgba(148, 163, 184, 0.12)" stroke-width="1" stroke-dasharray="6,4" />
+                                </svg>
+                                <svg class="absolute inset-0 w-full h-full" id="oscilloscope-lines" viewBox="0 0 1000 200" preserveAspectRatio="none">
+                                    <path id="osc-vibration" d="M0,100 L1000,100" fill="none" stroke="#06B6D4" stroke-width="2" class="transition-all duration-300"/>
+                                    <path id="osc-temperature" d="M0,100 L1000,100" fill="none" stroke="#F97316" stroke-width="2" class="transition-all duration-300"/>
+                                </svg>
+                                <div id="osc-scan-line" class="absolute top-0 bottom-0 w-0.5 bg-slate-600/30 left-[95%] hidden"></div>
+                                <div id="osc-ready-indicator" class="chart-ready-indicator">
+                                    <span class="ready-dot"></span>
+                                    <span>UI Ready — Awaiting stream</span>
+                                </div>
+                            </div>
+                            <p id="osc-chart-caption" class="text-[10px] text-slate-500 font-mono mt-2 text-center">Awaiting asset link</p>
+                        </div>
+
+                        <!-- Phase 3: AI Streaming Console (Left) -->
+                        <div class="glass-card rounded-xl border border-white/10 bg-[#0a0a0a] overflow-hidden flex flex-col min-h-[20rem]">
+                            <div class="px-6 py-4 bg-black/40 border-b border-white/10 flex items-center justify-between">
+                                <h3 class="font-bold text-white font-mono uppercase text-sm"><i class="fas fa-terminal text-[#FACC15] mr-2"></i> AI Anomaly Stream</h3>
+                                <span class="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse"></span>
+                            </div>
+                            <div id="ai-terminal-feed" class="p-6 flex-1 overflow-y-auto space-y-2 font-mono text-[11px] text-[#22C55E] bg-[#050505] relative">
+                                <div id="ai-terminal-standby" class="text-slate-400 text-[11px] leading-relaxed">
+                                    <span class="text-[#22C55E]/80">&gt;</span> Monitoring engine <span class="text-[#22C55E]">online</span>.<br>
+                                    <span class="text-[#22C55E]/80">&gt;</span> <span class="text-slate-300">Awaiting telemetry stream.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Instantaneous Readouts + Recent Anomalies (Right column) -->
+                        <div class="flex flex-col gap-4 min-h-[20rem]">
+                            <div class="glass-card rounded-xl p-6 border border-white/10 bg-black/80 flex flex-col flex-1">
+                                <h3 class="font-bold text-white font-mono uppercase text-sm mb-4"><i class="fas fa-tachometer-alt text-[#F97316] mr-2"></i> Instantaneous Readouts</h3>
+                                <div class="grid grid-cols-2 gap-4 flex-1">
+                                    <div class="bg-[#111] border border-white/5 rounded-lg p-4 flex flex-col justify-center items-center text-center">
+                                        <span class="text-[10px] text-light-slate font-mono uppercase tracking-widest mb-2">Spindle Load</span>
+                                        <div class="flex items-center gap-2">
+                                            <span id="gauge-spindle" class="text-3xl font-black font-mono text-slate-400 tracking-tighter">—<span class="text-sm text-light-slate ml-1">%</span></span>
+                                            <span id="gauge-spindle-trend" class="text-slate-500 text-xs" title="Trend"><i class="fas fa-minus"></i></span>
+                                        </div>
+                                    </div>
+                                    <div class="bg-[#111] border border-white/5 rounded-lg p-4 flex flex-col justify-center items-center text-center">
+                                        <span class="text-[10px] text-light-slate font-mono uppercase tracking-widest mb-2">Coolant Press.</span>
+                                        <div class="flex items-center gap-2">
+                                            <span id="gauge-coolant" class="text-3xl font-black font-mono text-slate-400 tracking-tighter">—<span class="text-sm text-light-slate ml-1">PSI</span></span>
+                                            <span id="gauge-coolant-trend" class="text-slate-500 text-xs" title="Trend"><i class="fas fa-minus"></i></span>
+                                        </div>
+                                    </div>
+                                    <div class="bg-[#111] border border-white/5 rounded-lg p-4 flex flex-col justify-center items-center text-center col-span-2">
+                                        <span class="text-[10px] text-light-slate font-mono uppercase tracking-widest mb-2">System Flow Rate</span>
+                                        <span id="gauge-flow" class="text-4xl font-black font-mono text-slate-400 tracking-tighter">—<span class="text-base text-light-slate ml-2">L/min</span></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="glass-card rounded-xl p-4 border border-white/10 bg-[#0a0a0a]">
+                                <h3 class="font-bold text-white font-mono uppercase text-[10px] tracking-widest mb-3 flex items-center gap-2 text-slate-300">
+                                    <i class="fas fa-exclamation-circle text-amber-500/80 text-xs"></i> Recent Anomalies
+                                </h3>
+                                <ul id="telemetry-anomaly-ticker" class="space-y-2 font-mono text-[11px] min-h-[4.5rem]">
+                                    <li class="telemetry-anomaly-standby flex gap-2 text-slate-400 py-2 items-start">
+                                        <span class="ready-dot shrink-0 mt-1" style="width:5px;height:5px;"></span>
+                                        <span class="italic">No anomalies — awaiting live link</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Stream Connector Modal -->
+            <div id="data-stream-modal" class="hidden fixed inset-0 z-[250] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+                <div class="w-full max-w-2xl rounded-3xl bg-slate-950 border border-white/10 shadow-2xl overflow-hidden">
+                    <div class="flex items-start justify-between px-6 py-4 border-b border-white/10">
+                        <div>
+                            <h3 class="text-lg font-semibold text-white">Initiate Live Link</h3>
+                            <p class="text-sm text-light-slate mt-1">Choose a live broker connection or upload a demo file for instant telemetry preview.</p>
+                        </div>
+                        <button onclick="closeDataStreamModal()" class="text-light-slate hover:text-white text-2xl leading-none">×</button>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 p-6">
+                        <div class="glass-card rounded-2xl p-5 border border-white/10">
+                            <h4 class="font-semibold mb-3">Live MQTT / WebSocket</h4>
+                            <p class="text-[11px] text-light-slate mb-4">Enter a live broker URL to connect the scanner engine to your plant floor.</p>
+                            <input id="live-stream-url" type="text" placeholder="mqtt://broker.local:1883 or ws://edge-node:9001" class="glass-input w-full px-3 py-2 rounded text-sm mb-4" />
+                            <button onclick="connectLiveUrl()" class="w-full py-3 bg-[#22C55E] text-black font-semibold rounded-lg hover:bg-[#16A34A] transition">Connect Live Stream</button>
+                        </div>
+                        <div class="glass-card rounded-2xl p-5 border border-white/10">
+                            <h4 class="font-semibold mb-3">Demo File Upload</h4>
+                            <p class="text-[11px] text-light-slate mb-4">Upload a historical JSON or CSV telemetry file to demo charts and AI scoring.</p>
+                            <button onclick="uploadDemoTelemetryFile()" class="w-full py-3 bg-[#F97316] text-black font-semibold rounded-lg hover:bg-[#EA580C] transition">Upload Demo File</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- AI Alert Overlay (Urgent Bottom-Center Design) -->
+            <div id="ai-alert-overlay" class="hidden fixed bottom-10 left-1/2 -translate-x-1/2 z-[200] w-full max-w-lg">
+                <div class="bg-red-950/40 border-2 border-red-500 backdrop-blur-xl p-6 rounded-2xl shadow-[0_0_50px_rgba(239,68,68,0.4)] animate-pulse">
+                    <div class="flex items-start gap-4">
+                        <div class="bg-red-500 p-2 rounded-lg shrink-0">
+                            <i class="fas fa-exclamation-triangle text-black text-xl"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-bold text-red-500 text-lg uppercase tracking-widest" id="anomaly-title">Anomaly Detected</h4>
+                            <p class="text-white/90 text-sm mt-1">
+                                Vibration spike <span class="font-bold text-red-400">(8.4 mm/s)</span> detected. <span class="font-bold text-[#F97316]">AI Analysis:</span> 92% match with bearing fatigue pattern in Manual Section 4.2.
+                            </p>
+                            <div class="flex gap-3 mt-4">
+                                <button onclick="generateWorkOrder(AppState.currentAsset)" class="flex-1 py-2.5 bg-red-500 text-black font-bold rounded-lg hover:bg-red-400 transition text-xs uppercase tracking-wider">
+                                    <i class="fas fa-file-export mr-1"></i>Draft Work Order
+                                </button>
+                                <button onclick="handleAlert('dismiss')" class="flex-1 py-2.5 bg-white/10 border border-white/20 rounded-lg font-bold hover:bg-white/20 transition text-xs uppercase tracking-wider">
+                                    Ignore
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Knowledge Vault View -->
+            
+{% endblock %}

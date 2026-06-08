@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="vault-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6">
+                <div class="max-w-4xl mx-auto">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold">Field Notes</h2>
+                            <p class="text-sm text-light-slate mt-1">Field tips and practical fixes from experienced technicians</p>
+                        </div>
+                        <button onclick="createKnowledgePost()" class="px-3 py-1.5 bg-[#F97316] text-white border border-[#EA580C] rounded text-sm font-medium flex items-center gap-2 hover:bg-[#EA580C] transition-all">
+                            <i class="fas fa-plus"></i>Add Field Note
+                        </button>
+                    </div>
+
+                    <div id="knowledge-feed" class="space-y-4">
+                        <!-- Knowledge posts populated by JS -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Field Notes View -->
+            
+{% endblock %}

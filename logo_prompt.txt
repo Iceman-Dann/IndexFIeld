@@ -1,0 +1,42 @@
+IndexField Logo Design Prompt
+
+Create a modern, industrial logo for IndexField - an AI-powered industrial intelligence platform.
+
+Brand Colors:
+- Primary: Safety Orange (#F97316) - vibrant, energetic
+- Secondary: Burnt Orange (#EA580C) - darker, professional
+- Background: Charcoal (#111827) - dark, sophisticated
+- Text: Off-White (#F8FAFC) - clean, readable
+
+Design Elements:
+- Typography: Clean, modern sans-serif (Inter font family)
+- Style: Minimalist, professional, tech-forward
+- Industry: Industrial/maintenance/operations focus
+- Vibe: Sophisticated, reliable, cutting-edge AI
+
+Logo Concepts:
+1. **Abstract Field/Grid**: Geometric pattern representing data fields or industrial grid systems
+2. **Index Symbol**: Stylized "I" or "IF" with data visualization elements
+3. **Industrial Tech**: Fusion of gear/cog shapes with digital circuit patterns
+4. **Data Flow**: Lines or nodes suggesting information processing and analysis
+
+Technical Requirements:
+- Scalable for web and mobile
+- Works well on dark backgrounds
+- Single color and full color versions
+- Professional enough for enterprise clients
+- Modern enough for tech startup appeal
+
+Avoid:
+- Overly complex designs
+- Generic tech clichés (clouds, random circuit patterns)
+- Playful or casual elements
+- Traditional industrial imagery (hammers, wrenches)
+
+Target Audience:
+- Industrial maintenance teams
+- Operations managers
+- Engineering professionals
+- Enterprise decision makers
+
+Keywords: Industrial AI, data intelligence, predictive maintenance, operations optimization, smart manufacturing

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Registry - IndexField</title>
+    <link rel="icon" href="data:,">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../supabase-config.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+                    colors: {
+                        charcoal: '#111827', graphite: '#1F2937', slate: '#475569', steel: '#64748B',
+                        'light-slate': '#94A3B8', 'off-white': '#F8FAFC', 'safety-orange': '#F97316',
+                        'burnt-orange': '#EA580C', 'success-green': '#22C55E', 'warning-amber': '#FACC15',
+                        'critical-red': '#EF4444', 'data-cyan': '#06B6D4',
+                        brand: { bg: '#111827', surface: '#1F2937', card: '#1F2937', border: '#374151',
+                            hover: '#374151', accent: '#F97316', accent2: '#EA580C', text: '#94A3B8',
+                            textLight: '#F8FAFC', verified: '#22C55E' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="selection:bg-safety-orange selection:text-white">
+    <div class="ambient-glow glow-1"></div>
+    <div class="bg-grid"></div>
+    
+    <div class="relative z-10 flex h-screen flex-col">
+        <header class="h-16 border-b border-white/5 flex items-center justify-between px-6 glass-card">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-industry text-light-slate"></i>
+                <span class="font-medium text-base text-white">Asset Registry</span>
+            </div>
+            <button onclick="handleLogout()" class="text-[10px] font-mono text-white font-bold bg-[#F97316]/20 border border-[#F97316]/40 px-3 py-1.5 rounded hover:bg-[#F97316]/30 transition flex items-center gap-2">
+                <i class="fas fa-sign-out-alt"></i> LOG OUT
+            </button>
+        </header>
+        
+        <main class="flex-1 overflow-y-auto p-6">
+            <div class="max-w-7xl mx-auto">
+                <!-- Stats -->
+                <div class="grid grid-cols-4 gap-4 mb-6">
+                    <div class="glass-card p-4 rounded-lg">
+                        <p class="text-xs text-light-slate uppercase mb-1">Total Assets</p>
+                        <p id="total-assets" class="text-2xl font-bold text-white">0</p>
+                    </div>
+                    <div class="glass-card p-4 rounded-lg">
+                        <p class="text-xs text-light-slate uppercase mb-1">Active Alerts</p>
+                        <p id="active-alerts" class="text-2xl font-bold text-slate-400">0</p>
+                    </div>
+                    <div class="glass-card p-4 rounded-lg">
+                        <p class="text-xs text-light-slate uppercase mb-1">AI Coverage</p>
+                        <p id="ai-coverage" class="text-2xl font-bold text-slate-400">--</p>
+                    </div>
+                    <div class="glass-card p-4 rounded-lg">
+                        <p class="text-xs text-light-slate uppercase mb-1">Fleet Status</p>
+                        <p class="text-2xl font-bold text-[#22C55E]">Nominal</p>
+                    </div>
+                </div>
+
+                <!-- Asset Table -->
+                <div class="glass-card rounded-lg border border-white/10 overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-black/60 border-b border-white/10">
+                            <tr>
+                                <th class="px-4 py-3 text-xs text-light-slate font-mono uppercase">Status</th>
+                                <th class="px-4 py-3 text-xs text-light-slate font-mono uppercase">Equipment</th>
+                                <th class="px-4 py-3 text-xs text-light-slate font-mono uppercase">Location</th>
+                                <th class="px-4 py-3 text-xs text-light-slate font-mono uppercase">Priority</th>
+                                <th class="px-4 py-3 text-xs text-light-slate font-mono uppercase">Health</th>
+                            </tr>
+                        </thead>
+                        <tbody id="asset-table-body" class="divide-y divide-white/5">
+                            <tr class="hover:bg-white/5 transition">
+                                <td class="px-4 py-4">
+                                    <span class="px-2 py-1 bg-[#22C55E]/10 text-[#22C55E] text-xs rounded">HEALTHY</span>
+                                </td>
+                                <td class="px-4 py-4 text-sm text-white">Pump P-101</td>
+                                <td class="px-4 py-4 text-sm text-light-slate">Building A</td>
+                                <td class="px-4 py-4 text-xs text-white">Tier 1</td>
+                                <td class="px-4 py-4 text-sm text-[#22C55E]">▓▓▓▓░ 85%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 space-y-2"></div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+        
+        async function guardSession() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            function getStoredDemoSession() {
+                try {
+                    return JSON.parse(localStorage.getItem('indexfield-demo-session'));
+                } catch { return null; }
+            }
+            if (!session && !getStoredDemoSession()) {
+                window.location.href = '../signin.html';
+            }
+        }
+
+        async function loadAssets() {
+            try {
+                const response = await fetch(`${API_URL}/api/assets`);
+                const assets = await response.json();
+                
+                document.getElementById('total-assets').textContent = assets.length;
+                
+                const tbody = document.getElementById('asset-table-body');
+                tbody.innerHTML = assets.map(a => `
+                    <tr class="hover:bg-white/5 transition">
+                        <td class="px-4 py-4">
+                            <span class="px-2 py-1 ${a.status === 'warning' ? 'bg-yellow-500/10 text-yellow-500' : 'bg-[#22C55E]/10 text-[#22C55E]'} text-xs rounded">${a.status.toUpperCase()}</span>
+                        </td>
+                        <td class="px-4 py-4 text-sm text-white">${a.name}</td>
+                        <td class="px-4 py-4 text-sm text-light-slate">${a.location}</td>
+                        <td class="px-4 py-4 text-xs text-white">${a.priority}</td>
+                        <td class="px-4 py-4 text-sm text-[#22C55E]">▓▓▓▓░ ${a.health || 85}%</td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error('Failed to load assets:', err);
+            }
+        }
+
+        function showToast(text, type = 'brand') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `glass-card border-l-4 ${type === 'brand' ? 'border-[#22C55E]' : 'border-[#F97316]'} px-4 py-3 rounded text-xs flex items-center gap-3`;
+            toast.innerHTML = `<i class="fas ${type === 'brand' ? 'fa-check-circle text-[#22C55E]' : 'fa-info-circle text-[#F97316]'}"></i> <span>${text}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+            localStorage.removeItem('indexfield-demo-session');
+            window.location.href = '../signin.html';
+        }
+
+        guardSession();
+        loadAssets();
+    </script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ PAGE_TITLE }}</title>
+    <link rel="icon" href="data:,">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../supabase-config.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+                    colors: {
+                        charcoal: '#111827',
+                        graphite: '#1F2937',
+                        slate: '#475569',
+                        steel: '#64748B',
+                        'light-slate': '#94A3B8',
+                        'off-white': '#F8FAFC',
+                        'safety-orange': '#F97316',
+                        'burnt-orange': '#EA580C',
+                        'success-green': '#22C55E',
+                        'warning-amber': '#FACC15',
+                        'critical-red': '#EF4444',
+                        'data-cyan': '#06B6D4',
+                        brand: {
+                            bg: '#111827',
+                            surface: '#1F2937',
+                            card: '#1F2937',
+                            border: '#374151',
+                            hover: '#374151',
+                            accent: '#F97316',
+                            accent2: '#EA580C',
+                            text: '#94A3B8',
+                            textLight: '#F8FAFC',
+                            verified: '#22C55E'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="selection:bg-safety-orange selection:text-white">
+    <div class="ambient-glow glow-1"></div>
+    <div class="ambient-glow glow-2"></div>
+    <div class="bg-grid"></div>
+    
+    <div class="relative z-10 flex h-screen flex-col">
+        <header class="h-16 border-b border-white/5 flex items-center justify-between px-4 lg:px-6 glass-card">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-robot text-light-slate hidden sm:block"></i>
+                <span class="font-medium text-sm sm:text-base text-white">{{ PAGE_TITLE }}</span>
+                <span class="text-[10px] font-mono text-light-slate bg-white/5 px-2 py-1 rounded border border-white/10">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#22C55E] inline-block mr-1.5"></span>FACILITY INTERNAL DATA
+                </span>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="handleLogout()" class="text-[10px] font-mono text-white font-bold bg-[#F97316]/20 border border-[#F97316]/40 px-3 py-1.5 rounded hover:bg-[#F97316]/30 transition flex items-center gap-2">
+                    <i class="fas fa-sign-out-alt"></i> LOG OUT
+                </button>
+            </div>
+        </header>
+        
+        <main id="page-content" class="flex-1 overflow-y-auto p-6">
+            <!-- Page content goes here -->
+        </main>
+    </div>
+    
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 space-y-2"></div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+        
+        async function guardSession() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            function getStoredDemoSession() {
+                try {
+                    const raw = localStorage.getItem('indexfield-demo-session');
+                    if (!raw) return null;
+                    const parsed = JSON.parse(raw);
+                    return parsed && parsed.user ? parsed : null;
+                } catch { return null; }
+            }
+            const demoSession = getStoredDemoSession();
+            if (!session && !demoSession) {
+                window.location.href = '../signin.html';
+                return;
+            }
+            const user = session ? session.user : demoSession.user;
+            loadUserProfile(user);
+        }
+
+        async function loadUserProfile(user) {
+            const email = user.email || '';
+            let metaName = user.user_metadata?.full_name || email.split('@')[0];
+            console.log('User loaded:', metaName);
+        }
+
+        function showToast(text, type = 'brand') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `glass-card border-l-4 ${type === 'brand' ? 'border-[#22C55E]' : 'border-[#F97316]'} px-4 py-3 rounded shadow-2xl animate-in text-xs flex items-center gap-3 mb-2`;
+            toast.innerHTML = `<i class="fas ${type === 'brand' ? 'fa-check-circle text-[#22C55E]' : 'fa-info-circle text-[#F97316]'}"></i> <span>${text}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+            localStorage.removeItem('indexfield-demo-session');
+            window.location.href = '../signin.html';
+        }
+
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_OUT') {
+                window.location.href = '../signin.html';
+            }
+        });
+
+        // Initialize page
+        guardSession();
+    </script>
+</body>
+</html>
