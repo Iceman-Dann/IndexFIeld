@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="field-view" class="dashboard-view hidden flex-1 overflow-y-auto">
+                <div class="h-full flex flex-col items-center justify-center p-6">
+                    <div class="w-full max-w-md">
+                        <div class="text-center mb-8">
+                            <div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#F97316]/20 to-[#22C55E]/20 border border-[#F97316]/20 flex items-center justify-center">
+                                <i class="fas fa-qrcode text-4xl text-[#F97316]"></i>
+                            </div>
+                            <h2 class="text-2xl font-bold mb-2">Field Scan</h2>
+                            <p class="text-sm text-light-slate">Scan an equipment QR code for quick manual access</p>
+                        </div>
+
+                        <div class="glass-card rounded-2xl p-8 mb-6">
+                            <div id="qr-scanner-area" class="aspect-square rounded-xl border-2 border-dashed border-[#F97316]/30 flex flex-col items-center justify-center cursor-pointer hover:border-[#F97316] transition-all" onclick="simulateQRScan()">
+                                <i class="fas fa-camera text-3xl text-[#F97316]/50 mb-3"></i>
+                                <p class="text-sm text-light-slate">Tap to simulate QR scan</p>
+                                <p class="text-xs text-light-slate/50 mt-1">Camera access required on mobile</p>
+                            </div>
+                        </div>
+                        
+                        <div id="qr-result" class="hidden glass-card rounded-xl p-4">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-10 h-10 rounded-lg bg-[#F97316]/10 flex items-center justify-center">
+                                    <i class="fas fa-industry text-[#F97316]"></i>
+                                </div>
+                                <div>
+                                    <h4 id="scan-asset-name" class="font-semibold">Unnamed Asset</h4>
+                                    <p id="scan-asset-serial" class="text-xs text-light-slate">Serial: --</p>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <button onclick="loadAssetManual('P-101')" class="w-full p-3 bg-white/5 hover:bg-white/10 rounded-lg text-left text-sm flex items-center gap-2 transition">
+                                    <i class="fas fa-book text-[#F97316]"></i>
+                                    <span>View Maintenance Manual</span>
+                                </button>
+                                <button onclick="showAssetHistory('P-101')" class="w-full p-3 bg-white/5 hover:bg-white/10 rounded-lg text-left text-sm flex items-center gap-2 transition">
+                                    <i class="fas fa-history text-[#22C55E]"></i>
+                                    <span>Last 3 Maintenance Records</span>
+                                </button>
+                                <button onclick="requestAssistance('P-101')" class="w-full p-3 bg-[#F97316]/10 hover:bg-[#F97316]/20 border border-[#F97316]/30 rounded-lg text-left text-sm flex items-center gap-2 transition">
+                                    <i class="fas fa-robot text-[#F97316]"></i>
+                                    <span>Ask AI About This Asset</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Lockout / Tagout View -->
+            
+{% endblock %}

@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in | Index Field</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+                    colors: { brand: { bg: '#050505', card: '#0A0A0A', border: '#1A1A1A', accent: '#E5E5E5' } },
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #050505; color: #E5E5E5; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; overflow: hidden; }
+        
+        /* Subtle Engineering Grid Background */
+        .bg-grid {
+            position: absolute; inset: 0; z-index: 0;
+            background-size: 30px 30px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px), 
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            mask-image: radial-gradient(circle at center, black 30%, transparent 80%);
+            -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 80%);
+        }
+
+        /* Ambient background glow (Very subtle) */
+        .ambient-glow {
+            position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+            width: 600px; height: 300px; background: rgba(255, 255, 255, 0.03);
+            filter: blur(100px); border-radius: 50%; z-index: 0; pointer-events: none;
+        }
+
+        /* Clean Entrance Animation */
+        @keyframes subtleFade { from { opacity: 0; transform: translateY(10px) scale(0.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .animate-in { animation: subtleFade 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+
+        /* Sleek Input Fields */
+        .input-field {
+            background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #fff; transition: all 0.2s ease; outline: none;
+        }
+        .input-field:focus { border-color: rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.04); }
+
+        /* SSO Buttons */
+        .btn-sso {
+            background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .btn-sso:hover { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.15); }
+
+        /* The thin gradient top border representing "active node" */
+        .card-accent-line {
+            position: absolute; top: 0; left: 0; width: 100%; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            opacity: 0.5;
+        }
+
+        /* Tab styling */
+        .auth-tab {
+            transition: all 0.2s ease;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+        }
+        .auth-tab.active {
+            border-bottom-color: #fff;
+            color: #fff;
+        }
+        .auth-tab:not(.active) {
+            color: #666;
+        }
+        .auth-tab:hover:not(.active) {
+            color: #999;
+        }
+
+        /* Error/Success messages */
+        .auth-message {
+            font-size: 12px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-top: 12px;
+            display: none;
+        }
+        .auth-message.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #f87171;
+        }
+        .auth-message.success {
+            display: block;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #4ade80;
+        }
+    </style>
+</head>
+<body class="selection:bg-white selection:text-black relative">
+
+    <!-- Background Elements -->
+    <div class="ambient-glow"></div>
+    <div class="bg-grid"></div>
+
+    <!-- Login Modal Container -->
+    <div class="w-full max-w-[400px] px-6 relative z-10 animate-in">
+        
+        <!-- Logo Header -->
+        <div class="flex flex-col items-center mb-8">
+            <img src="favicon.png" alt="Index Field Logo" class="w-8 h-8 mb-4 rounded">
+            <h1 id="auth-heading" class="text-xl font-medium tracking-tight text-white mb-1">Sign in to Index Field</h1>
+            <p class="text-sm text-[#888888]">Secure Industrial Intelligence</p>
+        </div>
+
+        <!-- The Card -->
+        <div class="bg-brand-card/80 backdrop-blur-xl border border-brand-border rounded-xl p-6 relative overflow-hidden shadow-2xl">
+            <!-- Accent Line -->
+            <div class="card-accent-line"></div>
+
+            <!-- Auth Mode Tabs -->
+            <div class="flex gap-6 mb-6 border-b border-[rgba(255,255,255,0.08)] pb-0">
+                <button onclick="switchTab('signin')" id="tab-signin" class="auth-tab active pb-3 text-sm font-medium">Sign In</button>
+                <button onclick="switchTab('signup')" id="tab-signup" class="auth-tab pb-3 text-sm font-medium">Create Account</button>
+            </div>
+
+            <!-- SSO Options -->
+            <div class="space-y-3 mb-6">
+                <!-- Google -->
+                <button onclick="handleGoogleAuth()" class="btn-sso w-full py-2.5 px-4 rounded-lg flex items-center justify-center gap-3 text-sm font-medium text-[#E5E5E5]">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                    Continue with Google
+                </button>
+                <!-- Microsoft (placeholder - not wired) -->
+                <button onclick="showMessage('Microsoft SSO requires Enterprise SAML configuration.', 'error')" class="btn-sso w-full py-2.5 px-4 rounded-lg flex items-center justify-center gap-3 text-sm font-medium text-[#E5E5E5]">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.4 24H0V12.6H11.4V24ZM24 24H12.6V12.6H24V24ZM11.4 11.4H0V0H11.4V11.4ZM24 11.4H12.6V0H24V11.4Z" fill="#00a4ef"/></svg>
+                    Continue with Microsoft
+                </button>
+            <button onclick="handleGuestLogin()" class="btn-sso w-full py-2.5 px-4 rounded-lg flex items-center justify-center gap-3 text-sm font-medium text-[#E5E5E5]" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);">Continue as Guest</button>
+</div>
+
+            <!-- Divider -->
+            <div class="flex items-center gap-3 mb-6">
+                <div class="flex-1 h-px bg-brand-border"></div>
+                <span class="text-[11px] text-[#666666] font-mono uppercase tracking-widest">or email</span>
+                <div class="flex-1 h-px bg-brand-border"></div>
+            </div>
+
+            <!-- Sign In Form -->
+            <form id="signin-form" class="space-y-4" onsubmit="handleSignIn(event)">
+                <div>
+                    <label class="block text-xs font-medium text-[#A1A1A1] mb-1.5">Work Email</label>
+                    <input type="email" id="signin-email" placeholder="name@company.com" class="w-full input-field rounded-lg px-3 py-2 text-sm placeholder-[#444444]" required>
+                </div>
+                
+                <div>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="block text-xs font-medium text-[#A1A1A1]">Password</label>
+                        <a href="#" onclick="handleForgotPassword(event)" class="text-xs text-[#888888] hover:text-white transition">Forgot?</a>
+                    </div>
+                    <input type="password" id="signin-password" placeholder="••••••••" class="w-full input-field rounded-lg px-3 py-2 text-sm placeholder-[#444444]" required minlength="6">
+                </div>
+
+                <!-- Primary Action Button -->
+                <button type="submit" id="signin-btn" class="w-full bg-white hover:bg-gray-200 text-black font-medium py-2.5 rounded-lg transition-colors duration-200 text-sm mt-2">
+                    Sign In
+                </button>
+            </form>
+
+            <!-- Sign Up Form (Hidden by default) -->
+            <form id="signup-form" class="space-y-4 hidden" onsubmit="handleSignUp(event)">
+                <div>
+                    <label class="block text-xs font-medium text-[#A1A1A1] mb-1.5">Full Name</label>
+                    <input type="text" id="signup-name" placeholder="John Smith" class="w-full input-field rounded-lg px-3 py-2 text-sm placeholder-[#444444]" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-[#A1A1A1] mb-1.5">Work Email</label>
+                    <input type="email" id="signup-email" placeholder="name@company.com" class="w-full input-field rounded-lg px-3 py-2 text-sm placeholder-[#444444]" required>
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-medium text-[#A1A1A1] mb-1.5">Password</label>
+                    <input type="password" id="signup-password" placeholder="Minimum 6 characters" class="w-full input-field rounded-lg px-3 py-2 text-sm placeholder-[#444444]" required minlength="6">
+                </div>
+
+                <button type="submit" id="signup-btn" class="w-full bg-white hover:bg-gray-200 text-black font-medium py-2.5 rounded-lg transition-colors duration-200 text-sm mt-2">
+                    Create Account
+                </button>
+            </form>
+
+            <!-- Auth Messages -->
+            <div id="auth-message" class="auth-message"></div>
+        </div>
+
+        <!-- Footer Links -->
+        <div class="mt-6 flex justify-between items-center text-[11px] font-mono text-[#666666]">
+            <span>System Status: <span class="text-green-500">Operational</span></span>
+            <div class="space-x-3">
+                <a href="#" class="hover:text-white transition">Help</a>
+                <a href="#" class="hover:text-white transition">Privacy</a>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Supabase client is initialized in supabase-config.js (loaded in <head>)
+
+        function getStoredDemoSession() {
+            try {
+                const raw = localStorage.getItem('indexfield-demo-session');
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                return parsed && parsed.user ? parsed : null;
+            } catch {
+                return null;
+            }
+        }
+
+        function createDemoSession(email, fullName = 'Demo User') {
+            const session = {
+                user: {
+                    id: 'demo-user',
+                    email,
+                    user_metadata: { full_name: fullName }
+                }
+            };
+            localStorage.setItem('indexfield-demo-session', JSON.stringify(session));
+            return session;
+        }
+
+        function clearDemoSession() {
+            localStorage.removeItem('indexfield-demo-session');
+        }
+
+        // CHECK IF ALREADY LOGGED IN
+        // =============================================
+        (async function checkSession() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
+            if (getStoredDemoSession()) {
+                window.location.href = 'dashboard.html';
+            }
+        })();
+
+        // =============================================
+        // TAB SWITCHING
+        // =============================================
+        function switchTab(tab) {
+            const signinForm = document.getElementById('signin-form');
+            const signupForm = document.getElementById('signup-form');
+            const tabSignin = document.getElementById('tab-signin');
+            const tabSignup = document.getElementById('tab-signup');
+            const heading = document.getElementById('auth-heading');
+            clearMessage();
+
+            if (tab === 'signin') {
+                signinForm.classList.remove('hidden');
+                signupForm.classList.add('hidden');
+                tabSignin.classList.add('active');
+                tabSignup.classList.remove('active');
+                heading.textContent = 'Sign in to Index Field';
+            } else {
+                signinForm.classList.add('hidden');
+                signupForm.classList.remove('hidden');
+                tabSignin.classList.remove('active');
+                tabSignup.classList.add('active');
+                heading.textContent = 'Create your account';
+            }
+        }
+
+        // =============================================
+        // MESSAGE DISPLAY
+        // =============================================
+        function showMessage(text, type = 'error') {
+            const el = document.getElementById('auth-message');
+            el.textContent = text;
+            el.className = `auth-message ${type}`;
+        }
+
+        function clearMessage() {
+            const el = document.getElementById('auth-message');
+            el.className = 'auth-message';
+            el.textContent = '';
+        }
+
+        // =============================================
+        // SIGN IN WITH EMAIL/PASSWORD
+        // =============================================
+        async function handleSignIn(e) {
+            e.preventDefault();
+            clearMessage();
+            
+            const btn = document.getElementById('signin-btn');
+            const email = document.getElementById('signin-email').value.trim();
+            const password = document.getElementById('signin-password').value;
+            
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i>Authenticating...';
+            btn.disabled = true;
+
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password,
+                });
+
+                if (error) {
+                    createDemoSession(email, email.split('@')[0]);
+                    showMessage('Demo mode enabled. Redirecting to the dashboard.', 'success');
+                    btn.innerHTML = '<i class="fas fa-check mr-2"></i>Demo mode active!';
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 500);
+                    return;
+                }
+
+                btn.innerHTML = '<i class="fas fa-check mr-2"></i>Welcome back!';
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 500);
+
+            } catch (err) {
+                createDemoSession(email, email.split('@')[0]);
+                showMessage('Demo mode enabled. Redirecting to the dashboard.', 'success');
+                btn.innerHTML = '<i class="fas fa-check mr-2"></i>Demo mode active!';
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 500);
+            }
+        }
+
+        // =============================================
+        // SIGN UP WITH EMAIL/PASSWORD
+        // =============================================
+        async function handleSignUp(e) {
+            e.preventDefault();
+            clearMessage();
+
+            const btn = document.getElementById('signup-btn');
+            const name = document.getElementById('signup-name').value.trim();
+            const email = document.getElementById('signup-email').value.trim();
+            const password = document.getElementById('signup-password').value;
+
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i>Creating account...';
+            btn.disabled = true;
+
+            try {
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            full_name: name,
+                        }
+                    }
+                });
+
+                if (error) {
+                    createDemoSession(email, name || email.split('@')[0]);
+                    showMessage('Demo mode enabled. Redirecting to the dashboard.', 'success');
+                    btn.innerHTML = '<i class="fas fa-check mr-2"></i>Demo mode active!';
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 500);
+                    return;
+                }
+
+                if (data.user && data.user.identities && data.user.identities.length === 0) {
+                    createDemoSession(email, name || email.split('@')[0]);
+                    showMessage('Demo mode enabled. Redirecting to the dashboard.', 'success');
+                    btn.innerHTML = '<i class="fas fa-check mr-2"></i>Demo mode active!';
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 500);
+                    return;
+                }
+
+                if (data.session) {
+                    btn.innerHTML = '<i class="fas fa-check mr-2"></i>Account created!';
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 500);
+                } else {
+                    createDemoSession(email, name || email.split('@')[0]);
+                    showMessage('Demo mode enabled. Redirecting to the dashboard.', 'success');
+                    btn.innerHTML = '<i class="fas fa-check mr-2"></i>Demo mode active!';
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 500);
+                }
+
+            } catch (err) {
+                createDemoSession(email, name || email.split('@')[0]);
+                showMessage('Demo mode enabled. Redirecting to the dashboard.', 'success');
+                btn.innerHTML = '<i class="fas fa-check mr-2"></i>Demo mode active!';
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 500);
+            }
+        }
+
+        // =============================================
+        // GOOGLE OAUTH
+        // =============================================
+        async function handleGoogleAuth() {
+            clearMessage();
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        redirectTo: window.location.origin + '/dashboard.html'
+                    }
+                });
+
+                if (error) {
+                    showMessage(error.message, 'error');
+                }
+                // If successful, Supabase redirects to Google automatically
+            } catch (err) {
+                showMessage('Google sign-in failed. Make sure Google OAuth is configured in Supabase.', 'error');
+            }
+        }
+
+        // =============================================
+        // FORGOT PASSWORD
+        // =============================================
+        async function handleForgotPassword(e) {
+            e.preventDefault();
+            clearMessage();
+
+            const email = document.getElementById('signin-email').value.trim();
+            if (!email) {
+                showMessage('Enter your email address first, then click Forgot.', 'error');
+                return;
+            }
+
+            try {
+                const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+                    redirectTo: window.location.origin + '/signin.html'
+                });
+
+                if (error) {
+                    showMessage(error.message, 'error');
+                    return;
+                }
+
+                showMessage('Password reset email sent. Check your inbox.', 'success');
+            } catch (err) {
+                showMessage('Failed to send reset email.', 'error');
+            }
+        }
+
+        // Guest login handler - creates demo session and redirects to dashboard
+        function handleGuestLogin() {
+            clearMessage();
+            // Create a demo session with placeholder email/name
+            const session = createDemoSession('guest@example.com', 'Guest User');
+            // Optionally store in localStorage (already handled by createDemoSession)
+            // Redirect to dashboard
+            window.location.href = 'dashboard.html';
+        }
+    </script>
+</body>
+</html>

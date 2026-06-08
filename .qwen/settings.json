@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(findstr *)",
+      "Bash(tasklist *)",
+      "Bash(taskkill *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
+    ]
+  },
+  "$version": 4
+}

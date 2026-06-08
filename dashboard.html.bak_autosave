@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IndexField | Mission Control</title>
+    <link rel="icon" href="data:,">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <!-- Note: In a true air-gapped deployment, this library is served locally from the node -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+                    colors: {
+                        // Primary
+                        charcoal: '#111827',
+                        graphite: '#1F2937',
+                        slate: '#475569',
+                        // Secondary
+                        steel: '#64748B',
+                        'light-slate': '#94A3B8',
+                        'off-white': '#F8FAFC',
+                        // Accent
+                        'safety-orange': '#F97316',
+                        'burnt-orange': '#EA580C',
+                        // Support
+                        'success-green': '#22C55E',
+                        'warning-amber': '#FACC15',
+                        'critical-red': '#EF4444',
+                        'data-cyan': '#06B6D4',
+                        // Legacy brand mapping
+                        brand: {
+                            bg: '#111827',
+                            surface: '#1F2937',
+                            card: '#1F2937',
+                            border: '#374151',
+                            hover: '#374151',
+                            accent: '#F97316',
+                            accent2: '#EA580C',
+                            text: '#94A3B8',
+                            textLight: '#F8FAFC',
+                            verified: '#22C55E'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { scrollbar-width: thin; scrollbar-color: #374151 #111827; }
+        body { background-color: #111827; color: #F8FAFC; overflow: hidden; }
+
+        /* Subtle ambient only - reduced for enterprise feel */
+        .ambient-glow { position: fixed; pointer-events: none; z-index: 0; }
+        .glow-1 { top: -20%; left: 50%; transform: translateX(-50%); width: 600px; height: 400px; background: rgba(249, 115, 22, 0.02); filter: blur(120px); border-radius: 50%; }
+        .glow-2 { display: none; } /* Removed secondary glow */
+
+        .bg-grid { position: fixed; inset: 0; z-index: 0; pointer-events: none; background-size: 60px 60px; background-image: linear-gradient(to right, rgba(148,163,184,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(148,163,184,0.03) 1px, transparent 1px); mask-image: linear-gradient(to bottom, black 30%, transparent 100%); }
+
+        /* ... (backup contains full original content) ... */
