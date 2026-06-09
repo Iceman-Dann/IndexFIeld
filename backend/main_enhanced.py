@@ -47,6 +47,7 @@ from backend.routes.prognostics import router as prognostics_router
 from backend.routes.history import router as history_router
 from backend.routes.help import router as help_router
 from backend.routes.manuals import router as manuals_router
+from backend.routes.qr import router as qr_router
 
 app.include_router(chat_router)
 # app.include_router(insights_router)
@@ -59,6 +60,7 @@ app.include_router(prognostics_router)
 app.include_router(history_router)
 app.include_router(help_router)
 app.include_router(manuals_router)
+app.include_router(qr_router)
 
 
 # CORS
@@ -85,6 +87,14 @@ if os.path.isdir(DASHBOARD_PAGES_DIR):
 # Serve all other static assets (HTML, CSS, JS) under /static for compatibility
 app.mount("/static", StaticFiles(directory=PROJECT_ROOT), name="static")
 
+@app.get("/supabase-config.js")
+async def serve_config():
+    return FileResponse(os.path.join(PROJECT_ROOT, "supabase-config.js"))
+
+@app.get("/")
+async def serve_index():
+    return FileResponse(os.path.join(PROJECT_ROOT, "index.html"))
+
 @app.get("/signin.html")
 async def serve_signin():
     return FileResponse(os.path.join(PROJECT_ROOT, "signin.html"))
@@ -92,10 +102,6 @@ async def serve_signin():
 @app.get("/dashboard.html")
 async def serve_dashboard():
     return FileResponse(os.path.join(PROJECT_ROOT, "dashboard.html"))
-
-@app.get("/supabase-config.js")
-async def serve_config():
-    return FileResponse(os.path.join(PROJECT_ROOT, "supabase-config.js"))
 
 # Security
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -147,6 +153,7 @@ query_analytics: List[Dict] = []
 class QueryRequest(BaseModel):
     query: str
     manual_id: Optional[str] = None
+    asset_id: Optional[str] = None
     top_k: int = 3
 
 class ChunkResult(BaseModel):
@@ -748,10 +755,36 @@ async def query_documents(request: QueryRequest):
     try:
         print(f"[DEBUG] Query: {request.query[:50]}... | Skeletons available: {len(skeleton_extractor.skeletons)} | Manuals registry: {len(manuals_registry)}")
 
+        # If asset_id is provided, check query_count limit for asset owner
+        if request.asset_id:
+            try:
+                from supabase import create_client
+                supabase_client = create_client(settings.SUPABASE_URL, settings.SUPABASE_ANON_KEY)
+                
+                # Get asset to find owner
+                asset_response = supabase_client.table('user_assets').select('user_id').eq('id', request.asset_id).execute()
+                if asset_response.data:
+                    user_id = asset_response.data[0]['user_id']
+                    
+                    # Check query_count in profiles table
+                    profile_response = supabase_client.table('profiles').select('query_count').eq('id', user_id).execute()
+                    if profile_response.data:
+                        query_count = profile_response.data[0].get('query_count', 0)
+                        if query_count >= 2:
+                            raise HTTPException(status_code=402, detail="Query limit reached")
+                        
+                        # Increment query_count
+                        supabase_client.table('profiles').update({'query_count': query_count + 1}).eq('id', user_id).execute()
+            except HTTPException:
+                raise
+            except Exception as e:
+                print(f"[WARN] Query count check failed: {e}")
+
         query_analytics.append({
             "query": request.query,
             "timestamp": datetime.now().isoformat(),
             "user": "anonymous",
+            "asset_id": request.asset_id,
         })
 
         answer, sources = rag_engine.query(
@@ -782,6 +815,8 @@ async def query_documents(request: QueryRequest):
             sources=source_results,
             citations=citations,
         )
+    except HTTPException:
+        raise
     except Exception as e:
         import traceback
         print(f"[ERROR] Query failed: {e}")
