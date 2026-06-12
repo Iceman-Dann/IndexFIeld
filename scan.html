@@ -99,8 +99,15 @@
             <div class="glass-card rounded-xl p-6">
                 <h3 class="text-sm font-semibold text-light-slate uppercase tracking-wider mb-4">Ask About This Asset</h3>
                 <div class="space-y-3">
-                    <input type="text" id="query-input" placeholder="Ask anything about this asset..." 
-                           class="glass-input w-full px-4 py-3 rounded-lg text-sm">
+                    <div class="relative">
+                        <input type="text" id="query-input" placeholder="Ask anything about this asset..." 
+                               class="glass-input w-full px-4 py-3 pr-12 rounded-lg text-sm">
+                        <!-- FEATURE 1: Voice Query Button for Scan Page -->
+                        <button type="button" id="scan-mic-btn" onclick="toggleVoiceRecording()"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-[#F97316] transition-colors">
+                            <i class="fas fa-microphone" id="scan-mic-icon"></i>
+                        </button>
+                    </div>
                     <button onclick="submitQuery()" id="query-button" 
                             class="w-full px-4 py-3 bg-[#F97316] text-black font-semibold rounded-lg hover:bg-[#EA580C] transition-all">
                         <i class="fas fa-search mr-2"></i>ASK
@@ -422,5 +429,7 @@
         // Load asset on page load
         loadAsset();
     </script>
+    <!-- New Features JavaScript -->
+    <script src="new_features.js"></script>
 </body>
 </html>

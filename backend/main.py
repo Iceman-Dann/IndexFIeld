@@ -1,6 +1,7 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List, Optional
 import os
@@ -8,10 +9,10 @@ import uuid
 from datetime import datetime
 import json
 
-from backend.document_processor import DocumentProcessor
-from backend.vector_store import VectorStore
-from backend.rag_engine import RAGEngine
-from backend.document_skeleton import SkeletonExtractor
+from document_processor import DocumentProcessor
+from vector_store import VectorStore
+from rag_engine import RAGEngine
+from document_skeleton import SkeletonExtractor
 
 app = FastAPI(title="IndexField RAG API", version="1.0.0")
 
@@ -23,6 +24,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Static files - serve from parent directory
+PARENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+app.mount("/static", StaticFiles(directory=PARENT_DIR), name="static")
 
 # Ensure directories exist
 UPLOAD_DIR = "uploads"

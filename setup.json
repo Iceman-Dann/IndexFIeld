@@ -1,0 +1,13 @@
+{
+  "facilityName": "HARWICK PROCESSING",
+  "managerName": "John Smith",
+  "industry": "Oil & Gas",
+  "compliance": "API 510",
+  "criticalAsset": "Hydraulic Press #3",
+  "documentCount": 12,
+  "modulesActive": 6,
+  "healthScore": 73,
+  "healthStatus": "amber",
+  "shift": "DAY",
+  "bootCompleted": false
+}

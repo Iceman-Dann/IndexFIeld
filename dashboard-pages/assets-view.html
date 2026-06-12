@@ -20,18 +20,18 @@
                     <div class="grid grid-cols-3 gap-4 mb-6">
                         <div class="glass-card rounded-xl p-4">
                             <div class="text-[10px] text-light-slate uppercase tracking-wider mb-1">Total Assets</div>
-                            <div class="text-2xl font-bold gradient-text" id="total-assets">0</div>
-                            <div class="text-[10px] text-light-slate mt-1">System awaiting sync</div>
+                            <div class="text-2xl font-bold text-slate-400" id="total-assets">No assets yet</div>
+                            <div class="text-[10px] text-light-slate mt-1" id="total-assets-sub">Add your first asset to begin</div>
                         </div>
                         <div class="glass-card rounded-xl p-4">
                             <div class="text-[10px] text-light-slate uppercase tracking-wider mb-1">Active Alerts</div>
-                            <div class="text-2xl font-bold text-slate-400" id="active-alerts">0</div>
-                            <div id="active-alerts-sub" class="text-[10px] text-light-slate mt-1">System awaiting sync</div>
+                            <div class="text-2xl font-bold text-slate-400" id="active-alerts">No alerts</div>
+                            <div id="active-alerts-sub" class="text-[10px] text-light-slate mt-1">System monitoring active</div>
                         </div>
                         <div class="glass-card rounded-xl p-4">
                             <div class="text-[10px] text-light-slate uppercase tracking-wider mb-1">AI Coverage</div>
-                            <div class="text-2xl font-bold text-slate-400" id="ai-coverage">--</div>
-                            <div id="ai-coverage-sub" class="text-[10px] text-light-slate mt-1">System awaiting sync</div>
+                            <div class="text-2xl font-bold text-slate-400" id="ai-coverage">Activates on</div>
+                            <div id="ai-coverage-sub" class="text-[10px] text-light-slate mt-1">first upload</div>
                         </div>
                     </div>
                     
@@ -43,38 +43,65 @@
                                     <input type="text" placeholder="Search assets..." class="glass-input px-3 py-1.5 rounded text-sm w-64" id="asset-search">
                                 </div>
                                 <div id="asset-active-fleet" class="mt-4 flex flex-col items-center justify-center border border-dashed border-zinc-800/80 rounded-lg p-8 min-h-[380px] bg-[#0d1117]/50 text-center">
-                                    <div class="relative flex items-center justify-center w-16 h-16 rounded-full bg-zinc-900/80 border border-zinc-800 mb-4 shadow-inner">
-                                        <i class="fas fa-industry text-2xl text-zinc-500"></i>
+                                    <div class="relative flex items-center justify-center w-16 h-16 rounded-full bg-[#F97316]/10 border border-[#F97316]/30 mb-4 shadow-inner">
+                                        <i class="fas fa-cog text-2xl text-[#F97316]"></i>
                                     </div>
 
-                                    <h4 class="text-sm font-semibold tracking-wide text-zinc-300 uppercase">
-                                        Awaiting Asset Configuration
+                                    <h4 class="text-lg font-bold text-white mb-2">
+                                        YOUR FIRST ASSET IS READY TO CONFIGURE
                                     </h4>
                                     
                                     <p class="mt-3 text-sm text-slate-300 max-w-md leading-relaxed">
-                                        System ready to link to your factory floor. Connect your first hardware node to begin monitoring.
+                                        <span id="setup-asset-name">Hydraulic Press #3</span> was registered during setup.<br/>
+                                        Complete its profile to activate AI coverage.
                                     </p>
 
                                     <div class="flex flex-col sm:flex-row gap-3 mt-8 w-full max-w-sm justify-center">
-                                        <button type="button" onclick="injectDemoAssetStream()" class="flex-1 px-4 py-3 text-sm font-semibold text-white bg-[#F97316] hover:bg-[#EA580C] active:scale-95 rounded-lg transition-all shadow-[0_0_20px_rgba(249,115,22,0.25)] flex items-center justify-center gap-2">
-                                            <i class="fas fa-rocket"></i> Inject Demo Fleet
+                                        <button type="button" onclick="configureFirstAsset()" class="w-full px-4 py-3 text-sm font-semibold text-white bg-[#F97316] hover:bg-[#EA580C] active:scale-95 rounded-lg transition-all shadow-[0_0_20px_rgba(249,115,22,0.25)] flex items-center justify-center gap-2">
+                                            CONFIGURE ASSET <i class="fas fa-arrow-right"></i>
                                         </button>
                                         <button type="button" onclick="connectDataStream()" class="flex-1 px-4 py-3 text-sm font-semibold text-slate-200 bg-transparent border border-slate-600 hover:border-[#F97316]/50 hover:bg-white/5 active:scale-95 rounded-lg transition-all flex items-center justify-center gap-2">
-                                            <i class="fas fa-plug text-slate-400"></i> Link Data Stream
+                                            <i class="fas fa-plug text-slate-400"></i> LIVE DATA <i class="fas fa-arrow-right"></i>
+                                        </button>
+                                    </div>
+
+                                    <div class="flex flex-col sm:flex-row gap-3 mt-4 w-full max-w-sm justify-center">
+                                        <button type="button" onclick="addFirstAsset()" class="flex-1 px-4 py-2 text-sm font-semibold text-white bg-white/5 border border-white/20 hover:bg-white/10 active:scale-95 rounded-lg transition-all flex items-center justify-center gap-2">
+                                            <i class="fas fa-plus text-slate-400"></i> ADD YOUR FIRST ASSET
+                                        </button>
+                                        <button type="button" onclick="importFromCSV()" class="flex-1 px-4 py-2 text-sm font-semibold text-slate-200 bg-transparent border border-slate-600 hover:border-[#F97316]/50 hover:bg-white/5 active:scale-95 rounded-lg transition-all flex items-center justify-center gap-2">
+                                            <i class="fas fa-file-csv text-slate-400"></i> IMPORT FROM CSV
                                         </button>
                                     </div>
                                 </div>
-                                <div id="asset-list" class="space-y-4 mt-4 overflow-y-auto max-h-[calc(100vh-340px)] pr-2 scrollbar-thin scrollbar-thumb-zinc-800">
-                                    <!-- Assets populated by JS -->
+                                <div id="asset-list" class="mt-4 overflow-y-auto max-h-[calc(100vh-340px)] pr-2 scrollbar-thin scrollbar-thumb-zinc-800 hidden">
+                                    <table class="w-full text-sm">
+                                        <thead class="bg-white/5 text-left">
+                                            <tr>
+                                                <th class="p-3 font-medium text-light-slate text-[10px] uppercase tracking-wider">Status</th>
+                                                <th class="p-3 font-medium text-light-slate text-[10px] uppercase tracking-wider">Asset Name</th>
+                                                <th class="p-3 font-medium text-light-slate text-[10px] uppercase tracking-wider">Type</th>
+                                                <th class="p-3 font-medium text-light-slate text-[10px] uppercase tracking-wider">Location</th>
+                                                <th class="p-3 font-medium text-light-slate text-[10px] uppercase tracking-wider">Last Service</th>
+                                                <th class="p-3 font-medium text-light-slate text-[10px] uppercase tracking-wider">Next Due</th>
+                                                <th class="p-3 font-medium text-light-slate text-[10px] uppercase tracking-wider">AI Coverage</th>
+                                                <th class="p-3 font-medium text-light-slate text-[10px] uppercase tracking-wider">QR</th>
+                                                <th class="p-3 font-medium text-light-slate text-[10px] uppercase tracking-wider"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="asset-table-body">
+                                            <!-- Assets populated by JS -->
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
                         <aside class="space-y-6">
                             <div class="glass-card rounded-xl p-6">
-                                <h3 class="font-semibold mb-4">AI Shift Handover</h3>
-                                <p class="text-[11px] text-light-slate mb-4">Auto-compile active telemetry anomalies and team queries into a shift log.</p>
-                                <button onclick="draftHandoverReport()" class="w-full px-4 py-3 bg-[#F97316] text-black font-semibold rounded-lg hover:bg-[#EA580C] transition-all flex items-center justify-center gap-2">
-                                    <i class="fas fa-file-alt"></i> 📝 Draft Handover Report
+                                <h3 class="font-semibold mb-4">QR Code Generator</h3>
+                                <p class="text-[11px] text-light-slate mb-4">Generate instant QR intelligence cards for your assets. Scan to view manuals, procedures, and live status.</p>
+                                <button onclick="openQRGenerator()" class="w-full px-4 py-3 bg-[#F97316] text-black font-semibold rounded-lg hover:bg-[#EA580C] transition-all flex items-center justify-center gap-2">
+                                    <i class="fas fa-qrcode"></i> Generate QR Code
                                 </button>
                             </div>
                             <div id="asset-protocol-panel" class="glass-card rounded-xl p-6 opacity-50 transition-opacity duration-300">
@@ -91,7 +118,7 @@
                                 <div class="h-28 rounded-2xl bg-[#0a0d12] border border-white/10 overflow-hidden relative flex items-center justify-center">
                                     <!-- Disabled state by default -->
                                     <div class="smart-envelope-disabled absolute inset-0 flex flex-col items-center justify-center bg-black/60 text-center p-4 z-10">
-                                        <span class="text-xs text-zinc-500 tracking-wide">Select an active machine stream to initialize.</span>
+                                        <span class="text-xs text-zinc-500 tracking-wide">CONNECTS WHEN FIRST ASSET IS LINKED</span>
                                     </div>
                                     <!-- Baseline low opacity flat grid line -->
                                     <svg class="absolute inset-0 w-full h-full opacity-10" viewBox="0 0 360 120" preserveAspectRatio="none">

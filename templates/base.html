@@ -6464,7 +6464,14 @@
                         console.warn(`[SPA] Fetch failed due to local file CORS restrictions for ${fragment.id}. Standalone inlining fallback required.`);
                         if (target.innerHTML.trim().length > 0) return;
                     }
-                    target.innerHTML = `<div class="p-6 text-sm text-red-300">Unable to load ${fragment.id}: ${error.message}</div>`;
+                    target.innerHTML = `
+                        <div class="p-6 text-sm text-red-300 flex flex-col items-start gap-2">
+                            <span>Unable to load ${fragment.id}: ${error.message}</span>
+                            <button onclick="loadDashboardFragments()" class="px-3 py-1.5 bg-[#F97316]/20 border border-[#F97316]/40 hover:bg-[#F97316]/30 text-white rounded text-xs font-bold transition flex items-center gap-1.5 mt-1">
+                                <i class="fas fa-sync-alt"></i> Run Again
+                            </button>
+                        </div>
+                    `;
                 }
             }));
         }

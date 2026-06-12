@@ -10,7 +10,7 @@ from PIL import Image
 import pytesseract
 import requests
 import io
-from backend.tribal_vault import record_tribal_note
+from tribal_vault import record_tribal_note
 
 class VisionProcessor:
     """Two-tier OCR: fast layer (PyMuPDF) + deep layer (Tesseract)."""

@@ -4,7 +4,7 @@ from chromadb.utils.embedding_functions import ONNXMiniLM_L6_V2
 from typing import List
 import json
 
-from backend.document_processor import DocumentChunk
+from document_processor import DocumentChunk
 
 class VectorStore:
     """ChromaDB-based vector storage for document embeddings."""

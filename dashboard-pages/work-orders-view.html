@@ -1,0 +1,316 @@
+<div class="p-6 max-w-7xl mx-auto">
+        <!-- PAGE HEADER -->
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h1 class="text-2xl font-bold">WORK ORDERS</h1>
+                <p class="text-sm text-slate-400 mt-1">AI-briefed maintenance tasks with instant access to relevant procedures.</p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="openCreateWorkOrderModal()" class="px-4 py-2 bg-transparent text-white border border-white/20 rounded-lg text-sm font-medium hover:bg-white/5 transition-all">
+                    + CREATE WORK ORDER
+                </button>
+                <button onclick="openGenerateAIModal()" class="px-4 py-2 bg-[#F97316] text-black font-semibold rounded-lg text-sm hover:bg-[#EA580C] transition-all">
+                    ⚡ GENERATE FROM AI
+                </button>
+            </div>
+        </div>
+
+        <!-- KPI CARDS ROW -->
+        <div class="grid grid-cols-4 gap-4 mb-6">
+            <div class="glass-card rounded-xl p-4">
+                <div class="text-[10px] text-light-slate uppercase tracking-wider mb-1">CRITICAL OPEN</div>
+                <div class="text-2xl font-bold text-[#EF4444]" id="kpi-critical-open">0</div>
+                <div class="text-[10px] text-light-slate mt-1">Require immediate attention</div>
+            </div>
+            <div class="glass-card rounded-xl p-4">
+                <div class="text-[10px] text-light-slate uppercase tracking-wider mb-1">HIGH PRIORITY</div>
+                <div class="text-2xl font-bold text-[#F97316]" id="kpi-high-priority">0</div>
+                <div class="text-[10px] text-light-slate mt-1">Due within 72 hours</div>
+            </div>
+            <div class="glass-card rounded-xl p-4">
+                <div class="text-[10px] text-light-slate uppercase tracking-wider mb-1">DUE TODAY</div>
+                <div class="text-2xl font-bold text-slate-400" id="kpi-due-today">0</div>
+                <div class="text-[10px] text-light-slate mt-1">Including overdue</div>
+            </div>
+            <div class="glass-card rounded-xl p-4">
+                <div class="text-[10px] text-light-slate uppercase tracking-wider mb-1">COMPLETED THIS WEEK</div>
+                <div class="text-2xl font-bold text-[#22C55E]" id="kpi-completed-week">0</div>
+                <div class="text-[10px] text-light-slate mt-1">Last 7 days</div>
+            </div>
+        </div>
+
+        <!-- FILTER BAR -->
+        <div class="glass-card rounded-xl p-4 mb-6">
+            <div class="flex items-center gap-4">
+                <div class="flex gap-2">
+                    <button onclick="filterWorkOrders('all')" class="wo-filter-btn px-3 py-1.5 bg-[#F97316]/20 border border-[#F97316]/50 rounded-lg text-xs text-[#F97316] font-semibold">All</button>
+                    <button onclick="filterWorkOrders('critical')" class="wo-filter-btn px-3 py-1.5 bg-white/5 border border-white/20 rounded-lg text-xs text-white hover:bg-white/10 transition-all">Critical</button>
+                    <button onclick="filterWorkOrders('high')" class="wo-filter-btn px-3 py-1.5 bg-white/5 border border-white/20 rounded-lg text-xs text-white hover:bg-white/10 transition-all">High</button>
+                    <button onclick="filterWorkOrders('medium')" class="wo-filter-btn px-3 py-1.5 bg-white/5 border border-white/20 rounded-lg text-xs text-white hover:bg-white/10 transition-all">Medium</button>
+                    <button onclick="filterWorkOrders('low')" class="wo-filter-btn px-3 py-1.5 bg-white/5 border border-white/20 rounded-lg text-xs text-white hover:bg-white/10 transition-all">Low</button>
+                </div>
+                <div class="flex-1"></div>
+                <select id="asset-filter" onchange="filterByAsset(this.value)" class="px-3 py-1.5 bg-black/30 border border-white/20 rounded-lg text-xs text-white">
+                    <option value="">All Assets</option>
+                </select>
+                <select id="status-filter" onchange="filterByStatus(this.value)" class="px-3 py-1.5 bg-black/30 border border-white/20 rounded-lg text-xs text-white">
+                    <option value="">All Status</option>
+                    <option value="OPEN">Open</option>
+                    <option value="IN_PROGRESS">In Progress</option>
+                    <option value="COMPLETE">Complete</option>
+                    <option value="OVERDUE">Overdue</option>
+                    <option value="CANCELLED">Cancelled</option>
+                </select>
+                <input type="text" id="search-filter" placeholder="Search title or asset..." class="px-3 py-1.5 bg-black/30 border border-white/20 rounded-lg text-xs text-white placeholder-slate-400 focus:border-[#F97316]/50 focus:outline-none w-64" onkeyup="filterBySearch()">
+            </div>
+        </div>
+
+        <!-- WORK ORDER TABLE -->
+        <div class="glass-card rounded-xl overflow-hidden">
+            <table class="w-full">
+                <thead class="bg-white/5">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Priority</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">WO ID</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Title</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Asset</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Assigned To</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Due Date</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">AI Briefed</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Status</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400"></th>
+                    </tr>
+                </thead>
+                <tbody id="work-orders-table-body" class="divide-y divide-white/10">
+                    <!-- Work orders populated by JS -->
+                </tbody>
+            </table>
+            
+            <!-- Empty State -->
+            <div id="empty-state" class="hidden flex flex-col items-center justify-center py-16">
+                <div class="w-16 h-16 rounded-full bg-[#F97316]/10 border border-[#F97316]/30 flex items-center justify-center mb-4">
+                    <i class="fas fa-clipboard-list text-2xl text-[#F97316]"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white mb-2">NO WORK ORDERS YET</h3>
+                <p class="text-sm text-slate-400 mb-6 text-center max-w-md">Generate AI suggestions from your uploaded manuals and asset data to get started.</p>
+                <button onclick="openGenerateAIModal()" class="px-6 py-3 bg-[#F97316] text-black font-semibold rounded-lg hover:bg-[#EA580C] transition-all">
+                    ⚡ GENERATE FROM AI
+                </button>
+            </div>
+        </div>
+</div>
+
+<!-- WORK ORDER DETAIL PANEL (RIGHT DRAWER) -->
+<div id="wo-detail-drawer" class="fixed inset-y-0 right-0 w-[45%] glass-card border-l border-white/10 transform translate-x-full transition-transform duration-300 z-50 overflow-hidden">
+    <div class="h-full flex flex-col">
+        <!-- Drawer Header -->
+        <div class="p-6 border-b border-white/10 flex items-start justify-between">
+            <div class="flex-1">
+                <div class="flex items-center gap-3 mb-2">
+                    <span id="detail-wo-id" class="text-xs font-mono text-slate-500">WO-0001</span>
+                    <span id="detail-priority-badge" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#EF4444]/20 text-[#EF4444] border border-[#EF4444]/30">CRITICAL</span>
+                </div>
+                <h2 id="detail-title" class="text-xl font-bold text-white mb-2">Work Order Title</h2>
+                <div class="flex items-center gap-3">
+                    <span id="detail-status-badge" class="px-2 py-1 rounded text-xs font-semibold uppercase tracking-wider border border-white/20 text-slate-400">OPEN</span>
+                    <a id="detail-asset-link" href="#" class="text-sm text-[#F97316] hover:underline">Asset Name</a>
+                </div>
+            </div>
+            <button onclick="closeDetailDrawer()" class="text-slate-400 hover:text-white transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <!-- Drawer Content -->
+        <div class="flex-1 overflow-y-auto p-6 space-y-6">
+            <!-- Details Section -->
+            <div class="space-y-3">
+                <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-400">Details</h3>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                        <span class="text-slate-500">Assigned To:</span>
+                        <span id="detail-assigned-to" class="ml-2 text-white">UNASSIGNED</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500">Due Date:</span>
+                        <span id="detail-due-date" class="ml-2 text-white">--</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500">Estimated hrs:</span>
+                        <span id="detail-estimated-hours" class="ml-2 text-white">--</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500">Created:</span>
+                        <span id="detail-created" class="ml-2 text-white">--</span>
+                    </div>
+                    <div class="col-span-2">
+                        <span class="text-slate-500">Created from:</span>
+                        <span id="detail-created-from" class="ml-2 text-white">MANUAL</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Procedure Steps Section -->
+            <div class="space-y-3">
+                <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-400">Procedure Steps</h3>
+                <div id="detail-procedure-steps" class="space-y-2">
+                    <!-- Steps populated by JS -->
+                </div>
+                <div id="no-procedure-steps" class="hidden text-sm text-slate-400">
+                    No procedure defined — AI can generate steps from linked manual
+                    <button onclick="generateProcedureSteps()" class="ml-2 text-[#F97316] hover:underline text-xs font-semibold">GENERATE STEPS FROM MANUAL →</button>
+                </div>
+            </div>
+            
+            <!-- AI Briefing Section -->
+            <div class="space-y-3">
+                <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-400">AI Briefing</h3>
+                <p class="text-xs text-slate-500">Pulled automatically from your manuals</p>
+                <div id="detail-ai-briefing" class="space-y-3">
+                    <!-- AI briefing populated by JS -->
+                </div>
+                <div id="no-ai-briefing" class="hidden">
+                    <button onclick="generateAIBriefing()" class="px-4 py-2 bg-[#F97316]/10 border border-[#F97316]/30 rounded-lg text-sm text-[#F97316] hover:bg-[#F97316]/20 transition-all">
+                        ⚡ GENERATE AI BRIEFING
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Asset History Section -->
+            <div class="space-y-3">
+                <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-400">Asset History</h3>
+                <div id="detail-asset-history" class="space-y-2 text-sm">
+                    <!-- Asset history populated by JS -->
+                </div>
+            </div>
+            
+            <!-- Notes Section -->
+            <div class="space-y-3">
+                <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-400">Notes</h3>
+                <div id="detail-notes" class="space-y-2 max-h-40 overflow-y-auto">
+                    <!-- Notes populated by JS -->
+                </div>
+                <div class="flex gap-2">
+                    <input type="text" id="new-note-input" placeholder="Add a note..." class="flex-1 px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-sm text-white placeholder-slate-400 focus:border-[#F97316]/50 focus:outline-none">
+                    <button onclick="addNote()" class="px-4 py-2 bg-[#F97316] text-black font-semibold rounded-lg text-sm hover:bg-[#EA580C] transition-all">Add</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div id="detail-actions" class="p-6 border-t border-white/10 space-y-3">
+            <!-- Actions populated by JS based on status -->
+        </div>
+    </div>
+</div>
+
+<!-- CREATE WORK ORDER MODAL -->
+<div id="create-wo-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+    <div class="glass-card rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <h3 class="text-lg font-bold mb-6">CREATE WORK ORDER</h3>
+        <div class="space-y-4">
+            <div>
+                <label class="text-[10px] text-slate-400 uppercase tracking-wider">Title *</label>
+                <input type="text" id="new-wo-title" class="w-full mt-1 px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-sm text-white focus:border-[#F97316]/50 focus:outline-none" placeholder="Enter work order title">
+            </div>
+            <div>
+                <label class="text-[10px] text-slate-400 uppercase tracking-wider">Asset</label>
+                <select id="new-wo-asset" class="w-full mt-1 px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-sm text-white focus:border-[#F97316]/50 focus:outline-none">
+                    <option value="">Select Asset</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-[10px] text-slate-400 uppercase tracking-wider">Priority</label>
+                <div class="flex gap-2 mt-1">
+                    <button type="button" onclick="setNewWOPriority('CRITICAL')" class="new-wo-priority-btn flex-1 px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-xs text-white hover:border-[#EF4444]/50 transition-all">CRITICAL</button>
+                    <button type="button" onclick="setNewWOPriority('HIGH')" class="new-wo-priority-btn flex-1 px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-xs text-white hover:border-[#F97316]/50 transition-all">HIGH</button>
+                    <button type="button" onclick="setNewWOPriority('MEDIUM')" class="new-wo-priority-btn flex-1 px-3 py-2 bg-[#F97316]/20 border border-[#F97316]/50 rounded-lg text-xs text-[#F97316] transition-all">MEDIUM</button>
+                    <button type="button" onclick="setNewWOPriority('LOW')" class="new-wo-priority-btn flex-1 px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-xs text-white hover:border-[#64748B]/50 transition-all">LOW</button>
+                </div>
+            </div>
+            <div>
+                <label class="text-[10px] text-slate-400 uppercase tracking-wider">Assigned To</label>
+                <input type="text" id="new-wo-assign" placeholder="Technician name" class="w-full mt-1 px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-sm text-white placeholder-slate-400 focus:border-[#F97316]/50 focus:outline-none">
+            </div>
+            <div>
+                <label class="text-[10px] text-slate-400 uppercase tracking-wider">Due Date</label>
+                <input type="date" id="new-wo-due-date" class="w-full mt-1 px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-sm text-white focus:border-[#F97316]/50 focus:outline-none">
+            </div>
+            <div>
+                <label class="text-[10px] text-slate-400 uppercase tracking-wider">Estimated Hours</label>
+                <input type="number" id="new-wo-hours" step="0.5" class="w-full mt-1 px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-sm text-white focus:border-[#F97316]/50 focus:outline-none">
+            </div>
+            <div>
+                <label class="text-[10px] text-slate-400 uppercase tracking-wider">Description</label>
+                <textarea id="new-wo-description" rows="4" class="w-full mt-1 px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-sm text-white placeholder-slate-400 focus:border-[#F97316]/50 focus:outline-none resize-none" placeholder="Describe the work to be done"></textarea>
+            </div>
+            <div>
+                <label class="text-[10px] text-slate-400 uppercase tracking-wider">Procedure Steps</label>
+                <div id="procedure-steps-container" class="space-y-2 mt-1">
+                    <div class="flex gap-2">
+                        <input type="text" class="procedure-step-input flex-1 px-3 py-2 bg-black/30 border border-white/20 rounded-lg text-sm text-white placeholder-slate-400 focus:border-[#F97316]/50 focus:outline-none" placeholder="Step 1">
+                        <button type="button" onclick="addProcedureStep()" class="px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-xs text-white hover:bg-white/20 transition-all">+ ADD STEP</button>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="createNewWorkOrder()" class="flex-1 px-4 py-3 bg-[#F97316] text-black font-semibold rounded-lg text-sm hover:bg-[#EA580C] transition-all">
+                    CREATE WORK ORDER
+                </button>
+                <button onclick="createNewWorkOrderWithAI()" class="flex-1 px-4 py-3 bg-[#F97316]/10 border border-[#F97316]/50 rounded-lg text-sm text-[#F97316] hover:bg-[#F97316]/20 transition-all">
+                    CREATE AND GENERATE AI BRIEFING
+                </button>
+                <button onclick="closeCreateWorkOrderModal()" class="px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-sm text-white hover:bg-white/20 transition-all">
+                    CANCEL
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- GENERATE FROM AI MODAL -->
+<div id="generate-ai-modal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-50 hidden">
+    <div class="glass-card rounded-xl p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-bold">AI WORK ORDER SUGGESTIONS</h3>
+            <button onclick="closeGenerateAIModal()" class="text-slate-400 hover:text-white transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <!-- Terminal Animation -->
+        <div id="ai-terminal" class="mb-6">
+            <div class="terminal-thinking font-mono text-sm space-y-2">
+                <div id="terminal-line-1" class="hidden text-slate-400">[▸] SCANNING ASSET REGISTRY...</div>
+                <div id="terminal-line-2" class="hidden text-slate-400">[▸] CHECKING MAINTENANCE SCHEDULES...</div>
+                <div id="terminal-line-3" class="hidden text-slate-400">[▸] ANALYZING UPLOADED MANUALS...</div>
+                <div id="terminal-line-4" class="hidden text-slate-400">[▸] CROSS-REFERENCING SERVICE INTERVALS...</div>
+                <div id="terminal-line-5" class="hidden text-[#22C55E] font-bold">[✓] SUGGESTIONS READY — {n} FOUND</div>
+            </div>
+        </div>
+        
+        <!-- Suggestions List -->
+        <div id="ai-suggestions-list" class="hidden space-y-4 mb-6">
+            <!-- Suggestions populated by JS -->
+        </div>
+        
+        <!-- No Manuals Message -->
+        <div id="no-manuals-message" class="hidden text-center py-12">
+            <div class="w-16 h-16 rounded-full bg-[#F97316]/10 border border-[#F97316]/30 flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-book text-2xl text-[#F97316]"></i>
+            </div>
+            <h4 class="text-lg font-bold text-white mb-2">UPLOAD MANUALS TO GENERATE AI SUGGESTIONS</h4>
+            <p class="text-sm text-slate-400 mb-6 max-w-md mx-auto">IndexField reads your maintenance manuals and automatically surfaces overdue and upcoming work orders.</p>
+            <button onclick="navigateToAssets()" class="px-6 py-3 bg-[#F97316] text-black font-semibold rounded-lg hover:bg-[#EA580C] transition-all">
+                UPLOAD MANUAL →
+            </button>
+        </div>
+        
+        <!-- Create All Button -->
+        <div id="create-all-suggestions" class="hidden">
+            <button onclick="createAllSuggestions()" class="w-full px-6 py-3 bg-[#F97316] text-black font-semibold rounded-lg hover:bg-[#EA580C] transition-all">
+                CREATE ALL SUGGESTED
+            </button>
+        </div>
+    </div>
+</div>

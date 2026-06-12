@@ -1,97 +1,160 @@
 {% extends "base.html" %}
 {% block content %}
-<div id="history-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6 font-mono text-white">
+<div id="history-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6">
                 <div class="max-w-6xl mx-auto">
-                    <div class="flex items-center justify-between mb-8">
-                        <div>
-                            <h2 class="text-xl font-bold tracking-widest text-[#F97316]">Search History</h2>
-                            <p class="text-xs text-light-slate mt-2 tracking-wide">Review past questions, confirm the source of answers, and keep records in order.</p>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <div class="relative w-72">
-                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-light-slate/50 text-xs"></i>
-                                <input type="text" placeholder="Filter audit log by asset, operator, or inquiry..." class="w-full bg-white/5 border border-white/10 rounded px-9 py-2 text-[10px] text-white focus:outline-none focus:border-[#F97316]/50 transition-colors placeholder:text-light-slate/40">
-                            </div>
-                            <button class="px-4 py-2 bg-white/5 border border-white/10 rounded text-[10px] font-bold text-light-slate hover:text-white hover:bg-white/10 transition-colors tracking-widest flex items-center gap-2">
-                                <i class="fas fa-file-export"></i> EXPORT CSV
-                            </button>
-                        </div>
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold text-white mb-2">KNOWLEDGE AUDIT</h2>
+                        <p class="text-sm text-light-slate mt-1">Your facility's documentation coverage, gap analysis, and query intelligence.</p>
                     </div>
-                    
-                    <!-- Empty State: Data Feed Offline -->
-                    <div id="history-empty-state" class="flex flex-col items-center justify-center py-20 px-4 border border-[#F97316]/20 bg-[#F97316]/5 rounded-xl text-center relative overflow-hidden">
-                        <div class="absolute inset-0 opacity-20 pointer-events-none" style="background-image: radial-gradient(circle at center, rgba(249, 115, 22, 0.4) 0, transparent 70%);"></div>
-                        <i class="fas fa-clipboard-list text-5xl text-light-slate/25 mb-6"></i>
-                        <h3 class="text-sm font-bold text-white/80 tracking-widest mb-2 flex items-center justify-center gap-2">
-                            [ NO SEARCH HISTORY YET ]
-                        </h3>
-                        <p class="text-xs text-light-slate mb-4 max-w-md mx-auto">Search history is empty. Once questions are asked, the recent activity will show here.</p>
-                        <button type="button" onclick="showView('chat')" class="mb-10 px-5 py-2.5 text-xs font-semibold border border-slate-500 text-slate-200 hover:text-white hover:border-[#F97316]/40 hover:bg-white/5 rounded-lg transition-all inline-flex items-center gap-2">
-                            <i class="fas fa-comments text-[#F97316]/80"></i> Go to Ask Questions
-                        </button>
-                        
-                        <div id="history-empty-manuals" class="hidden w-full max-w-3xl mb-8 p-6 bg-[#111827]/80 border border-white/10 rounded-xl">
-                            <p class="text-sm font-semibold text-white mb-2">🔒 Search History Unavailable</p>
-                            <p class="text-xs text-slate-400 mb-4">Upload at least one machinery manual before searches can be logged.</p>
-                            <button onclick="showView('manuals')" class="px-5 py-3 bg-[#F97316] text-white rounded-lg font-semibold hover:bg-[#EA580C] transition">Go to Manuals</button>
-                        </div>
 
-                        <div class="w-full max-w-4xl">
-                            <p class="text-[10px] text-[#F97316] font-bold tracking-widest mb-4 uppercase text-left border-b border-[#F97316]/20 pb-2">Sample Search History</p>
-                            <div id="history-sample-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
-                                <button type="button" onclick="injectHistoryQuery('SIEMENS_TURBINE_V2', 'Hydraulic lockup on error E-402', 'Page 244 // Table 4')" class="history-sample group p-4 bg-[#0a0d12] border border-white/10 hover:border-[#F97316]/50 rounded-lg transition-all text-xs flex flex-col gap-2 relative overflow-hidden cursor-pointer">
-                                    <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-[8px] text-slate-500 uppercase tracking-wider font-semibold">
-                                        <span>Operator: Shift 2 Tech</span>
-                                        <span>Timestamp: Today, 14:30</span>
-                                        <span class="col-span-2 text-[#22C55E]/80">AI Confidence: 98%</span>
-                                    </div>
-                                    <div class="text-[9px] text-light-slate/50 font-bold tracking-widest flex justify-between pt-1 border-t border-white/5"><span>TARGET: SIEMENS_TURBINE_V2</span><i class="fas fa-arrow-right text-[#F97316]/0 group-hover:text-[#F97316] transition-all"></i></div>
-                                    <div class="text-[#F97316] font-mono text-[11px]">"Hydraulic lockup on error E-402"</div>
-                                </button>
-                                <button type="button" onclick="injectHistoryQuery('CAT_GENERATOR_SOP', 'Oil pressure sensor baseline specs', 'Page 12 // Para 3')" class="history-sample group p-4 bg-[#0a0d12] border border-white/10 hover:border-[#F97316]/50 rounded-lg transition-all text-xs flex flex-col gap-2 relative overflow-hidden cursor-pointer">
-                                    <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-[8px] text-slate-500 uppercase tracking-wider font-semibold">
-                                        <span>Operator: Shift 1 Lead</span>
-                                        <span>Timestamp: Today, 09:15</span>
-                                        <span class="col-span-2 text-[#22C55E]/80">AI Confidence: 96%</span>
-                                    </div>
-                                    <div class="text-[9px] text-light-slate/50 font-bold tracking-widest flex justify-between pt-1 border-t border-white/5"><span>TARGET: CAT_GENERATOR_SOP</span><i class="fas fa-arrow-right text-[#F97316]/0 group-hover:text-[#F97316] transition-all"></i></div>
-                                    <div class="text-[#F97316] font-mono text-[11px]">"Oil pressure sensor baseline specs"</div>
-                                </button>
-                                <button type="button" onclick="injectHistoryQuery('HVAC_SYSTEM_X', 'Compressor thermal overload triggers', 'Page 89 // Diagram B')" class="history-sample group p-4 bg-[#0a0d12] border border-white/10 hover:border-[#F97316]/50 rounded-lg transition-all text-xs flex flex-col gap-2 relative overflow-hidden cursor-pointer">
-                                    <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-[8px] text-slate-500 uppercase tracking-wider font-semibold">
-                                        <span>Operator: Night Crew</span>
-                                        <span>Timestamp: Yesterday, 22:48</span>
-                                        <span class="col-span-2 text-[#22C55E]/80">AI Confidence: 99%</span>
-                                    </div>
-                                    <div class="text-[9px] text-light-slate/50 font-bold tracking-widest flex justify-between pt-1 border-t border-white/5"><span>TARGET: HVAC_SYSTEM_X</span><i class="fas fa-arrow-right text-[#F97316]/0 group-hover:text-[#F97316] transition-all"></i></div>
-                                    <div class="text-[#F97316] font-mono text-[11px]">"Compressor thermal overload triggers"</div>
-                                </button>
+                    <!-- Coverage Score -->
+                    <div class="glass-card rounded-xl p-6 mb-6 border border-white/10 bg-[#0d1117]">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-semibold text-white">Coverage Score</h3>
+                            <div class="text-3xl font-bold text-[#F97316]">34%</div>
+                        </div>
+                        <p class="text-sm text-slate-400">3 of 9 critical system categories documented</p>
+                    </div>
+
+                    <!-- Category Coverage -->
+                    <div class="glass-card rounded-xl p-6 mb-6 border border-white/10">
+                        <h3 class="font-semibold text-white mb-4">Category Coverage</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-4">
+                                <span class="w-48 text-sm text-slate-300">Hydraulic Systems</span>
+                                <div class="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-[#22C55E]" style="width: 80%"></div>
+                                </div>
+                                <span class="text-sm text-slate-400 w-16 text-right">80%</span>
+                                <span class="text-xs text-slate-500 w-20">2 manuals</span>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span class="w-48 text-sm text-slate-300">Electrical Systems</span>
+                                <div class="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-slate-600" style="width: 0%"></div>
+                                </div>
+                                <span class="text-sm text-slate-400 w-16 text-right">0%</span>
+                                <span class="text-xs text-slate-500 w-20">NO DOCS</span>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span class="w-48 text-sm text-slate-300">Boiler Operations</span>
+                                <div class="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-yellow-500" style="width: 40%"></div>
+                                </div>
+                                <span class="text-sm text-slate-400 w-16 text-right">40%</span>
+                                <span class="text-xs text-slate-500 w-20">1 manual</span>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span class="w-48 text-sm text-slate-300">Safety Procedures</span>
+                                <div class="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-[#22C55E]" style="width: 60%"></div>
+                                </div>
+                                <span class="text-sm text-slate-400 w-16 text-right">60%</span>
+                                <span class="text-xs text-slate-500 w-20">2 manuals</span>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span class="w-48 text-sm text-slate-300">Pressure Systems</span>
+                                <div class="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-slate-600" style="width: 0%"></div>
+                                </div>
+                                <span class="text-sm text-slate-400 w-16 text-right">0%</span>
+                                <span class="text-xs text-slate-500 w-20">NO DOCS</span>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span class="w-48 text-sm text-slate-300">Compliance Records</span>
+                                <div class="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-red-500" style="width: 20%"></div>
+                                </div>
+                                <span class="text-sm text-slate-400 w-16 text-right">20%</span>
+                                <span class="text-xs text-slate-500 w-20">1 manual</span>
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Active Feed Table (Hidden initially) -->
-                    <div id="history-active-state" class="hidden">
-                        <div class="border border-white/10 rounded-xl overflow-hidden bg-[#0a0d12] text-xs shadow-[0_0_30px_rgba(249,115,22,0.05)]">
-                            <table class="w-full text-left">
+
+                    <!-- Unanswered Queries -->
+                    <div class="glass-card rounded-xl p-6 mb-6 border border-white/10">
+                        <h3 class="font-semibold text-white mb-4">Unanswered Queries (last 30 days)</h3>
+                        <p class="text-sm text-slate-400 mb-4">Questions asked that had no good answer because the relevant manual is missing:</p>
+                        <div class="space-y-3">
+                            <div class="p-4 bg-white/5 rounded-lg border border-white/10">
+                                <p class="text-sm text-white mb-2">"What is the pressure relief setting..."</p>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-slate-400">→ NO DOCUMENT FOUND for pressure systems</span>
+                                    <button type="button" onclick="showView('manuals')" class="text-xs text-[#F97316] font-semibold hover:underline">UPLOAD MANUAL TO RESOLVE →</button>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-white/5 rounded-lg border border-white/10">
+                                <p class="text-sm text-white mb-2">"Electrical lockout procedure for..."</p>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-slate-400">→ NO DOCUMENT FOUND for electrical systems</span>
+                                    <button type="button" onclick="showView('manuals')" class="text-xs text-[#F97316] font-semibold hover:underline">UPLOAD MANUAL TO RESOLVE →</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Query Intelligence -->
+                    <div class="glass-card rounded-xl p-6 mb-6 border border-white/10">
+                        <h3 class="font-semibold text-white mb-4">Query Intelligence</h3>
+                        <p class="text-sm text-slate-400 mb-4">Most asked topics this month:</p>
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-4">
+                                <span class="w-48 text-sm text-slate-300">Hydraulic maintenance</span>
+                                <div class="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-[#F97316]" style="width: 60%"></div>
+                                </div>
+                                <span class="text-sm text-slate-400">12 queries</span>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span class="w-48 text-sm text-slate-300">Fault codes</span>
+                                <div class="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-[#F97316]" style="width: 40%"></div>
+                                </div>
+                                <span class="text-sm text-slate-400">8 queries</span>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span class="w-48 text-sm text-slate-300">Safety procedures</span>
+                                <div class="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-[#F97316]" style="width: 25%"></div>
+                                </div>
+                                <span class="text-sm text-slate-400">5 queries</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Audit Log -->
+                    <div class="glass-card rounded-xl p-6 border border-white/10">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-semibold text-white">Recent Audit Log</h3>
+                            <div class="relative w-64">
+                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                                <input type="text" placeholder="Filter log..." class="w-full bg-white/5 border border-white/10 rounded px-9 py-2 text-xs text-white focus:outline-none focus:border-[#F97316]/50 transition-colors placeholder:text-slate-500">
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
                                 <thead>
-                                    <tr class="bg-white/5 border-b border-white/10 text-[9px] text-light-slate tracking-widest uppercase">
-                                        <th class="p-4 font-normal">Timestamp</th>
-                                        <th class="p-4 font-normal">Ingested Target</th>
-                                        <th class="p-4 font-normal w-1/3">Vector Query Field</th>
-                                        <th class="p-4 font-normal">Response Match</th>
-                                        <th class="p-4 font-normal text-right">Status</th>
+                                    <tr class="border-b border-white/10">
+                                        <th class="text-left py-3 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Time</th>
+                                        <th class="text-left py-3 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Operator</th>
+                                        <th class="text-left py-3 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Query</th>
+                                        <th class="text-left py-3 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Source Doc</th>
+                                        <th class="text-left py-3 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Page Cited</th>
+                                        <th class="text-left py-3 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Confidence</th>
+                                        <th class="text-left py-3 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Action Taken</th>
                                     </tr>
                                 </thead>
-                                <tbody id="history-table-body" class="divide-y divide-white/5">
-                                    <!-- Injected via JS -->
+                                <tbody id="audit-log-body" class="divide-y divide-white/5">
+                                    <tr>
+                                        <td colspan="7" class="py-8 px-4 text-center text-sm text-slate-400">
+                                            <p>No audit log entries yet. Queries will appear here once you start using the system.</p>
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- Help Center View -->
-            
+
 {% endblock %}

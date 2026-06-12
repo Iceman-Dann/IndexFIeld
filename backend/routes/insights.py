@@ -21,5 +21,5 @@ async def serve_insights_page(request: Request):
 async def get_insights():
     """Get operational intelligence data."""
     # This matches the endpoint called by the frontend.
-    from backend.main_enhanced import get_insights
+    from ..main_enhanced import get_insights
     return await get_insights()

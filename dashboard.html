@@ -251,7 +251,7 @@
         .chat-view-layout {
             display: flex;
             flex-direction: column;
-            height: calc(100vh - 64px);
+            height: calc(100vh - 56px);
         }
         .chat-view-layout .chat-split-columns {
             display: grid;
@@ -265,7 +265,7 @@
             overflow: hidden;
         }
         @media (min-width: 1024px) {
-            .chat-view-layout .chat-split-columns { grid-template-columns: 40% 60%; }
+            .chat-view-layout .chat-split-columns { grid-template-columns: 1fr 1fr; }
         }
         .engine-telemetry-panel {
             font-family: 'JetBrains Mono', monospace;
@@ -516,7 +516,6 @@
                 <a href="#" onclick="routeGuard('insights')" id="nav-insights" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
                     <i class="fas fa-chart-network"></i>
                     <span>Performance Summary</span>
-                    <span class="ml-auto text-[9px] bg-white/5 text-slate-200 font-medium px-1.5 py-0.5 rounded border border-white/10">ENT</span>
                 </a>
                 <a href="#" onclick="routeGuard('manuals')" id="nav-manuals" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
                     <i class="fas fa-folder-open"></i>
@@ -525,7 +524,17 @@
                 </a>
                 <a href="#" onclick="routeGuard('history')" id="nav-history" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
                     <i class="fas fa-clipboard-list"></i>
-                    <span>Search History</span>
+                    <span>Knowledge Audit</span>
+                </a>
+                <!-- FEATURE 2 & 5: New Operations Items -->
+                <a href="#" onclick="routeGuard('workorders')" id="nav-workorders" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>Work Orders</span>
+                    <span id="work-orders-badge" class="ml-auto text-[10px] bg-white/5 text-slate-200 font-medium px-1.5 py-0.5 rounded border border-white/10 hidden">0</span>
+                </a>
+                <a href="#" onclick="routeGuard('handover')" id="nav-handover" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
+                    <i class="fas fa-handshake"></i>
+                    <span>Shift Handover</span>
                 </a>
                 
                 <div class="px-4 mb-1 mt-4 text-[10px] font-bold text-white uppercase tracking-wider border-t border-white/10 pt-4">Fleet</div>
@@ -540,53 +549,27 @@
                 <a href="#" onclick="routeGuard('prognostics')" id="nav-prognostics" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
                     <i class="fas fa-chart-line text-[#22C55E]"></i>
                     <span>Maintenance Forecast</span>
-                    <span class="ml-auto text-[9px] bg-[#22C55E]/10 text-[#22C55E] font-bold px-1.5 py-0.5 rounded border border-[#22C55E]/30">ROI</span>
                 </a>
                 <a href="#" onclick="routeGuard('loto')" id="nav-loto" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
                     <i class="fas fa-lock text-yellow-500"></i>
                     <span>Lockout / Tagout</span>
                     <span class="ml-auto text-[9px] bg-yellow-500/10 text-yellow-500 font-bold px-1.5 py-0.5 rounded border border-yellow-500/30">SAFETY</span>
                 </a>
-                
-                <div class="px-4 mb-1 mt-4 text-[10px] font-bold text-white uppercase tracking-wider border-t border-white/10 pt-4">System</div>
-                <div class="px-4 py-2">
-                    <div class="flex items-center gap-2 text-xs text-slate-100 font-semibold mb-2">
-                        <span class="status-dot status-online"></span>
-                        <span>System Structure: Ready</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-xs text-slate-100 font-semibold">
-                        <span id="llm-status-dot" class="status-dot status-idle"></span>
-                        <span id="llm-status-text">Awaiting First Manual Upload</span>
-                    </div>
-                </div>
             </nav>
             
-            <div class="px-4 py-3 border-t border-white/5 w-full">
-                <div class="text-[10px] font-semibold text-white uppercase tracking-wider mb-2">Tribal Knowledge</div>
-                <div class="flex items-center justify-between w-full text-xs">
-                    <span class="text-slate-200">Verified</span>
-                    <span id="verified-count" class="text-slate-400 font-mono opacity-50 ml-auto">0</span>
-                </div>
-                <div class="flex items-center justify-between w-full text-xs mt-1">
-                    <span class="text-slate-200">Notes</span>
-                    <span id="notes-count" class="text-[#F97316] font-mono opacity-50 ml-auto">0</span>
-                </div>
-                <div class="mt-2 text-[9px] text-slate-300 font-mono flex items-center">
-                    <span class="text-[#22C55E] mr-1 font-black animate-pulse">●</span> Connected to secure factory server
-                </div>
-            </div>
+            <!-- Profile Dropdown Trigger -->
             
             <!-- Profile Dropdown Trigger -->
             <div class="p-4 border-t border-white/5 relative">
                 <button onclick="toggleProfileDropdown()" class="w-full flex items-center gap-3 hover:bg-white/5 rounded-lg p-2 -m-2 transition-all">
-                    <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#F97316]/20 to-[#22C55E]/20 border border-white/10 flex items-center justify-center">
-                        <i class="fas fa-user text-xs text-[#F97316]"></i>
+                    <div id="user-avatar" class="w-9 h-9 rounded-full bg-gradient-to-br from-[#F97316]/20 to-[#22C55E]/20 border border-white/10 flex items-center justify-center overflow-hidden">
+                        <i id="user-avatar-icon" class="fas fa-user text-xs text-[#F97316]"></i>
+                        <img id="user-avatar-img" class="w-full h-full object-cover hidden" alt="User avatar">
                     </div>
                     <div class="flex-1 min-w-0 text-left">
                         <p id="user-display-name" class="text-sm font-medium truncate">Loading...</p>
                         <div class="flex items-center gap-1">
                             <span id="user-display-role" class="text-[10px] text-slate-200 font-semibold">Plant Manager</span>
-                            <span class="text-[8px] px-1 py-0.5 bg-[#F97316]/20 text-[#F97316] rounded">ENT</span>
                         </div>
                     </div>
                     <i class="fas fa-chevron-up text-xs text-light-slate/50" id="profile-chevron"></i>
@@ -661,61 +644,45 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Sovereign Seal Footer -->
-            <div class="mt-auto p-4 border-t border-white/5 bg-black/20">
-                <div class="flex items-center gap-2 opacity-50 hover:opacity-100 transition cursor-default">
-                    <div class="w-1.5 h-1.5 rounded-full bg-[#22C55E]"></div>
-                    <span class="text-[10px] font-mono tracking-widest uppercase text-light-slate">Secure Connection</span>
-                </div>
-                <p class="text-[9px] text-light-slate mt-1">Secure Plant Server — data cannot leak outside</p>
-            </div>
         </aside>
         
         <main class="flex-1 flex flex-col">
-            <header class="h-16 border-b border-white/5 flex items-center justify-between px-4 lg:px-6 glass-card">
-                <div class="flex items-center gap-3">
+            <header class="h-14 border-b border-white/5 flex items-center justify-between px-4 lg:px-6 glass-card">
+                <div class="flex items-center gap-4">
                     <button onclick="toggleSidebar()" class="mobile-menu-btn p-2 -ml-2 text-light-slate hover:text-white lg:hidden">
                         <i class="fas fa-bars text-lg"></i>
                     </button>
-                    <i class="fas fa-robot text-light-slate hidden sm:block"></i>
-                    <span id="page-title" class="font-medium text-sm sm:text-base text-white">Ask Questions</span>
-                    <!-- Enterprise Status Indicators - Minimal, Solid -->
-                    <span class="text-[10px] font-mono text-light-slate bg-white/5 px-2 py-1 rounded flex items-center gap-2 border border-white/10" title="Your documentation never leaves this facility">
-                        <span class="w-1.5 h-1.5 rounded-full bg-[#22C55E]"></span>
-                        FACILITY INTERNAL DATA
-                    </span>
-                    <span id="load-indicator" onclick="toggleEngineThrottle()" class="cursor-pointer text-[10px] font-mono text-light-slate bg-white/5 px-2 py-1 rounded flex items-center gap-1.5 border border-white/10 hover:bg-white/10 transition" title="System health — click to simulate busy processing">
-                        <span id="load-status-dot" class="text-[#F97316] text-xs leading-none">●</span>
-                        <span id="load-text">OPERATIONAL INTELLIGENCE: STANDBY</span>
-                    </span>
-                    <span class="text-[10px] font-mono text-[#94A3B8] bg-white/5 border border-white/10 px-2 py-1 rounded hidden sm:inline-block">
-                        Industrial AI Core
-                    </span>
+                    <span id="page-title" class="font-bold text-base text-white tracking-tight">HARWICK PROCESSING — MISSION CONTROL</span>
+    
+    
                 </div>
                 <div class="flex items-center gap-3">
-                    <div class="flex items-center gap-1" id="low-signal-container">
-                        <button onclick="toggleLowSignal()" id="low-signal-btn" class="text-[10px] font-mono bg-[#22C55E]/10 text-[#22C55E] border border-[#22C55E]/30 px-3 py-1.5 rounded hover:bg-[#22C55E]/20 transition flex items-center gap-2" title="Your data stays on-site — never sent to the cloud">
-                            <i class="fas fa-lock"></i> SECURE PLANT NETWORK
-                        </button>
-                        <span id="data-usage-badge" class="hidden text-[9px] font-mono text-[#FACC15] bg-[#FACC15]/10 px-1.5 py-1 rounded border border-[#FACC15]/30">Lite: 1.2MB</span>
-                    </div>
-                    <button onclick="initiateLogoutHandover()" class="text-[10px] font-mono text-white font-bold bg-[#F97316]/20 border border-[#F97316]/40 px-3 py-1.5 rounded hover:bg-[#F97316]/30 transition flex items-center gap-2" title="Generate Shift Handover Report">
-                        <i class="fas fa-sign-out-alt"></i> LOG OUT (END SHIFT)
-                    </button>
-                    <button id="clear-chat-btn" onclick="clearChat()" class="p-2 text-light-slate hover:text-white transition text-sm hidden" title="Clear conversation">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                    <!-- Secondary CTA - Minimal, Operational -->
-                    <button id="top-upload-btn" onclick="showUploadModal()" class="hidden px-3 py-1.5 bg-white/5 text-white border border-white/10 rounded text-sm font-medium hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-2 shadow-sm">
-                        <i class="fas fa-cloud-upload-alt text-light-slate"></i>
-                        <span>Upload Manual</span>
+                    <span class="text-[10px] font-mono text-[#22C55E] bg-[#22C55E]/10 border border-[#22C55E]/30 px-3 py-1.5 rounded">
+                        <i class="fas fa-lock mr-1"></i> SECURE LOCAL NETWORK
+                    </span>
+                    <button onclick="initiateLogoutHandover()" class="text-[10px] font-mono text-white font-bold bg-[#F97316]/20 border border-[#F97316]/40 px-3 py-1.5 rounded hover:bg-[#F97316]/30 transition flex items-center gap-2">
+                        <i class="fas fa-sign-out-alt"></i> LOG OUT
                     </button>
                 </div>
             </header>
+            <!-- Status Bar -->
+            <div class="h-8 border-b border-white/5 flex items-center px-4 lg:px-6 bg-[#0d1117]">
+                <div class="flex items-center gap-4 text-[10px] font-mono text-slate-500 w-full">
+                    <span>FACILITY: HARWICK PROCESSING</span>
+                    <span class="text-slate-700">·</span>
+                    <span>INDUSTRY: OIL & GAS</span>
+                    <span class="text-slate-700">·</span>
+                    <span>MODULES: 6 ACTIVE</span>
+                    <span class="text-slate-700">·</span>
+                    <span>HEALTH: 73/100</span>
+                    <span class="text-slate-700">·</span>
+                    <span class="flex items-center gap-1.5">NODE STATUS: <span class="w-1.5 h-1.5 rounded-full bg-[#22C55E]"></span> OPERATIONAL</span>
+                </div>
+            </div>
+
             
             <!-- Chat View -->
-            <div id="chat-view" class="dashboard-view chat-view-layout" data-fragment="chat-view"></div><div id="insights-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="insights-view"></div><div id="assets-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="assets-view"></div><div id="telemetry-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="telemetry-view"></div><div id="vault-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="vault-view"></div><div id="field-view" class="dashboard-view hidden flex-1 overflow-y-auto" data-fragment="field-view"></div><div id="loto-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="loto-view"></div><div id="prognostics-view" class="dashboard-view hidden flex-col flex-1 overflow-y-auto p-6 font-mono text-white" data-fragment="prognostics-view"></div><div id="history-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6 font-mono text-white" data-fragment="history-view"></div><div id="help-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="help-view"></div><div id="manuals-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="manuals-view"></div>        </main>
+            <div id="chat-view" class="dashboard-view chat-view-layout" data-fragment="chat-view"></div><div id="insights-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="insights-view"></div><div id="assets-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="assets-view"></div><div id="telemetry-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="telemetry-view"></div><div id="vault-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="vault-view"></div><div id="field-view" class="dashboard-view hidden flex-1 overflow-y-auto" data-fragment="field-view"></div><div id="loto-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="loto-view"></div><div id="prognostics-view" class="dashboard-view hidden flex-col flex-1 overflow-y-auto p-6 font-mono text-white" data-fragment="prognostics-view"></div><div id="history-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6 font-mono text-white" data-fragment="history-view"></div><div id="help-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="help-view"></div><div id="manuals-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="manuals-view"></div><div id="workorders-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="workorders-view"></div><div id="handover-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="handover-view"></div>        </main>
     </div>
     
     <!-- First-Time Onboarding Wizard -->
@@ -1507,6 +1474,16 @@
             document.getElementById('dropdown-user-name').textContent = metaName;
             document.getElementById('dropdown-user-company').textContent = email;
 
+            // Set avatar image from Google profile if available
+            const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture;
+            if (avatarUrl) {
+                const avatarImg = document.getElementById('user-avatar-img');
+                const avatarIcon = document.getElementById('user-avatar-icon');
+                avatarImg.src = avatarUrl;
+                avatarImg.classList.remove('hidden');
+                avatarIcon.classList.add('hidden');
+            }
+
             // Try to load richer profile from profiles table
             try {
                 const { data: profile, error } = await supabaseClient
@@ -1831,7 +1808,9 @@
                 'loto': 'Lockout / Tagout',
                 'manuals': 'Manuals',
                 'help': 'Help Center',
-                'history': 'Search History'
+                'history': 'Knowledge Audit',
+                'workorders': 'Work Orders',
+                'handover': 'Shift Handover'
             };
             document.getElementById('page-title').textContent = titles[view] || 'IndexField';
             
@@ -1857,6 +1836,9 @@
                 loadAssetRegistry();
             } else if (view === 'insights') {
                 generateHeatmap();
+            } else if (view === 'workorders') {
+                if (typeof loadWorkOrders === 'function') loadWorkOrders();
+                if (typeof loadWorkOrderStats === 'function') loadWorkOrderStats();
             } else if (telemetryInterval) {
                 clearInterval(telemetryInterval);
                 telemetryInterval = null;
@@ -5475,7 +5457,7 @@
         function hideManualsModal() { document.getElementById('manuals-modal').classList.add('hidden'); }
         
         function loadManuals() {
-            fetch(`${API_URL}/manuals`)
+            fetch(`${API_URL}/api/manuals`)
             .then(r => r.json())
             .then(data => {
                 manuals = filterIndustrialManuals(data);
@@ -5494,6 +5476,9 @@
                 syncDashboardState();
             });
         }
+        
+        // Expose loadManuals to window scope for new_features.js
+        window.loadManuals = loadManuals;
 
         function addDemoManual() {
             const tbody = document.getElementById('manuals-table-body');
@@ -6415,17 +6400,19 @@
 
         async function loadDashboardFragments() {
             const fragmentTargets = [
-                { id: 'chat-view', url: 'dashboard-pages/chat-view.html' },
-                { id: 'insights-view', url: 'dashboard-pages/insights-view.html' },
-                { id: 'assets-view', url: 'dashboard-pages/assets-view.html' },
-                { id: 'telemetry-view', url: 'dashboard-pages/telemetry-view.html' },
-                { id: 'vault-view', url: 'dashboard-pages/vault-view.html' },
-                { id: 'field-view', url: 'dashboard-pages/field-view.html' },
-                { id: 'loto-view', url: 'dashboard-pages/loto-view.html' },
-                { id: 'prognostics-view', url: 'dashboard-pages/prognostics-view.html' },
-                { id: 'history-view', url: 'dashboard-pages/history-view.html' },
-                { id: 'help-view', url: 'dashboard-pages/help-view.html' },
-                { id: 'manuals-view', url: 'dashboard-pages/manuals-view.html' }
+                { id: 'chat-view', url: 'dashboard-pages/chat-view.html?v=' + Date.now() },
+                { id: 'insights-view', url: 'dashboard-pages/insights-view.html?v=' + Date.now() },
+                { id: 'assets-view', url: 'dashboard-pages/assets-view.html?v=' + Date.now() },
+                { id: 'telemetry-view', url: 'dashboard-pages/telemetry-view.html?v=' + Date.now() },
+                { id: 'vault-view', url: 'dashboard-pages/vault-view.html?v=' + Date.now() },
+                { id: 'field-view', url: 'dashboard-pages/field-view.html?v=' + Date.now() },
+                { id: 'loto-view', url: 'dashboard-pages/loto-view.html?v=' + Date.now() },
+                { id: 'prognostics-view', url: 'dashboard-pages/prognostics-view.html?v=' + Date.now() },
+                { id: 'history-view', url: 'dashboard-pages/history-view.html?v=' + Date.now() },
+                { id: 'help-view', url: 'dashboard-pages/help-view.html?v=' + Date.now() },
+                { id: 'manuals-view', url: 'dashboard-pages/manuals-view.html?v=' + Date.now() },
+                { id: 'workorders-view', url: 'dashboard-pages/work-orders-view.html?v=' + Date.now() },
+                { id: 'handover-view', url: 'dashboard-pages/handover-view.html?v=' + Date.now() }
             ];
 
             await Promise.all(fragmentTargets.map(async (fragment) => {
@@ -6475,7 +6462,14 @@
                         console.warn(`[SPA] Fetch failed due to local file CORS restrictions for ${fragment.id}. Standalone inlining fallback required.`);
                         if (target.innerHTML.trim().length > 0) return;
                     }
-                    target.innerHTML = `<div class="p-6 text-sm text-red-300">Unable to load ${fragment.id}: ${error.message}</div>`;
+                    target.innerHTML = `
+                        <div class="p-6 text-sm text-red-300 flex flex-col items-start gap-2">
+                            <span>Unable to load ${fragment.id}: ${error.message}</span>
+                            <button onclick="loadDashboardFragments()" class="px-3 py-1.5 bg-[#F97316]/20 border border-[#F97316]/40 hover:bg-[#F97316]/30 text-white rounded text-xs font-bold transition flex items-center gap-1.5 mt-1">
+                                <i class="fas fa-sync-alt"></i> Run Again
+                            </button>
+                        </div>
+                    `;
                 }
             }));
         }
@@ -6837,9 +6831,32 @@
             }
         });
     </script>
+    <!-- New Features JavaScript -->
+    <script src="new_features.js?v=2"></script>
                 <span>SECURE ENCRYPTED VERIFICATION ENVIRONMENT</span>
             </div>
         </div>
     </div>
 </body>
 </html>
+
+    <!-- Boot overlay (first load) -->
+    <div id="boot-overlay" class="fixed inset-0 bg-black/90 flex items-center justify-center z-50 hidden">
+      <div class="terminal-boot text-white text-sm space-y-2 text-center">
+        <p>[✓] FACILITY NODE: HARWICK PROCESSING — ONLINE</p>
+        <p>[✓] INDUSTRY SCHEMA: OIL & GAS — LOADED</p>
+        <p>[✓] MODULES ACTIVE: 6/6</p>
+        <p>[✓] COMPLIANCE FRAMEWORK: API 510 — CONFIGURED</p>
+        <p>[✓] CRITICAL ASSET: HYDRAULIC PRESS #3 — REGISTERED</p>
+        <p>[✓] INDEXFIELD ENVIRONMENT — FULLY OPERATIONAL</p>
+      </div>
+    </div>
+    <script>
+      (function(){
+        if(!localStorage.getItem('bootSeen')){
+          const overlay=document.getElementById('boot-overlay');
+          overlay.classList.remove('hidden');
+          setTimeout(()=>{overlay.classList.add('hidden'); localStorage.setItem('bootSeen','1');},3000);
+        }
+      })();
+    </script>

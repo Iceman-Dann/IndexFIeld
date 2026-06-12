@@ -1,5 +1,5 @@
 from supabase import create_client
-from backend.config import settings
+from config import settings
 import uuid
 import datetime
 

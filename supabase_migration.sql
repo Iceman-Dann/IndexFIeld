@@ -68,7 +68,7 @@ END $$;
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.user_manuals (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  user_id TEXT NOT NULL,
   backend_id TEXT,                    -- ID returned from backend processing
   filename TEXT NOT NULL,
   asset_type TEXT DEFAULT 'Industrial Equipment',
@@ -89,7 +89,7 @@ BEGIN
     WHERE tablename = 'user_manuals' 
     AND policyname = 'Users can view own manuals'
   ) THEN
-    CREATE POLICY "Users can view own manuals" ON user_manuals FOR SELECT USING (auth.uid() = user_id);
+    CREATE POLICY "Users can view own manuals" ON user_manuals FOR SELECT USING (auth.uid()::text = user_id);
   END IF;
   
   IF NOT EXISTS (
@@ -97,7 +97,7 @@ BEGIN
     WHERE tablename = 'user_manuals' 
     AND policyname = 'Users can insert own manuals'
   ) THEN
-    CREATE POLICY "Users can insert own manuals" ON user_manuals FOR INSERT WITH CHECK (auth.uid() = user_id);
+    CREATE POLICY "Users can insert own manuals" ON user_manuals FOR INSERT WITH CHECK (auth.uid()::text = user_id);
   END IF;
   
   IF NOT EXISTS (
@@ -105,7 +105,7 @@ BEGIN
     WHERE tablename = 'user_manuals' 
     AND policyname = 'Users can update own manuals'
   ) THEN
-    CREATE POLICY "Users can update own manuals" ON user_manuals FOR UPDATE USING (auth.uid() = user_id);
+    CREATE POLICY "Users can update own manuals" ON user_manuals FOR UPDATE USING (auth.uid()::text = user_id);
   END IF;
   
   IF NOT EXISTS (
@@ -113,7 +113,7 @@ BEGIN
     WHERE tablename = 'user_manuals' 
     AND policyname = 'Users can delete own manuals'
   ) THEN
-    CREATE POLICY "Users can delete own manuals" ON user_manuals FOR DELETE USING (auth.uid() = user_id);
+    CREATE POLICY "Users can delete own manuals" ON user_manuals FOR DELETE USING (auth.uid()::text = user_id);
   END IF;
 END $$;
 
@@ -122,7 +122,7 @@ END $$;
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.user_assets (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  user_id TEXT NOT NULL,
   asset_code TEXT NOT NULL,
   name TEXT NOT NULL,
   model TEXT DEFAULT '',
@@ -144,7 +144,7 @@ BEGIN
     WHERE tablename = 'user_assets' 
     AND policyname = 'Users can view own assets'
   ) THEN
-    CREATE POLICY "Users can view own assets" ON user_assets FOR SELECT USING (auth.uid() = user_id);
+    CREATE POLICY "Users can view own assets" ON user_assets FOR SELECT USING (auth.uid()::text = user_id);
   END IF;
   
   IF NOT EXISTS (
@@ -152,7 +152,7 @@ BEGIN
     WHERE tablename = 'user_assets' 
     AND policyname = 'Users can insert own assets'
   ) THEN
-    CREATE POLICY "Users can insert own assets" ON user_assets FOR INSERT WITH CHECK (auth.uid() = user_id);
+    CREATE POLICY "Users can insert own assets" ON user_assets FOR INSERT WITH CHECK (auth.uid()::text = user_id);
   END IF;
   
   IF NOT EXISTS (
@@ -160,7 +160,7 @@ BEGIN
     WHERE tablename = 'user_assets' 
     AND policyname = 'Users can update own assets'
   ) THEN
-    CREATE POLICY "Users can update own assets" ON user_assets FOR UPDATE USING (auth.uid() = user_id);
+    CREATE POLICY "Users can update own assets" ON user_assets FOR UPDATE USING (auth.uid()::text = user_id);
   END IF;
   
   IF NOT EXISTS (
@@ -168,7 +168,7 @@ BEGIN
     WHERE tablename = 'user_assets' 
     AND policyname = 'Users can delete own assets'
   ) THEN
-    CREATE POLICY "Users can delete own assets" ON user_assets FOR DELETE USING (auth.uid() = user_id);
+    CREATE POLICY "Users can delete own assets" ON user_assets FOR DELETE USING (auth.uid()::text = user_id);
   END IF;
 END $$;
 
@@ -206,7 +206,7 @@ CREATE TRIGGER on_user_asset_insert
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.knowledge_posts (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  user_id TEXT NOT NULL,
   author_name TEXT NOT NULL,
   title TEXT NOT NULL,
   content TEXT NOT NULL,
@@ -225,7 +225,7 @@ BEGIN
     WHERE tablename = 'knowledge_posts' 
     AND policyname = 'Users can view own posts'
   ) THEN
-    CREATE POLICY "Users can view own posts" ON knowledge_posts FOR SELECT USING (auth.uid() = user_id);
+    CREATE POLICY "Users can view own posts" ON knowledge_posts FOR SELECT USING (auth.uid()::text = user_id);
   END IF;
   
   IF NOT EXISTS (
@@ -233,7 +233,7 @@ BEGIN
     WHERE tablename = 'knowledge_posts' 
     AND policyname = 'Users can insert own posts'
   ) THEN
-    CREATE POLICY "Users can insert own posts" ON knowledge_posts FOR INSERT WITH CHECK (auth.uid() = user_id);
+    CREATE POLICY "Users can insert own posts" ON knowledge_posts FOR INSERT WITH CHECK (auth.uid()::text = user_id);
   END IF;
   
   IF NOT EXISTS (
@@ -241,7 +241,7 @@ BEGIN
     WHERE tablename = 'knowledge_posts' 
     AND policyname = 'Users can update own posts'
   ) THEN
-    CREATE POLICY "Users can update own posts" ON knowledge_posts FOR UPDATE USING (auth.uid() = user_id);
+    CREATE POLICY "Users can update own posts" ON knowledge_posts FOR UPDATE USING (auth.uid()::text = user_id);
   END IF;
   
   IF NOT EXISTS (
@@ -249,7 +249,7 @@ BEGIN
     WHERE tablename = 'knowledge_posts' 
     AND policyname = 'Users can delete own posts'
   ) THEN
-    CREATE POLICY "Users can delete own posts" ON knowledge_posts FOR DELETE USING (auth.uid() = user_id);
+    CREATE POLICY "Users can delete own posts" ON knowledge_posts FOR DELETE USING (auth.uid()::text = user_id);
   END IF;
 END $$;
 
@@ -258,7 +258,7 @@ END $$;
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.query_history (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  user_id TEXT NOT NULL,
   query TEXT NOT NULL,
   answer TEXT,
   manual_id TEXT,
@@ -275,7 +275,7 @@ BEGIN
     WHERE tablename = 'query_history' 
     AND policyname = 'Users can view own queries'
   ) THEN
-    CREATE POLICY "Users can view own queries" ON query_history FOR SELECT USING (auth.uid() = user_id);
+    CREATE POLICY "Users can view own queries" ON query_history FOR SELECT USING (auth.uid()::text = user_id);
   END IF;
   
   IF NOT EXISTS (
@@ -283,7 +283,7 @@ BEGIN
     WHERE tablename = 'query_history' 
     AND policyname = 'Users can insert own queries'
   ) THEN
-    CREATE POLICY "Users can insert own queries" ON query_history FOR INSERT WITH CHECK (auth.uid() = user_id);
+    CREATE POLICY "Users can insert own queries" ON query_history FOR INSERT WITH CHECK (auth.uid()::text = user_id);
   END IF;
 END $$;
 

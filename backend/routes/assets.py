@@ -16,3 +16,9 @@ templates = Jinja2Templates(directory=[
 async def serve_assets_page(request: Request):
     """Serve the assets page using Jinja2 templates."""
     return templates.TemplateResponse("assets-view.html", {"request": request})
+
+@router.get("/api/assets")
+async def get_assets():
+    """Get all user assets."""
+    # This is a placeholder - implement actual asset retrieval
+    return []

@@ -250,10 +250,6 @@
                 window.location.href = 'dashboard.html';
                 return;
             }
-
-            if (getStoredDemoSession()) {
-                window.location.href = 'dashboard.html';
-            }
         })();
 
         // =============================================
@@ -318,12 +314,9 @@
                 });
 
                 if (error) {
-                    createDemoSession(email, email.split('@')[0]);
-                    showMessage('Demo mode enabled. Redirecting to the dashboard.', 'success');
-                    btn.innerHTML = '<i class="fas fa-check mr-2"></i>Demo mode active!';
-                    setTimeout(() => {
-                        window.location.href = 'dashboard.html';
-                    }, 500);
+                    showMessage(error.message || 'Authentication failed. Please check your credentials.', 'error');
+                    btn.innerHTML = 'Sign In';
+                    btn.disabled = false;
                     return;
                 }
 
@@ -333,12 +326,9 @@
                 }, 500);
 
             } catch (err) {
-                createDemoSession(email, email.split('@')[0]);
-                showMessage('Demo mode enabled. Redirecting to the dashboard.', 'success');
-                btn.innerHTML = '<i class="fas fa-check mr-2"></i>Demo mode active!';
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 500);
+                showMessage('Authentication failed. Please try again.', 'error');
+                btn.innerHTML = 'Sign In';
+                btn.disabled = false;
             }
         }
 
@@ -364,27 +354,23 @@
                     options: {
                         data: {
                             full_name: name,
-                        }
+                        },
+                        emailRedirectTo: window.location.origin + '/dashboard.html',
+                        emailConfirm: false
                     }
                 });
 
                 if (error) {
-                    createDemoSession(email, name || email.split('@')[0]);
-                    showMessage('Demo mode enabled. Redirecting to the dashboard.', 'success');
-                    btn.innerHTML = '<i class="fas fa-check mr-2"></i>Demo mode active!';
-                    setTimeout(() => {
-                        window.location.href = 'dashboard.html';
-                    }, 500);
+                    showMessage(error.message || 'Failed to create account. Please try again.', 'error');
+                    btn.innerHTML = 'Create Account';
+                    btn.disabled = false;
                     return;
                 }
 
                 if (data.user && data.user.identities && data.user.identities.length === 0) {
-                    createDemoSession(email, name || email.split('@')[0]);
-                    showMessage('Demo mode enabled. Redirecting to the dashboard.', 'success');
-                    btn.innerHTML = '<i class="fas fa-check mr-2"></i>Demo mode active!';
-                    setTimeout(() => {
-                        window.location.href = 'dashboard.html';
-                    }, 500);
+                    showMessage('Please check your email to confirm your account before signing in.', 'success');
+                    btn.innerHTML = '<i class="fas fa-envelope mr-2"></i>Check your email';
+                    btn.disabled = false;
                     return;
                 }
 
@@ -394,21 +380,15 @@
                         window.location.href = 'dashboard.html';
                     }, 500);
                 } else {
-                    createDemoSession(email, name || email.split('@')[0]);
-                    showMessage('Demo mode enabled. Redirecting to the dashboard.', 'success');
-                    btn.innerHTML = '<i class="fas fa-check mr-2"></i>Demo mode active!';
-                    setTimeout(() => {
-                        window.location.href = 'dashboard.html';
-                    }, 500);
+                    showMessage('Please check your email to confirm your account before signing in.', 'success');
+                    btn.innerHTML = '<i class="fas fa-envelope mr-2"></i>Check your email';
+                    btn.disabled = false;
                 }
 
             } catch (err) {
-                createDemoSession(email, name || email.split('@')[0]);
-                showMessage('Demo mode enabled. Redirecting to the dashboard.', 'success');
-                btn.innerHTML = '<i class="fas fa-check mr-2"></i>Demo mode active!';
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 500);
+                showMessage('Failed to create account: ' + err.message, 'error');
+                btn.innerHTML = 'Create Account';
+                btn.disabled = false;
             }
         }
 

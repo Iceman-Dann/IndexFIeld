@@ -4,8 +4,8 @@
                 <div class="max-w-6xl mx-auto">
                     <div class="flex items-center justify-between mb-6">
                         <div>
-                            <h2 class="text-2xl font-bold">Performance Summary</h2>
-                            <p class="text-sm text-light-slate mt-1">Track searches, spot recurring issues, and monitor time and cost savings.</p>
+                            <h2 class="text-2xl font-bold">OPERATIONAL INTELLIGENCE SUMMARY</h2>
+                            <p class="text-sm text-light-slate mt-1">Your facility's AI activity, knowledge coverage, and risk signals — last 30 days.</p>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="text-[10px] text-light-slate">Last 30 days</span>
@@ -56,27 +56,15 @@
                         </div>
                     </div>
                     
-                    <!-- ROI Dashboard Widget ("CFO Bait") -->
+                    <!-- ROI Dashboard Widget -->
                     <div class="glass-card rounded-xl p-6 mb-6 border border-white/10 bg-white/5 relative overflow-hidden" id="roi-dashboard-widget">
-                        <div class="absolute top-0 right-0 bg-slate-800 text-slate-400 text-[10px] font-bold px-3 py-1 font-mono uppercase rounded-bl-lg border-l border-b border-white/10" id="roi-badge">ROI Dashboard</div>
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="font-semibold"><i class="fas fa-chart-pie text-slate-400 mr-2" id="roi-icon"></i>Estimated Value Generated</h3>
-                        </div>
-                        <div class="grid grid-cols-3 gap-4">
-                            <div>
-                                <div class="text-[10px] text-light-slate uppercase tracking-wider mb-1">Time Saved</div>
-                                <div class="text-2xl font-bold text-slate-400" id="roi-time-saved-val">0 <span class="text-sm font-normal text-light-slate">hrs</span></div>
-                                <div class="text-[10px] text-light-slate/50 mt-1" id="roi-time-saved-sub">⏳ Starts tracking after 1st search</div>
-                            </div>
-                            <div>
-                                <div class="text-[10px] text-light-slate uppercase tracking-wider mb-1">Downtime Avoided</div>
-                                <div class="text-2xl font-bold text-slate-400" id="roi-downtime-avoided-val">0 <span class="text-sm font-normal text-light-slate">days</span></div>
-                                <div class="text-[10px] text-light-slate/50 mt-1" id="roi-downtime-avoided-sub">Based on searches</div>
-                            </div>
-                            <div>
-                                <div class="text-[10px] text-light-slate uppercase tracking-wider mb-1">Estimated Cost Savings</div>
-                                <div class="text-2xl font-bold text-slate-400 transition-all duration-300" id="roi-savings-ticker">$0.00</div>
-                                <div class="text-[10px] text-light-slate mt-1">(Calculated at your $15k/day downtime rate)</div>
+                        <div class="flex items-center justify-center py-8">
+                            <div class="text-center">
+                                <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-slate-800/50 border border-slate-700/50 flex items-center justify-center">
+                                    <i class="fas fa-chart-line text-slate-500 text-lg"></i>
+                                </div>
+                                <h3 class="font-semibold text-slate-300 mb-2">ROI Tracking</h3>
+                                <p class="text-sm text-slate-400 leading-relaxed">ACTIVATES AFTER YOUR FIRST 30 DAYS OF OPERATIONAL DATA</p>
                             </div>
                         </div>
                     </div>
@@ -84,7 +72,6 @@
                     <div class="glass-card rounded-xl p-6 mb-6">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="font-semibold"><i class="fas fa-fire text-[#F97316] mr-2"></i>Most Searched Fault Codes</h3>
-                            <span id="fault-codes-ent-badge" class="text-[10px] text-light-slate bg-white/5 px-2 py-1 rounded">Enterprise Feature</span>
                         </div>
                         <div id="fault-heatmap" class="relative min-h-[140px] border border-white/5 rounded-lg bg-white/5 overflow-hidden">
                             <div id="fault-heatmap-empty" class="absolute inset-0 flex flex-col items-center justify-center">

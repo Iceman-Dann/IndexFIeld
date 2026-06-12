@@ -1,0 +1,344 @@
+<div id="handover-view" class="dashboard-view">
+    <!-- Print Styles Override -->
+    <style>
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #print-container, #print-container * {
+                visibility: visible;
+            }
+            #print-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                color: #000000 !important;
+                background: #ffffff !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+
+    <div class="p-6 max-w-7xl mx-auto space-y-6">
+        <!-- Incoming Handover Banner -->
+        <div id="incoming-handover-banner" class="hidden p-5 bg-[#F97316]/5 border border-[#F97316]/30 border-l-4 border-l-[#F97316] rounded-xl flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-[#F97316]/10 flex items-center justify-center text-[#F97316]">
+                    <i class="fas fa-exclamation-triangle text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold tracking-wider text-white uppercase">⚠ INCOMING SHIFT BRIEF WAITING</h3>
+                    <p class="text-xs text-slate-400">Previous shift handover has not been reviewed. Review before starting work on the floor.</p>
+                </div>
+            </div>
+            <button onclick="readIncomingHandover()" class="px-5 py-2.5 bg-[#F97316] text-black font-black uppercase text-xs tracking-wider rounded hover:bg-[#EA580C] transition-all">
+                READ INCOMING BRIEF →
+            </button>
+        </div>
+
+        <!-- Page Header -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-extrabold tracking-tight text-white">SHIFT HANDOVER</h1>
+                <p class="text-sm text-slate-400">AI-generated operational brief for outgoing and incoming shift leads.</p>
+            </div>
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3 self-start md:self-auto">
+                <!-- Monospace Current Shift Status -->
+                <div id="current-shift-indicator" class="font-mono text-xs text-slate-400 bg-white/5 border border-white/10 px-4 py-3 rounded-lg flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-[#F97316] animate-pulse"></span>
+                    DAY SHIFT · Started 06:00 · -- elapsed
+                </div>
+                <button onclick="generateHandoverBrief()" id="generate-handover-btn" class="px-5 py-3 bg-[#F97316] text-black font-black uppercase text-xs tracking-widest rounded-lg hover:bg-[#EA580C] transition-all flex items-center gap-2">
+                    <i class="fas fa-bolt"></i> GENERATE HANDOVER BRIEF
+                </button>
+            </div>
+        </div>
+
+        <!-- KPI Cards Row -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="glass-card rounded-xl p-5 border border-white/5">
+                <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">Briefs This Week</span>
+                <span class="text-3xl font-black font-mono text-white" id="kpi-briefs-week">0</span>
+                <span class="text-[10px] text-slate-400 block mt-2">Shift continuity tracked</span>
+            </div>
+            <div class="glass-card rounded-xl p-5 border border-white/5">
+                <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">Unacknowledged</span>
+                <span class="text-3xl font-black font-mono text-slate-400" id="kpi-unacknowledged">0</span>
+                <span class="text-[10px] text-slate-400 block mt-2">Require review</span>
+            </div>
+            <div class="glass-card rounded-xl p-5 border border-white/5">
+                <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">Critical Items Flagged</span>
+                <span class="text-3xl font-black font-mono text-slate-400" id="kpi-critical-flagged">0</span>
+                <span class="text-[10px] text-slate-400 block mt-2 font-mono">Last 7 days</span>
+            </div>
+            <div class="glass-card rounded-xl p-5 border border-white/5">
+                <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">Avg Shift Health</span>
+                <div>
+                    <span id="kpi-avg-health" class="inline-block mt-1 px-3 py-1 rounded text-xs font-bold font-mono bg-white/5 border border-white/10 text-white">N/A</span>
+                </div>
+                <span class="text-[10px] text-slate-400 block mt-2">Rolling 7-shift average</span>
+            </div>
+        </div>
+
+        <!-- Terminal Animation (Hidden initially) -->
+        <div id="handover-terminal" class="hidden glass-card rounded-xl p-6 border border-white/10 bg-[#0d1117]/80">
+            <div class="font-mono text-xs space-y-2.5">
+                <div id="term-line-1" class="hidden text-slate-400 flex items-center gap-2"><span class="text-[#F97316]">[▸]</span> SCANNING SHIFT ACTIVITY LOG...</div>
+                <div id="term-line-2" class="hidden text-slate-400 flex items-center gap-2"><span class="text-[#F97316]">[▸]</span> PULLING OPEN WORK ORDERS...</div>
+                <div id="term-line-3" class="hidden text-slate-400 flex items-center gap-2"><span class="text-[#F97316]">[▸]</span> CHECKING MAINTENANCE STATUS...</div>
+                <div id="term-line-4" class="hidden text-slate-400 flex items-center gap-2"><span class="text-[#F97316]">[▸]</span> REVIEWING ASSET ACCESS HISTORY...</div>
+                <div id="term-line-5" class="hidden text-slate-400 flex items-center gap-2"><span class="text-[#F97316]">[▸]</span> ANALYZING INCIDENT LOG...</div>
+                <div id="term-line-6" class="hidden text-slate-400 flex items-center gap-2"><span class="text-[#F97316]">[▸]</span> CROSS-REFERENCING SAFETY PROCEDURES...</div>
+                <div id="term-line-7" class="hidden text-slate-400 flex items-center gap-2"><span class="text-[#F97316]">[▸]</span> GENERATING INTELLIGENCE BRIEF...</div>
+                <div id="term-line-8" class="hidden text-[#22C55E] font-bold flex items-center gap-2"><span>[✓]</span> HANDOVER BRIEF READY — <span id="term-critical-count">0</span> ITEMS FLAGGED</div>
+            </div>
+        </div>
+
+        <!-- Handover Brief Layout -->
+        <div id="handover-brief-container" class="hidden glass-card rounded-xl border border-white/10 bg-[#111827] overflow-hidden">
+            <!-- Brief Header -->
+            <div class="p-6 border-b border-white/10 bg-white/[0.02] space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-black tracking-widest text-white font-mono uppercase">SHIFT HANDOVER BRIEF</h2>
+                        <div class="flex items-center gap-3 text-xs text-slate-400 mt-1 font-mono">
+                            <span id="brief-facility">FACILITY NAME</span>
+                            <span>·</span>
+                            <span id="brief-shift-type">SHIFT TYPE</span>
+                            <span>·</span>
+                            <span id="brief-date">DATE</span>
+                        </div>
+                    </div>
+                    <div class="text-right text-[10px] text-slate-500 font-mono">
+                        Generated: <span id="brief-timestamp">Timestamp</span><br>
+                        by: <span id="brief-creator">User</span>
+                    </div>
+                </div>
+                
+                <hr class="border-white/10">
+
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div class="flex flex-col">
+                        <span class="text-[9px] uppercase tracking-widest text-slate-500 font-mono font-bold mb-1">Overall Status</span>
+                        <div>
+                            <span id="brief-overall-status" class="inline-block px-3 py-1.5 rounded text-xs font-bold border">AMBER</span>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <span class="text-[9px] uppercase tracking-widest text-slate-500 font-mono font-bold block mb-1">AI Operational Summary</span>
+                        <p id="brief-ai-summary" class="text-xs italic text-slate-300">"Summary content..."</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sections Container -->
+            <div class="p-6 space-y-8">
+                <!-- Section 1: Critical Items -->
+                <div id="sec-critical" class="space-y-3">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                        CRITICAL ITEMS REQUIRING ATTENTION
+                        <span id="sec-critical-count" class="px-2 py-0.5 rounded-full text-[9px] bg-red-500/20 text-red-500 border border-red-500/30">0</span>
+                    </h3>
+                    <div id="sec-critical-list" class="space-y-2"></div>
+                </div>
+
+                <!-- Section 2: Work Orders -->
+                <div id="sec-workorders" class="space-y-3">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400" id="sec-workorders-title">
+                        WORK ORDERS · 0 TOTAL
+                    </h3>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                        <div class="p-4 bg-black/40 border border-white/5 rounded-xl space-y-3">
+                            <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/5 pb-2">Opened This Shift</div>
+                            <div id="wo-opened-list" class="space-y-2"></div>
+                        </div>
+                        <div class="p-4 bg-black/40 border border-white/5 rounded-xl space-y-3">
+                            <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/5 pb-2">In Progress</div>
+                            <div id="wo-progress-list" class="space-y-2"></div>
+                        </div>
+                        <div class="p-4 bg-black/40 border border-white/5 rounded-xl space-y-3">
+                            <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/5 pb-2">Completed</div>
+                            <div id="wo-completed-list" class="space-y-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Assets Accessed -->
+                <div id="sec-assets" class="space-y-3">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400" id="sec-assets-title">
+                        ASSETS ACCESSED THIS SHIFT · 0
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="border-b border-white/10 text-slate-400">
+                                    <th class="pb-2">Asset Name</th>
+                                    <th class="pb-2 text-center">Queries Asked</th>
+                                    <th class="pb-2 text-center">Work Orders</th>
+                                    <th class="pb-2 text-right">Last Activity</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sec-assets-table-body" class="divide-y divide-white/5"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Section 4: Maintenance Status -->
+                <div id="sec-maintenance" class="space-y-3">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400">MAINTENANCE STATUS</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                        <div class="p-4 bg-black/40 border border-white/5 rounded-xl">
+                            <div class="text-[9px] uppercase tracking-widest text-slate-500 font-bold">Overdue Now</div>
+                            <div class="text-xl font-black font-mono mt-1" id="maint-overdue-count">0 Items</div>
+                        </div>
+                        <div class="p-4 bg-black/40 border border-white/5 rounded-xl">
+                            <div class="text-[9px] uppercase tracking-widest text-slate-500 font-bold">Due This Week</div>
+                            <div class="text-xl font-black font-mono mt-1" id="maint-due-count">0 Items</div>
+                        </div>
+                        <div class="p-4 bg-black/40 border border-white/5 rounded-xl">
+                            <div class="text-[9px] uppercase tracking-widest text-slate-500 font-bold">Completed</div>
+                            <div class="text-xl font-black font-mono mt-1 text-[#22C55E]" id="maint-completed-count">0 this shift</div>
+                        </div>
+                    </div>
+                    <div id="maint-overdue-list" class="space-y-2"></div>
+                </div>
+
+                <!-- Section 5: Knowledge Queries -->
+                <div id="sec-queries" class="space-y-3">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400" id="sec-queries-title">
+                        KNOWLEDGE QUERIES THIS SHIFT · 0
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="border-b border-white/10 text-slate-400">
+                                    <th class="pb-2">Time</th>
+                                    <th class="pb-2">Question Asked</th>
+                                    <th class="pb-2">Source Found</th>
+                                    <th class="pb-2 text-right">Confidence</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sec-queries-table-body" class="divide-y divide-white/5"></tbody>
+                        </table>
+                    </div>
+                    <div id="queries-gap-callout" class="hidden p-4 bg-yellow-500/5 border border-yellow-500/20 rounded-xl flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center text-yellow-500">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-yellow-500 uppercase"><span id="gap-count">0</span> QUERIES HAD NO GOOD ANSWER</p>
+                                <p class="text-[10px] text-slate-400">These topics have no uploaded documentation.</p>
+                            </div>
+                        </div>
+                        <button onclick="showView('history')" class="px-3 py-1.5 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 font-bold rounded text-[10px] hover:bg-yellow-500/20 transition-all uppercase tracking-wider">
+                            VIEW IN KNOWLEDGE AUDIT →
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Section 6: Incidents -->
+                <div id="sec-incidents" class="space-y-3">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400">INCIDENTS THIS SHIFT</h3>
+                    <div id="sec-incidents-list" class="space-y-2"></div>
+                </div>
+
+                <!-- Section 7: AI Recommendations -->
+                <div id="sec-recommendations" class="space-y-3">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400">RECOMMENDED PRIORITIES FOR INCOMING SHIFT</h3>
+                    <ol id="sec-recommendations-list" class="space-y-3 text-xs leading-relaxed text-slate-300"></ol>
+                </div>
+            </div>
+
+            <!-- Brief Footer -->
+            <div class="p-6 border-t border-white/10 bg-white/[0.01] flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <!-- Action Buttons -->
+                <div class="flex flex-wrap items-center gap-3">
+                    <button onclick="downloadBriefPDF()" class="px-4 py-2.5 bg-white/5 border border-white/15 text-white font-bold rounded-lg text-xs hover:bg-white/10 transition-all flex items-center gap-2">
+                        <i class="fas fa-download"></i> DOWNLOAD PDF
+                    </button>
+                    <button onclick="copyShareBriefLink()" class="px-4 py-2.5 bg-white/5 border border-white/15 text-white font-bold rounded-lg text-xs hover:bg-white/10 transition-all flex items-center gap-2">
+                        <i class="fas fa-link"></i> COPY SHARE LINK
+                    </button>
+                    <button id="main-acknowledge-btn" onclick="scrollToAcknowledge()" class="px-4 py-2.5 bg-[#22C55E]/15 border border-[#22C55E]/30 text-[#22C55E] font-bold rounded-lg text-xs hover:bg-[#22C55E]/25 transition-all flex items-center gap-2">
+                        <i class="fas fa-check"></i> MARK AS ACKNOWLEDGED
+                    </button>
+                </div>
+
+                <!-- Signature Section -->
+                <div id="signature-input-area" class="flex items-center gap-3 bg-black/40 border border-white/10 p-3 rounded-lg max-w-md w-full ml-auto md:ml-0">
+                    <div class="flex-1">
+                        <input type="text" id="incoming-lead-name" placeholder="Incoming Lead Signature" class="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#F97316]">
+                    </div>
+                    <button onclick="submitAcknowledge()" class="px-4 py-2 bg-[#22C55E] text-black font-black uppercase text-xs tracking-wider rounded hover:bg-[#16a34a] transition-all">
+                        SIGN AND ACKNOWLEDGE
+                    </button>
+                </div>
+
+                <!-- Acknowledged Confirmation State -->
+                <div id="signature-confirmed-area" class="hidden font-mono text-xs text-[#22C55E] font-bold bg-[#22C55E]/10 border border-[#22C55E]/30 px-4 py-3 rounded-lg flex items-center gap-2 ml-auto">
+                    <i class="fas fa-check-circle text-sm"></i>
+                    ✓ ACKNOWLEDGED BY <span id="ack-signed-name">NAME</span> AT <span id="ack-signed-time">TIMESTAMP</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Previous Handovers Section -->
+        <div class="glass-card rounded-xl p-6 border border-white/5 space-y-4">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-white">PREVIOUS HANDOVER BRIEFS</h3>
+            
+            <div id="previous-handovers-container" class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="border-b border-white/10 text-slate-400">
+                            <th class="pb-3">DATE</th>
+                            <th class="pb-3">SHIFT</th>
+                            <th class="pb-3">OVERALL STATUS</th>
+                            <th class="pb-3">ITEMS FLAGGED</th>
+                            <th class="pb-3">GENERATED BY</th>
+                            <th class="pb-3">ACKNOWLEDGED</th>
+                            <th class="pb-3 text-right">ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody id="previous-handovers-tbody" class="divide-y divide-white/5"></tbody>
+                </table>
+            </div>
+
+            <!-- Empty State -->
+            <div id="handovers-empty-state" class="hidden py-10 text-center space-y-4">
+                <div class="text-slate-600"><i class="fas fa-handshake text-4xl"></i></div>
+                <div class="max-w-md mx-auto space-y-1">
+                    <h4 class="text-xs font-bold uppercase tracking-widest text-slate-400">NO HANDOVER BRIEFS GENERATED YET</h4>
+                    <p class="text-[11px] text-slate-500">Generate your first brief at the end of your current shift to establish operational continuity.</p>
+                </div>
+                <button onclick="generateHandoverBrief()" class="px-5 py-2.5 bg-[#F97316] text-black font-black uppercase text-xs tracking-wider rounded-lg hover:bg-[#EA580C] transition-all">
+                    ⚡ GENERATE FIRST BRIEF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Read-Only Brief Drawer -->
+    <div id="handover-drawer" class="hidden fixed inset-y-0 right-0 w-full max-w-2xl bg-[#111827] border-l border-white/10 shadow-2xl z-[100] flex flex-col transform translate-x-full transition-transform duration-300">
+        <div class="p-5 border-b border-white/10 bg-white/[0.02] flex items-center justify-between">
+            <h3 class="text-sm font-black tracking-widest font-mono text-white uppercase">HISTORICAL REPORT BRIEF</h3>
+            <button onclick="closeHandoverDrawer()" class="text-slate-400 hover:text-white p-2"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="drawer-content-area" class="flex-1 overflow-y-auto p-6 space-y-6"></div>
+        <div class="p-5 border-t border-white/10 bg-white/[0.01] flex justify-end gap-3 no-print">
+            <button onclick="printDrawerBrief()" class="px-4 py-2 bg-white/5 border border-white/15 rounded text-xs font-bold text-white hover:bg-white/10 transition-all flex items-center gap-2">
+                <i class="fas fa-print"></i> Print / Save PDF
+            </button>
+            <button onclick="closeHandoverDrawer()" class="px-4 py-2 bg-white/10 border border-white/10 rounded text-xs font-bold text-white hover:bg-white/20 transition-all">
+                Close
+            </button>
+        </div>
+    </div>
+    <div id="drawer-backdrop" class="hidden fixed inset-0 bg-black/60 z-[99] backdrop-blur-sm" onclick="closeHandoverDrawer()"></div>
+
+    <!-- Hidden Printer Container -->
+    <div id="print-container" class="hidden p-8"></div>
+</div>

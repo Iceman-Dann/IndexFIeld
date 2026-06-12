@@ -18,19 +18,22 @@
                             <p class="text-sm text-light-slate mt-1">Real-time plant sensor data with AI-guided alerts.</p>
                         </div>
                         <div class="flex flex-wrap items-center gap-3 lg:ml-auto lg:justify-end">
-                            <span class="text-[10px] text-light-slate px-2 py-1 bg-white/5 rounded border border-white/10" id="connected-sensors-count">Awaiting asset link</span>
                             <div class="flex flex-col items-end gap-1">
                                 <button onclick="connectDataStream()" class="px-3 py-1.5 bg-white/5 text-white border border-white/15 rounded-md hover:bg-white/10 transition text-xs flex items-center gap-2">
                                     <i class="fas fa-link text-[#F97316]"></i> Initiate Live Link
                                 </button>
                                 <span class="text-[9px] text-slate-500 tracking-wide">Safe Mode: Read-Only</span>
                             </div>
-                            <div class="flex flex-col items-end gap-1">
-                                <button onclick="draftHandoverReport()" class="px-3 py-1.5 bg-white/5 text-white border border-white/10 rounded-md text-xs hover:bg-white/10 transition flex items-center gap-2">
-                                    <i class="fas fa-file-lines"></i> Draft Handover Report
-                                </button>
-                                <span class="text-[9px] text-slate-500 text-right max-w-[200px] leading-snug">Summarize shift telemetry &amp; AI findings for next shift</span>
-                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Asset Selector -->
+                    <div class="mb-6">
+                        <div class="flex items-center gap-3">
+                            <span class="text-[10px] text-slate-400 font-mono uppercase tracking-wider">MONITORING:</span>
+                            <select class="glass-input px-3 py-1.5 rounded text-sm text-white bg-white/5 border border-white/10 focus:border-[#F97316]/50 focus:outline-none">
+                                <option>HYDRAULIC PRESS #3</option>
+                            </select>
                         </div>
                     </div>
 
@@ -92,7 +95,6 @@
                                     <span>UI Ready — Awaiting stream</span>
                                 </div>
                             </div>
-                            <p id="osc-chart-caption" class="text-[10px] text-slate-500 font-mono mt-2 text-center">Awaiting asset link</p>
                         </div>
 
                         <!-- Phase 3: AI Streaming Console (Left) -->
@@ -138,12 +140,14 @@
                                 <h3 class="font-bold text-white font-mono uppercase text-[10px] tracking-widest mb-3 flex items-center gap-2 text-slate-300">
                                     <i class="fas fa-exclamation-circle text-amber-500/80 text-xs"></i> Recent Anomalies
                                 </h3>
-                                <ul id="telemetry-anomaly-ticker" class="space-y-2 font-mono text-[11px] min-h-[4.5rem]">
-                                    <li class="telemetry-anomaly-standby flex gap-2 text-slate-400 py-2 items-start">
-                                        <span class="ready-dot shrink-0 mt-1" style="width:5px;height:5px;"></span>
-                                        <span class="italic">No anomalies — awaiting live link</span>
-                                    </li>
-                                </ul>
+                                <div class="space-y-2 font-mono text-[11px]">
+                                    <div class="flex items-center gap-2 text-slate-400 py-2">
+                                        <span class="w-2 h-2 rounded-full bg-[#22C55E] shrink-0"></span>
+                                        <span class="text-[10px]">ANOMALY DETECTION ACTIVE</span>
+                                    </div>
+                                    <div class="text-slate-500 text-[10px] pl-4">No anomalies detected — system nominal</div>
+                                    <div class="text-slate-600 text-[9px] pl-4">Last scan: just now</div>
+                                </div>
                             </div>
                         </div>
                     </div>

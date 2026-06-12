@@ -4,10 +4,10 @@ from dataclasses import dataclass
 import google.generativeai as genai
 from openai import OpenAI
 import anthropic
-from backend.config import settings
+from config import settings
 
-from backend.document_skeleton import SkeletonExtractor, get_relevant_context
-from backend.tribal_vault import check_unsafe_notes
+from document_skeleton import SkeletonExtractor, get_relevant_context
+from tribal_vault import check_unsafe_notes
 
 @dataclass
 class SourceCitation:

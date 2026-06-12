@@ -21,13 +21,13 @@ import shutil
 import pathlib
 
 # Import components
-from backend.document_skeleton import SkeletonExtractor, get_relevant_context, skeleton_extractor, extract_skeleton
-from backend.rag_engine import RAGEngine
-from backend.tribal_vault import get_tribal_notes, update_note_status
-from backend.config import settings
+from document_skeleton import SkeletonExtractor, get_relevant_context, skeleton_extractor, extract_skeleton
+from rag_engine import RAGEngine
+from tribal_vault import get_tribal_notes, update_note_status
+from config import settings
 import requests
-from backend.document_processor import DocumentProcessor
-from backend.vector_store import VectorStore
+from document_processor import DocumentProcessor
+from vector_store import VectorStore
 
 app = FastAPI(
     title="IndexField RAG API",
@@ -36,18 +36,26 @@ app = FastAPI(
 )
 
 # Include MPA Routers
-from backend.routes.chat import router as chat_router
-# from backend.routes.insights import router as insights_router
-from backend.routes.assets import router as assets_router
-from backend.routes.telemetry import router as telemetry_router
-from backend.routes.vault import router as vault_router
-from backend.routes.field import router as field_router
-from backend.routes.loto import router as loto_router
-from backend.routes.prognostics import router as prognostics_router
-from backend.routes.history import router as history_router
-from backend.routes.help import router as help_router
-from backend.routes.manuals import router as manuals_router
-from backend.routes.qr import router as qr_router
+from routes.chat import router as chat_router
+# from routes.insights import router as insights_router
+from routes.assets import router as assets_router
+from routes.telemetry import router as telemetry_router
+from routes.vault import router as vault_router
+from routes.field import router as field_router
+from routes.loto import router as loto_router
+from routes.prognostics import router as prognostics_router
+from routes.history import router as history_router
+from routes.help import router as help_router
+from routes.manuals import router as manuals_router
+from routes.qr import router as qr_router
+# New feature routers
+from routes.voice import router as voice_router
+from routes.handover import router as handover_router
+from routes.tribal import router as tribal_router
+from routes.workorders import router as workorders_router
+from routes.facility import router as facility_router
+from routes.handover_view import router as handover_view_router
+from routes.workorders_view import router as workorders_view_router
 
 app.include_router(chat_router)
 # app.include_router(insights_router)
@@ -61,6 +69,14 @@ app.include_router(history_router)
 app.include_router(help_router)
 app.include_router(manuals_router)
 app.include_router(qr_router)
+# New feature routers
+app.include_router(voice_router)
+app.include_router(handover_router)
+app.include_router(tribal_router)
+app.include_router(workorders_router)
+app.include_router(facility_router)
+app.include_router(handover_view_router)
+app.include_router(workorders_view_router)
 
 
 # CORS
@@ -155,6 +171,7 @@ class QueryRequest(BaseModel):
     manual_id: Optional[str] = None
     asset_id: Optional[str] = None
     top_k: int = 3
+    cross_reference: bool = False  # FEATURE 3: Multi-manual cross reference
 
 class ChunkResult(BaseModel):
     text: str
@@ -168,6 +185,12 @@ class QueryResponse(BaseModel):
     answer: str
     sources: List[ChunkResult]
     citations: List[str]
+    # FEATURE 3: Cross-reference fields
+    cross_reference_sources: Optional[List[Dict]] = None
+    conflicts_detected: Optional[bool] = False
+    conflict_description: Optional[str] = None
+    # FEATURE 4: Tribal knowledge
+    tribal_knowledge: Optional[List[Dict]] = None
 
 class ManualInfo(BaseModel):
     id: str
@@ -751,10 +774,13 @@ async def query_options():
 
 @app.post("/query", response_model=QueryResponse)
 async def query_documents(request: QueryRequest):
-    """Standard RAG query endpoint."""
+    """Standard RAG query endpoint with cross-reference and tribal knowledge support."""
     try:
         print(f"[DEBUG] Query: {request.query[:50]}... | Skeletons available: {len(skeleton_extractor.skeletons)} | Manuals registry: {len(manuals_registry)}")
 
+        user_id = None
+        asset_name = None
+        
         # If asset_id is provided, check query_count limit for asset owner
         if request.asset_id:
             try:
@@ -762,9 +788,10 @@ async def query_documents(request: QueryRequest):
                 supabase_client = create_client(settings.SUPABASE_URL, settings.SUPABASE_ANON_KEY)
                 
                 # Get asset to find owner
-                asset_response = supabase_client.table('user_assets').select('user_id').eq('id', request.asset_id).execute()
+                asset_response = supabase_client.table('user_assets').select('user_id, name').eq('id', request.asset_id).execute()
                 if asset_response.data:
                     user_id = asset_response.data[0]['user_id']
+                    asset_name = asset_response.data[0].get('name', 'Unknown')
                     
                     # Check query_count in profiles table
                     profile_response = supabase_client.table('profiles').select('query_count').eq('id', user_id).execute()
@@ -783,15 +810,65 @@ async def query_documents(request: QueryRequest):
         query_analytics.append({
             "query": request.query,
             "timestamp": datetime.now().isoformat(),
-            "user": "anonymous",
+            "user": user_id or "anonymous",
             "asset_id": request.asset_id,
         })
 
-        answer, sources = rag_engine.query(
-            request.query,
-            manual_id=request.manual_id,
-            top_k=request.top_k,
-        )
+        # FEATURE 3: Cross-reference mode
+        cross_reference_sources = None
+        conflicts_detected = False
+        conflict_description = None
+        
+        if request.cross_reference:
+            # Search across all manuals
+            all_sources = []
+            for manual in manuals_registry:
+                try:
+                    manual_sources = rag_engine.query(
+                        request.query,
+                        manual_id=manual['id'],
+                        top_k=2
+                    )[1]  # Get sources only
+                    all_sources.extend(manual_sources)
+                except:
+                    pass
+            
+            # Group by document
+            from collections import defaultdict
+            sources_by_doc = defaultdict(list)
+            for source in all_sources:
+                sources_by_doc[source.manual_id].append(source)
+            
+            # Generate cross-reference response using AI if Groq available
+            if settings.GROQ_API_KEY and len(sources_by_doc) > 1:
+                cross_reference_sources = await generate_cross_reference_response(request.query, sources_by_doc)
+            else:
+                # Simple fallback
+                cross_reference_sources = [
+                    {
+                        "document_name": doc_name,
+                        "page": sources[0].page_number,
+                        "section": "Unknown",
+                        "relevant_excerpt_summary": sources[0].text[:200],
+                        "confidence": "HIGH"
+                    }
+                    for manual_id, sources in sources_by_doc.items()
+                    if sources
+                ]
+            
+            # Use all sources for the main query
+            answer, sources = rag_engine.query(
+                request.query,
+                manual_id=None,  # Search all
+                top_k=request.top_k * 2 if len(manuals_registry) > 1 else request.top_k
+            )
+        else:
+            # Normal single-manual query
+            answer, sources = rag_engine.query(
+                request.query,
+                manual_id=request.manual_id,
+                top_k=request.top_k,
+            )
 
         citations = [
             f"Source: {s.manual_name} - Page {s.page_number}"
@@ -810,10 +887,50 @@ async def query_documents(request: QueryRequest):
             for s in sources
         ]
 
+        # FEATURE 4: Fetch tribal knowledge for this context
+        tribal_knowledge_data = None
+        if user_id and (request.asset_id or request.manual_id):
+            try:
+                from supabase import create_client
+                supabase_client = create_client(settings.SUPABASE_URL, settings.SUPABASE_ANON_KEY)
+                
+                query = supabase_client.table('tribal_knowledge').select('*').eq('user_id', user_id)
+                if request.asset_id:
+                    query = query.eq('asset_id', request.asset_id)
+                if request.manual_id:
+                    query = query.eq('manual_id', request.manual_id)
+                
+                tk_response = query.order('helpful_count', desc=True).limit(5).execute()
+                if tk_response.data:
+                    tribal_knowledge_data = tk_response.data
+            except Exception as e:
+                print(f"[WARN] Failed to fetch tribal knowledge: {e}")
+
+        # FEATURE 2: Log shift event if user_id available
+        if user_id:
+            try:
+                from supabase import create_client
+                supabase_client = create_client(settings.SUPABASE_URL, settings.SUPABASE_ANON_KEY)
+                supabase_client.table('shift_events').insert({
+                    "user_id": user_id,
+                    "event_type": "QUERY",
+                    "asset_id": request.asset_id,
+                    "asset_name": asset_name,
+                    "description": request.query[:200],
+                    "severity": "INFO",
+                    "created_at": datetime.now().isoformat()
+                }).execute()
+            except Exception as e:
+                print(f"[WARN] Failed to log shift event: {e}")
+
         return QueryResponse(
             answer=answer,
             sources=source_results,
             citations=citations,
+            cross_reference_sources=cross_reference_sources,
+            conflicts_detected=conflicts_detected,
+            conflict_description=conflict_description,
+            tribal_knowledge=tribal_knowledge_data
         )
     except HTTPException:
         raise
@@ -822,6 +939,72 @@ async def query_documents(request: QueryRequest):
         print(f"[ERROR] Query failed: {e}")
         print(traceback.format_exc())
         raise HTTPException(500, f"Query failed: {str(e)}")
+
+async def generate_cross_reference_response(query: str, sources_by_doc: dict) -> list:
+    """Generate cross-reference response using Groq AI."""
+    prompt = f"""Answer the following question using information from multiple industrial documents.
+
+Question: {query}
+
+Documents and their relevant sections:
+{json.dumps({mid: [{"page": s.page_number, "text": s.text[:300]} for s in sources[:2]] for mid, sources in sources_by_doc.items()}, indent=2)}
+
+For each piece of information, cite which document and page it came from.
+If documents contain conflicting information, flag the conflict explicitly.
+Format each source as a separate finding.
+
+Return JSON with this structure:
+{{
+  "sources": [
+    {{
+      "document_name": "Manual Name",
+      "page": number,
+      "section": "Section name",
+      "relevant_excerpt_summary": "Brief summary",
+      "confidence": "HIGH|MEDIUM|LOW"
+    }}
+  ],
+  "conflicts_detected": boolean,
+  "conflict_description": "string or null"
+}}
+
+Return ONLY the JSON, no other text."""
+    
+    try:
+        response = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": settings.GROQ_MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.3,
+                "response_format": {"type": "json_object"}
+            },
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            return json.loads(result['choices'][0]['message']['content'])
+        else:
+            raise Exception(f"Groq API error: {response.text}")
+    except Exception as e:
+        print(f"[ERROR] Cross-reference generation failed: {e}")
+        # Fallback to simple format
+        return [
+            {
+                "document_name": f"Document {i}",
+                "page": sources[0].page_number,
+                "section": "Unknown",
+                "relevant_excerpt_summary": sources[0].text[:200],
+                "confidence": "MEDIUM"
+            }
+            for i, (mid, sources) in enumerate(sources_by_doc.items())
+            if sources
+        ]
 
 @app.get("/admin/tribal_notes")
 async def admin_list_tribal_notes(status: str = "pending"):
@@ -839,6 +1022,15 @@ async def admin_update_tribal_note(note_id: str, payload: dict):
 
 @app.get("/manuals", response_model=List[ManualInfo])
 async def list_manuals():
+    """List uploaded industrial manuals (excludes system/UI assets)."""
+    return [
+        ManualInfo(**m)
+        for m in manuals_registry
+        if is_industrial_document(m.get("filename", ""))
+    ]
+
+@app.get("/api/manuals", response_model=List[ManualInfo])
+async def list_manuals_api():
     """List uploaded industrial manuals (excludes system/UI assets)."""
     return [
         ManualInfo(**m)
@@ -1190,83 +1382,8 @@ async def search_knowledge(q: str):
     return [KnowledgePost(**p) for p in results]
 
 # ============================================================================
-# Work Order Endpoints
+# Work Order Endpoints - Moved to backend/routes/workorders.py
 # ============================================================================
-
-@app.get("/workorders", response_model=List[WorkOrder])
-async def list_work_orders(
-    status: Optional[str] = None,
-    asset_id: Optional[str] = None
-):
-    """List all work orders."""
-    orders = work_orders
-    
-    if status:
-        orders = [o for o in orders if o["status"] == status]
-    if asset_id:
-        orders = [o for o in orders if o["asset_id"] == asset_id]
-    
-    return [WorkOrder(**o) for o in orders]
-
-@app.post("/workorders", response_model=WorkOrder)
-async def create_work_order(order: WorkOrderCreate):
-    """Create a new work order."""
-    # Get asset details
-    asset = next((a for a in assets_registry if a["id"] == order.asset_id), None)
-    if not asset:
-        raise HTTPException(404, "Asset not found")
-    
-    wo_id = f"WO-{datetime.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:4].upper()}"
-    
-    new_order = {
-        "id": wo_id,
-        "asset_id": order.asset_id,
-        "asset_name": asset["name"],
-        "location": asset["location"],
-        "priority": order.priority,
-        "procedure": order.procedure,
-        "sources": order.sources,
-        "verified": False,
-        "status": "draft",
-        "created_at": datetime.now().isoformat(),
-        "estimated_downtime": "4 Hours",
-        "parts_required": "Bearing 6205-RS",
-        "skill_level": "Level 2+",
-        "tribal_knowledge": None
-    }
-    
-    work_orders.append(new_order)
-    
-    # Send webhook if configured
-    if settings.WEBHOOK_URL:
-        # In production, send async webhook notification
-        pass
-    
-    return WorkOrder(**new_order)
-
-@app.get("/workorders/{workorder_id}", response_model=WorkOrder)
-async def get_work_order(workorder_id: str):
-    """Get work order details."""
-    order = next((o for o in work_orders if o["id"] == workorder_id), None)
-    if not order:
-        raise HTTPException(404, "Work order not found")
-    return WorkOrder(**order)
-
-@app.put("/workorders/{workorder_id}/status")
-async def update_work_order_status(workorder_id: str, status: str):
-    """Update work order status."""
-    order = next((o for o in work_orders if o["id"] == workorder_id), None)
-    if not order:
-        raise HTTPException(404, "Work order not found")
-    
-    valid_statuses = ["draft", "assigned", "in_progress", "completed", "cancelled"]
-    if status not in valid_statuses:
-        raise HTTPException(400, f"Invalid status. Must be one of: {valid_statuses}")
-    
-    order["status"] = status
-    order["updated_at"] = datetime.now().isoformat()
-    
-    return {"success": True, "status": status}
 
 # ============================================================================
 # Insights & Analytics Endpoints
