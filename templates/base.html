@@ -518,6 +518,10 @@
                     <span>Performance Summary</span>
                     <span class="ml-auto text-[9px] bg-white/5 text-slate-200 font-medium px-1.5 py-0.5 rounded border border-white/10">ENT</span>
                 </a>
+                <a href="/team" id="nav-team" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
+                    <i class="fas fa-users"></i>
+                    <span>Team</span>
+                </a>
                 <a href="/manuals" id="nav-manuals" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
                     <i class="fas fa-folder-open"></i>
                     <span>Manuals</span>
@@ -584,9 +588,10 @@
                     </div>
                     <div class="flex-1 min-w-0 text-left">
                         <p id="user-display-name" class="text-sm font-medium truncate">Loading...</p>
-                        <div class="flex items-center gap-1">
-                            <span id="user-display-role" class="text-[10px] text-slate-200 font-semibold">Plant Manager</span>
-                            <span class="text-[8px] px-1 py-0.5 bg-[#F97316]/20 text-[#F97316] rounded">ENT</span>
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-robot text-light-slate hidden sm:block"></i>
+                            <span class="font-medium text-sm sm:text-base text-white">{{ PAGE_TITLE }}</span>
+                            <span class="ml-2 font-extrabold text-sm sm:text-base gradient-text">IndexField</span>
                         </div>
                     </div>
                     <i class="fas fa-chevron-up text-xs text-light-slate/50" id="profile-chevron"></i>

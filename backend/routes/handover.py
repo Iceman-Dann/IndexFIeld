@@ -4,13 +4,13 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta, timezone
 from supabase import create_client
-from config import settings
+from ..config import settings
 import json
 import uuid
 import requests
 
 router = APIRouter()
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 class HandoverGenerateRequest(BaseModel):
     shift_type: Optional[str] = None
@@ -20,11 +20,21 @@ class HandoverGenerateRequest(BaseModel):
 class HandoverAcknowledgeRequest(BaseModel):
     name: str
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
     """Verify JWT token and return user info from Supabase."""
     from jose import jwt, JWTError
     
     try:
+        # If no credentials provided, return a guest demo user
+        if not credentials:
+            guest_id = f"guest_{uuid.uuid4().hex[:8]}"
+            return {
+                "user_id": guest_id,
+                "token": f"guest_token_{guest_id}",
+                "email": f"{guest_id}@local.guest",
+                "is_guest": True
+            }
+
         token = credentials.credentials
         
         # Handle guest tokens for testing
@@ -41,19 +51,51 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         user_id = payload.get("sub")
         if user_id is None:
             raise HTTPException(status_code=401, detail="Invalid authentication")
-        
-        supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_ANON_KEY)
-        user_response = supabase.auth.get_user(token)
-        
+
+        # Try to verify user with Supabase if configured, but fall back to the
+        # locally-decoded JWT if Supabase verification fails (demo mode).
+        try:
+            if settings.SUPABASE_URL and settings.SUPABASE_ANON_KEY:
+                supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_ANON_KEY)
+                try:
+                    user_response = supabase.auth.get_user(token)
+                    return {
+                        "user_id": user_id,
+                        "token": token,
+                        "email": user_response.user.email if user_response.user else f"{user_id}@local"
+                    }
+                except Exception:
+                    # Supabase rejected the token; fall back to local JWT
+                    pass
+
+        except Exception:
+            # Any unexpected error verifying Supabase should not block demo tokens
+            pass
+
+        # Default fallback: return the decoded token info
         return {
             "user_id": user_id,
             "token": token,
-            "email": user_response.user.email if user_response.user else None
+            "email": f"{user_id}@local",
+            "is_guest": False
         }
     except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid authentication")
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
+        # Return guest user for demo rather than failing
+        guest_id = f"guest_{uuid.uuid4().hex[:8]}"
+        return {
+            "user_id": guest_id,
+            "token": f"guest_token_{guest_id}",
+            "email": f"{guest_id}@local.guest",
+            "is_guest": True
+        }
+    except Exception:
+        guest_id = f"guest_{uuid.uuid4().hex[:8]}"
+        return {
+            "user_id": guest_id,
+            "token": f"guest_token_{guest_id}",
+            "email": f"{guest_id}@local.guest",
+            "is_guest": True
+        }
 
 def check_sandbox_limit(user_id: str, feature: str, limit: int, is_guest: bool = False):
     """Check if sandbox user has exceeded limit for a feature."""
@@ -437,18 +479,16 @@ async def generate_ai_report(activity_data: Dict) -> Dict[str, Any]:
 @router.get("/api/handover/history")
 async def get_handover_history(current_user: dict = Depends(get_current_user)):
     """Get last 20 handover reports for this user."""
+    # Demo users or missing Supabase should receive an empty list
+    if current_user.get('is_guest') or not settings.SUPABASE_URL or not settings.SUPABASE_ANON_KEY:
+        return []
+
     supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_ANON_KEY)
-    
     try:
-        response = supabase.table('shift_handovers')\
-            .select('*')\
-            .eq('user_id', current_user['user_id'])\
-            .order('created_at', desc=True)\
-            .limit(20)\
-            .execute()
+        response = supabase.table('shift_handovers').select('*').eq('user_id', current_user['user_id']).order('created_at', desc=True).limit(20).execute()
         return response.data or []
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to fetch handover history: {str(e)}")
+    except Exception:
+        return []
 
 @router.post("/api/handover/{handover_id}/acknowledge")
 async def acknowledge_handover(

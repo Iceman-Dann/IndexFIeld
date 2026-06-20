@@ -9,7 +9,7 @@ import qrcode
 import io
 import os
 from supabase import create_client, Client
-from config import settings
+from ..config import settings
 
 router = APIRouter()
 

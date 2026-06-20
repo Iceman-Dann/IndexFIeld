@@ -28,7 +28,7 @@ def prepare_templates():
         (r'onclick="routeGuard\(\'telemetry\'\)"', r'href="/telemetry"'),
         (r'onclick="routeGuard\(\'prognostics\'\)"', r'href="/prognostics"'),
         (r'onclick="routeGuard\(\'loto\'\)"', r'href="/loto"'),
-        (r'onclick="openVault\(\)"', r'href="/vault"')
+            (r'onclick="openVault\(\)"', r'href="/vault"')
     ]
     
     for old, new in nav_replacements:

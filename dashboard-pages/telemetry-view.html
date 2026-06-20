@@ -1,210 +1,737 @@
-{% extends "base.html" %}
-{% block content %}
 <div id="telemetry-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6">
-                <div class="max-w-7xl mx-auto">
-                    <div id="telemetry-health-banner" class="system-health-banner mb-5">
-                        <span class="w-2.5 h-2.5 rounded-full bg-[#22C55E] status-pulse shrink-0 mt-1"></span>
-                        <div class="flex-1 min-w-0">
-                            <div class="text-sm font-semibold text-[#22C55E] tracking-wide">System Health: Online and Monitoring</div>
-                            <p id="telemetry-health-detail" class="text-[11px] text-light-slate mt-0.5">IndexField is active on this node. <span class="text-slate-400 text-[10px]">Awaiting asset link.</span></p>
-                        </div>
-                    </div>
-                    <div class="flex flex-col lg:flex-row items-start justify-between gap-4 mb-6">
-                        <div>
-                            <h2 class="text-2xl font-bold flex items-center gap-3">
-                                <span id="telemetry-title-pulse" class="w-3 h-3 rounded-full bg-slate-500 status-pulse"></span>
-                                Live Monitoring
-                            </h2>
-                            <p class="text-sm text-light-slate mt-1">Real-time plant sensor data with AI-guided alerts.</p>
-                        </div>
-                        <div class="flex flex-wrap items-center gap-3 lg:ml-auto lg:justify-end">
-                            <div class="flex flex-col items-end gap-1">
-                                <button onclick="connectDataStream()" class="px-3 py-1.5 bg-white/5 text-white border border-white/15 rounded-md hover:bg-white/10 transition text-xs flex items-center gap-2">
-                                    <i class="fas fa-link text-[#F97316]"></i> Initiate Live Link
-                                </button>
-                                <span class="text-[9px] text-slate-500 tracking-wide">Safe Mode: Read-Only</span>
-                            </div>
-                        </div>
-                    </div>
+    <div class="max-w-7xl mx-auto space-y-6">
 
-                    <!-- Asset Selector -->
-                    <div class="mb-6">
+        <!-- PAGE HEADER -->
+        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-extrabold tracking-tight text-white">FACILITY PULSE</h1>
+                <p class="text-sm text-slate-400 mt-1">Real-time facility activity and floor observation intelligence.</p>
+            </div>
+            <div id="pulse-shift-indicator" class="font-mono text-xs text-slate-400 bg-white/5 border border-white/10 px-4 py-3 rounded-lg flex items-center gap-2 self-start">
+                <span class="w-2 h-2 rounded-full bg-[#F97316] animate-pulse"></span>
+                <span id="pulse-shift-label">DAY SHIFT · 09:14 · Monday</span>
+            </div>
+        </div>
+
+        <!-- KPI CARDS -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="glass-card rounded-xl p-5 border border-white/5">
+                <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">Active Now</span>
+                <span class="text-3xl font-black font-mono text-white" id="kpi-active-now">—</span>
+                <span class="text-[10px] text-slate-400 block mt-2">Users logged in today</span>
+            </div>
+            <div class="glass-card rounded-xl p-5 border border-white/5">
+                <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">Observations Today</span>
+                <span class="text-3xl font-black font-mono text-[#F97316]" id="kpi-observations-today">—</span>
+                <span class="text-[10px] text-slate-400 block mt-2">Logged this shift</span>
+            </div>
+            <div class="glass-card rounded-xl p-5 border border-white/5">
+                <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">Work Orders Touched</span>
+                <span class="text-3xl font-black font-mono text-white" id="kpi-wo-touched">—</span>
+                <span class="text-[10px] text-slate-400 block mt-2">Created or updated today</span>
+            </div>
+            <div class="glass-card rounded-xl p-5 border border-white/5">
+                <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">Queries This Shift</span>
+                <span class="text-3xl font-black font-mono text-white" id="kpi-queries-shift">—</span>
+                <span class="text-[10px] text-slate-400 block mt-2">AI questions asked</span>
+            </div>
+        </div>
+
+        <!-- TWO COLUMN LAYOUT -->
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+            <!-- LEFT COLUMN 60% -->
+            <div class="lg:col-span-3 space-y-6">
+
+                <!-- FLOOR OBSERVATION LOG PANEL -->
+                <div class="glass-card rounded-xl border border-white/10 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-white/10 bg-[#F97316]/5 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-sm font-black uppercase tracking-widest text-white">LOG A FLOOR OBSERVATION</h2>
+                            <p class="text-[10px] text-slate-400 mt-0.5">The AI will analyze what you describe and surface relevant manual content.</p>
+                        </div>
+                        <div id="pulse-obs-limit-badge" class="hidden text-[9px] font-bold px-2 py-1 bg-[#F97316]/10 border border-[#F97316]/30 text-[#F97316] rounded font-mono uppercase tracking-wider"></div>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <textarea
+                            id="pulse-obs-input"
+                            rows="4"
+                            class="glass-input w-full px-4 py-3 rounded-lg text-sm text-white placeholder-slate-500 resize-none focus:outline-none"
+                            placeholder="Describe what you are seeing or hearing on the floor... (e.g. Boiler Unit B making high pitched whine at startup)"
+                        ></textarea>
+
                         <div class="flex items-center gap-3">
-                            <span class="text-[10px] text-slate-400 font-mono uppercase tracking-wider">MONITORING:</span>
-                            <select class="glass-input px-3 py-1.5 rounded text-sm text-white bg-white/5 border border-white/10 focus:border-[#F97316]/50 focus:outline-none">
-                                <option>HYDRAULIC PRESS #3</option>
+                            <select id="pulse-obs-asset" class="glass-input flex-1 px-3 py-2 rounded text-sm text-white bg-transparent focus:outline-none">
+                                <option value="">Which asset? (optional — we will try to detect automatically)</option>
                             </select>
+                            <button onclick="togglePulseVoice()" id="pulse-mic-btn" title="Voice input"
+                                class="w-10 h-10 flex-shrink-0 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:border-[#F97316]/40 hover:text-[#F97316] transition-all">
+                                <i class="fas fa-microphone text-sm"></i>
+                            </button>
+                        </div>
+
+                        <button onclick="submitFloorObservation()" id="pulse-log-btn"
+                            class="w-full py-3 bg-[#F97316] text-black font-black uppercase text-xs tracking-widest rounded-lg hover:bg-[#EA580C] transition-all flex items-center justify-center gap-2">
+                            <i class="fas fa-eye"></i> LOG OBSERVATION
+                        </button>
+                    </div>
+
+                    <!-- AI ANALYSIS RESULT AREA -->
+                    <div id="pulse-obs-analysis" class="hidden border-t border-white/10 bg-black/20 p-6 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-[10px] font-black uppercase tracking-widest text-[#F97316]">OBSERVATION ANALYSIS</h3>
+                            <div class="flex items-center gap-2">
+                                <span id="pulse-analysis-risk" class="text-[9px] font-bold px-2 py-1 rounded border font-mono uppercase tracking-wider"></span>
+                            </div>
+                        </div>
+                        <div class="border-t border-white/5 pt-3 space-y-3 text-xs">
+                            <div class="flex items-center gap-2 text-slate-400 font-mono text-[10px]">
+                                <span>Asset: <span id="pulse-analysis-asset" class="text-white font-bold"></span></span>
+                                <span>·</span>
+                                <span>Logged: <span id="pulse-analysis-time" class="text-white"></span></span>
+                            </div>
+                            <div>
+                                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Likely Cause:</div>
+                                <p id="pulse-analysis-cause" class="text-slate-200 leading-relaxed"></p>
+                            </div>
+                            <div>
+                                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Recommended Action:</div>
+                                <p id="pulse-analysis-action" class="text-slate-200 leading-relaxed"></p>
+                            </div>
+                            <div id="pulse-analysis-source-row" class="hidden text-[10px] text-slate-500 font-mono"></div>
+                            <div class="flex gap-2 pt-2">
+                                <button onclick="pulseCreateWorkOrder()" class="px-3 py-2 bg-[#F97316]/15 border border-[#F97316]/30 text-[#F97316] font-bold rounded text-[10px] uppercase tracking-wider hover:bg-[#F97316]/25 transition-all">
+                                    <i class="fas fa-clipboard-check mr-1"></i>Create Work Order
+                                </button>
+                                <button onclick="pulseAddToShiftLog()" class="px-3 py-2 bg-white/5 border border-white/10 text-slate-300 font-bold rounded text-[10px] uppercase tracking-wider hover:bg-white/10 transition-all">
+                                    <i class="fas fa-plus mr-1"></i>Add to Shift Log
+                                </button>
+                                <button onclick="pulseDismissAnalysis()" class="px-3 py-2 bg-white/5 border border-white/10 text-slate-400 font-bold rounded text-[10px] uppercase tracking-wider hover:bg-white/10 transition-all ml-auto">
+                                    Dismiss
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <!-- Phase 2: Primary Time-Series Canvas (Full Width) -->
-                        <div class="md:col-span-2 glass-card rounded-xl p-6 border border-white/10 bg-black/80 shadow-[0_0_30px_rgba(0,0,0,0.8)]">
-                            <div class="flex items-center justify-between mb-4 border-b border-white/10 pb-4">
-                                <div>
-                                    <h3 class="font-bold text-lg text-white font-mono uppercase tracking-widest flex items-center gap-2">
-                                        <i class="fas fa-wave-square text-[#06B6D4]"></i> Plant Floor Oscilloscope
-                                    </h3>
-                                    <p class="text-[10px] text-light-slate font-mono mt-1">Multi-axis streams: VIBRATION (mm/s) &amp; TEMPERATURE (°C) — shaded band = normal operating range</p>
-                                </div>
-                                <div class="flex flex-wrap items-center gap-3">
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-3 h-0.5 bg-[#06B6D4]"></div>
-                                        <span class="text-[10px] font-mono text-light-slate uppercase">Vibration</span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-3 h-0.5 bg-[#F97316]"></div>
-                                        <span class="text-[10px] font-mono text-light-slate uppercase">Temperature</span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-4 h-3 rounded-sm bg-[#22C55E]/15 border border-[#22C55E]/25"></div>
-                                        <span class="text-[10px] font-mono text-slate-400 uppercase">Normal Range</span>
-                                    </div>
-                                    <span id="osc-live-badge" class="text-[10px] uppercase px-2 py-1 bg-white/5 rounded border border-white/10 font-mono text-slate-400">○ STANDING BY</span>
-                                </div>
-                            </div>
-                            <!-- Massive Time-Series Chart Container -->
-                            <div id="oscilloscope-container" class="h-64 w-full bg-[#050505] rounded-lg border border-white/5 overflow-hidden relative">
-                                <svg id="oscilloscope-skeleton" class="absolute inset-0 w-full h-full" viewBox="0 0 1000 200" preserveAspectRatio="none">
-                                    <defs>
-                                        <pattern id="osc-grid" width="50" height="40" patternUnits="userSpaceOnUse">
-                                            <path d="M 50 0 L 0 0 0 40" fill="none" class="chart-skeleton-grid"/>
-                                        </pattern>
-                                    </defs>
-                                    <rect width="1000" height="200" fill="url(#osc-grid)" />
-                                    <line x1="48" y1="8" x2="48" y2="192" class="chart-skeleton-axis" />
-                                    <line x1="48" y1="192" x2="992" y2="192" class="chart-skeleton-axis" />
-                                    <line x1="48" y1="50" x2="992" y2="50" class="chart-skeleton-grid" stroke-dasharray="4,6" />
-                                    <line x1="48" y1="100" x2="992" y2="100" class="chart-skeleton-grid" stroke-dasharray="4,6" />
-                                    <line x1="48" y1="150" x2="992" y2="150" class="chart-skeleton-grid" stroke-dasharray="4,6" />
-                                    <text x="8" y="54" class="chart-skeleton-tick">HIGH</text>
-                                    <text x="8" y="104" class="chart-skeleton-tick">MID</text>
-                                    <text x="8" y="154" class="chart-skeleton-tick">LOW</text>
-                                    <text x="120" y="198" class="chart-skeleton-tick">T-60s</text>
-                                    <text x="480" y="198" class="chart-skeleton-tick">T-30s</text>
-                                    <text x="920" y="198" class="chart-skeleton-tick">NOW</text>
-                                    <rect id="osc-normal-band" x="48" y="33" width="944" height="111" fill="rgba(148, 163, 184, 0.04)" stroke="rgba(148, 163, 184, 0.12)" stroke-width="1" stroke-dasharray="6,4" />
-                                </svg>
-                                <svg class="absolute inset-0 w-full h-full" id="oscilloscope-lines" viewBox="0 0 1000 200" preserveAspectRatio="none">
-                                    <path id="osc-vibration" d="M0,100 L1000,100" fill="none" stroke="#06B6D4" stroke-width="2" class="transition-all duration-300"/>
-                                    <path id="osc-temperature" d="M0,100 L1000,100" fill="none" stroke="#F97316" stroke-width="2" class="transition-all duration-300"/>
-                                </svg>
-                                <div id="osc-scan-line" class="absolute top-0 bottom-0 w-0.5 bg-slate-600/30 left-[95%] hidden"></div>
-                                <div id="osc-ready-indicator" class="chart-ready-indicator">
-                                    <span class="ready-dot"></span>
-                                    <span>UI Ready — Awaiting stream</span>
-                                </div>
-                            </div>
+                    <!-- AI LOADING STATE -->
+                    <div id="pulse-obs-loading" class="hidden border-t border-white/10 bg-black/20 p-6">
+                        <div class="flex items-center gap-3 text-xs font-mono text-slate-400">
+                            <span class="w-2 h-2 rounded-full bg-[#F97316] animate-pulse"></span>
+                            <span id="pulse-obs-loading-text">Analyzing observation...</span>
                         </div>
+                        <div class="mt-3 space-y-1 text-[10px] font-mono text-slate-500" id="pulse-obs-terminal"></div>
+                    </div>
+                </div>
 
-                        <!-- Phase 3: AI Streaming Console (Left) -->
-                        <div class="glass-card rounded-xl border border-white/10 bg-[#0a0a0a] overflow-hidden flex flex-col min-h-[20rem]">
-                            <div class="px-6 py-4 bg-black/40 border-b border-white/10 flex items-center justify-between">
-                                <h3 class="font-bold text-white font-mono uppercase text-sm"><i class="fas fa-terminal text-[#FACC15] mr-2"></i> AI Anomaly Stream</h3>
-                                <span class="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse"></span>
-                            </div>
-                            <div id="ai-terminal-feed" class="p-6 flex-1 overflow-y-auto space-y-2 font-mono text-[11px] text-[#22C55E] bg-[#050505] relative">
-                                <div id="ai-terminal-standby" class="text-slate-400 text-[11px] leading-relaxed">
-                                    <span class="text-[#22C55E]/80">&gt;</span> Monitoring engine <span class="text-[#22C55E]">online</span>.<br>
-                                    <span class="text-[#22C55E]/80">&gt;</span> <span class="text-slate-300">Awaiting telemetry stream.</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Instantaneous Readouts + Recent Anomalies (Right column) -->
-                        <div class="flex flex-col gap-4 min-h-[20rem]">
-                            <div class="glass-card rounded-xl p-6 border border-white/10 bg-black/80 flex flex-col flex-1">
-                                <h3 class="font-bold text-white font-mono uppercase text-sm mb-4"><i class="fas fa-tachometer-alt text-[#F97316] mr-2"></i> Instantaneous Readouts</h3>
-                                <div class="grid grid-cols-2 gap-4 flex-1">
-                                    <div class="bg-[#111] border border-white/5 rounded-lg p-4 flex flex-col justify-center items-center text-center">
-                                        <span class="text-[10px] text-light-slate font-mono uppercase tracking-widest mb-2">Spindle Load</span>
-                                        <div class="flex items-center gap-2">
-                                            <span id="gauge-spindle" class="text-3xl font-black font-mono text-slate-400 tracking-tighter">—<span class="text-sm text-light-slate ml-1">%</span></span>
-                                            <span id="gauge-spindle-trend" class="text-slate-500 text-xs" title="Trend"><i class="fas fa-minus"></i></span>
-                                        </div>
-                                    </div>
-                                    <div class="bg-[#111] border border-white/5 rounded-lg p-4 flex flex-col justify-center items-center text-center">
-                                        <span class="text-[10px] text-light-slate font-mono uppercase tracking-widest mb-2">Coolant Press.</span>
-                                        <div class="flex items-center gap-2">
-                                            <span id="gauge-coolant" class="text-3xl font-black font-mono text-slate-400 tracking-tighter">—<span class="text-sm text-light-slate ml-1">PSI</span></span>
-                                            <span id="gauge-coolant-trend" class="text-slate-500 text-xs" title="Trend"><i class="fas fa-minus"></i></span>
-                                        </div>
-                                    </div>
-                                    <div class="bg-[#111] border border-white/5 rounded-lg p-4 flex flex-col justify-center items-center text-center col-span-2">
-                                        <span class="text-[10px] text-light-slate font-mono uppercase tracking-widest mb-2">System Flow Rate</span>
-                                        <span id="gauge-flow" class="text-4xl font-black font-mono text-slate-400 tracking-tighter">—<span class="text-base text-light-slate ml-2">L/min</span></span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="glass-card rounded-xl p-4 border border-white/10 bg-[#0a0a0a]">
-                                <h3 class="font-bold text-white font-mono uppercase text-[10px] tracking-widest mb-3 flex items-center gap-2 text-slate-300">
-                                    <i class="fas fa-exclamation-circle text-amber-500/80 text-xs"></i> Recent Anomalies
-                                </h3>
-                                <div class="space-y-2 font-mono text-[11px]">
-                                    <div class="flex items-center gap-2 text-slate-400 py-2">
-                                        <span class="w-2 h-2 rounded-full bg-[#22C55E] shrink-0"></span>
-                                        <span class="text-[10px]">ANOMALY DETECTION ACTIVE</span>
-                                    </div>
-                                    <div class="text-slate-500 text-[10px] pl-4">No anomalies detected — system nominal</div>
-                                    <div class="text-slate-600 text-[9px] pl-4">Last scan: just now</div>
-                                </div>
-                            </div>
+                <!-- RECENT OBSERVATIONS PANEL -->
+                <div class="glass-card rounded-xl border border-white/10 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+                        <h3 class="text-sm font-black uppercase tracking-widest text-white">Recent Observations</h3>
+                        <span class="text-[10px] text-slate-500 font-mono">This Shift</span>
+                    </div>
+                    <div id="pulse-recent-obs" class="divide-y divide-white/5">
+                        <!-- Populated by JS -->
+                        <div class="p-8 text-center text-slate-500 text-xs" id="pulse-obs-empty">
+                            <i class="fas fa-clipboard-list text-2xl text-slate-700 mb-3 block"></i>
+                            No observations logged yet this shift. Be the first to log a floor note.
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Data Stream Connector Modal -->
-            <div id="data-stream-modal" class="hidden fixed inset-0 z-[250] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-                <div class="w-full max-w-2xl rounded-3xl bg-slate-950 border border-white/10 shadow-2xl overflow-hidden">
-                    <div class="flex items-start justify-between px-6 py-4 border-b border-white/10">
+            <!-- RIGHT COLUMN 40% -->
+            <div class="lg:col-span-2 space-y-6">
+
+                <!-- LIVE ACTIVITY FEED -->
+                <div class="glass-card rounded-xl border border-white/10 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-white/10 flex items-center justify-between">
                         <div>
-                            <h3 class="text-lg font-semibold text-white">Initiate Live Link</h3>
-                            <p class="text-sm text-light-slate mt-1">Choose a live broker connection or upload a demo file for instant telemetry preview.</p>
-                        </div>
-                        <button onclick="closeDataStreamModal()" class="text-light-slate hover:text-white text-2xl leading-none">×</button>
-                    </div>
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 p-6">
-                        <div class="glass-card rounded-2xl p-5 border border-white/10">
-                            <h4 class="font-semibold mb-3">Live MQTT / WebSocket</h4>
-                            <p class="text-[11px] text-light-slate mb-4">Enter a live broker URL to connect the scanner engine to your plant floor.</p>
-                            <input id="live-stream-url" type="text" placeholder="mqtt://broker.local:1883 or ws://edge-node:9001" class="glass-input w-full px-3 py-2 rounded text-sm mb-4" />
-                            <button onclick="connectLiveUrl()" class="w-full py-3 bg-[#22C55E] text-black font-semibold rounded-lg hover:bg-[#16A34A] transition">Connect Live Stream</button>
-                        </div>
-                        <div class="glass-card rounded-2xl p-5 border border-white/10">
-                            <h4 class="font-semibold mb-3">Demo File Upload</h4>
-                            <p class="text-[11px] text-light-slate mb-4">Upload a historical JSON or CSV telemetry file to demo charts and AI scoring.</p>
-                            <button onclick="uploadDemoTelemetryFile()" class="w-full py-3 bg-[#F97316] text-black font-semibold rounded-lg hover:bg-[#EA580C] transition">Upload Demo File</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- AI Alert Overlay (Urgent Bottom-Center Design) -->
-            <div id="ai-alert-overlay" class="hidden fixed bottom-10 left-1/2 -translate-x-1/2 z-[200] w-full max-w-lg">
-                <div class="bg-red-950/40 border-2 border-red-500 backdrop-blur-xl p-6 rounded-2xl shadow-[0_0_50px_rgba(239,68,68,0.4)] animate-pulse">
-                    <div class="flex items-start gap-4">
-                        <div class="bg-red-500 p-2 rounded-lg shrink-0">
-                            <i class="fas fa-exclamation-triangle text-black text-xl"></i>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <h4 class="font-bold text-red-500 text-lg uppercase tracking-widest" id="anomaly-title">Anomaly Detected</h4>
-                            <p class="text-white/90 text-sm mt-1">
-                                Vibration spike <span class="font-bold text-red-400">(8.4 mm/s)</span> detected. <span class="font-bold text-[#F97316]">AI Analysis:</span> 92% match with bearing fatigue pattern in Manual Section 4.2.
-                            </p>
-                            <div class="flex gap-3 mt-4">
-                                <button onclick="generateWorkOrder(AppState.currentAsset)" class="flex-1 py-2.5 bg-red-500 text-black font-bold rounded-lg hover:bg-red-400 transition text-xs uppercase tracking-wider">
-                                    <i class="fas fa-file-export mr-1"></i>Draft Work Order
-                                </button>
-                                <button onclick="handleAlert('dismiss')" class="flex-1 py-2.5 bg-white/10 border border-white/20 rounded-lg font-bold hover:bg-white/20 transition text-xs uppercase tracking-wider">
-                                    Ignore
-                                </button>
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-sm font-black uppercase tracking-widest text-white">Live Activity Feed</h3>
+                                <span class="flex items-center gap-1 px-2 py-0.5 bg-[#22C55E]/10 border border-[#22C55E]/30 rounded text-[9px] font-bold text-[#22C55E] font-mono uppercase tracking-wider">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse"></span> LIVE
+                                </span>
                             </div>
+                            <p class="text-[10px] text-slate-500 mt-0.5">Everything happening across your facility right now.</p>
                         </div>
+                    </div>
+                    <div id="pulse-activity-feed" class="divide-y divide-white/5 max-h-80 overflow-y-auto">
+                        <div class="p-6 text-center text-slate-500 text-xs" id="pulse-feed-empty">
+                            <i class="fas fa-stream text-xl text-slate-700 mb-2 block"></i>
+                            No activity yet. Start using the platform to see events here.
+                        </div>
+                    </div>
+                    <div class="px-6 py-3 border-t border-white/5 bg-black/10 text-[9px] font-mono text-slate-600 flex items-center justify-between">
+                        <span>AUTO-REFRESHES EVERY 30s</span>
+                        <span id="pulse-last-refresh">—</span>
+                    </div>
+                </div>
+
+                <!-- ON SHIFT NOW -->
+                <div class="glass-card rounded-xl border border-white/10 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-white/10">
+                        <h3 class="text-sm font-black uppercase tracking-widest text-white">On Shift Now</h3>
+                        <p class="text-[10px] text-slate-500 mt-0.5">Active in the last 2 hours.</p>
+                    </div>
+                    <div id="pulse-active-users" class="divide-y divide-white/5">
+                        <div class="p-6 text-center text-slate-500 text-xs" id="pulse-users-empty">
+                            <i class="fas fa-users text-xl text-slate-700 mb-2 block"></i>
+                            Loading team activity...
+                        </div>
+                    </div>
+                    <!-- Sandbox invite CTA -->
+                    <div id="pulse-invite-cta" class="hidden px-6 py-4 border-t border-white/5 bg-[#F97316]/5">
+                        <p class="text-[10px] text-slate-400 mb-2">Invite your team to see full facility activity</p>
+                        <button onclick="triggerPaywall('team_invite')" class="w-full py-2 bg-[#F97316]/15 border border-[#F97316]/30 text-[#F97316] font-bold rounded text-[10px] uppercase tracking-wider hover:bg-[#F97316]/25 transition-all">
+                            <i class="fas fa-user-plus mr-1"></i>Invite Team Members →
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- VOICE RECORDING INDICATOR -->
+    <div id="pulse-voice-indicator" class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-[#111827] border border-[#F97316]/40 rounded-xl px-6 py-4 flex items-center gap-3 shadow-2xl">
+        <span class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></span>
+        <span class="text-sm font-mono text-white">Recording... Click mic to stop</span>
+        <button onclick="togglePulseVoice()" class="text-slate-400 hover:text-white ml-2"><i class="fas fa-times"></i></button>
+    </div>
+</div>
+
+<script>
+// =============================================
+// FACILITY PULSE — PAGE CONTROLLER
+// =============================================
+(function() {
+    const PULSE_API = 'http://localhost:8000';
+    let pulseRefreshTimer = null;
+    let pulseCurrentAnalysis = null;
+    let pulseRecognition = null;
+    let pulseIsRecording = false;
+    let pulseObsCount = 0; // Sandbox counter
+
+    // Run when this view becomes active
+    window.initFacilityPulse = async function() {
+        updatePulseShiftTime();
+        await loadPulseAssets();
+        await loadPulsePage();
+        setupPulseAutoRefresh();
+    };
+
+    function getAuthToken() {
+        try {
+            // Try to get Supabase session
+            const keys = Object.keys(localStorage);
+            for (const key of keys) {
+                if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
+                    const data = JSON.parse(localStorage.getItem(key));
+                    if (data?.access_token) return data.access_token;
+                }
+            }
+            // Demo session fallback
+            const demo = JSON.parse(localStorage.getItem('indexfield-demo-session') || 'null');
+            if (demo?.access_token) return demo.access_token;
+        } catch(e) {}
+        return null;
+    }
+
+    function getUserDisplayName() {
+        const nameEl = document.getElementById('user-display-name');
+        return nameEl ? nameEl.textContent.trim() : 'Technician';
+    }
+
+    function updatePulseShiftTime() {
+        const now = new Date();
+        const h = now.getHours();
+        const m = now.getMinutes().toString().padStart(2,'0');
+        const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        const day = days[now.getDay()];
+        const shift = (h >= 6 && h < 18) ? 'DAY SHIFT' : 'NIGHT SHIFT';
+        const timeStr = `${h.toString().padStart(2,'0')}:${m}`;
+        const el = document.getElementById('pulse-shift-label');
+        if (el) el.textContent = `${shift} · ${timeStr} · ${day}`;
+    }
+
+    async function loadPulseAssets() {
+        const token = getAuthToken();
+        if (!token) return;
+        try {
+            const r = await fetch(`${PULSE_API}/api/assets`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!r.ok) return;
+            const assets = await r.json();
+            const sel = document.getElementById('pulse-obs-asset');
+            if (!sel) return;
+            sel.innerHTML = '<option value="">Which asset? (optional — we will try to detect automatically)</option>';
+            (assets.assets || assets || []).forEach(a => {
+                const opt = document.createElement('option');
+                opt.value = a.id || a.name;
+                opt.textContent = a.name;
+                sel.appendChild(opt);
+            });
+        } catch(e) {}
+    }
+
+    async function loadPulsePage() {
+        await Promise.all([
+            loadPulseKPIs(),
+            loadPulseActivityFeed(),
+            loadPulseRecentObs(),
+            loadPulseActiveUsers()
+        ]);
+    }
+
+    async function loadPulseKPIs() {
+        const token = getAuthToken();
+        if (!token) return;
+        try {
+            const r = await fetch(`${PULSE_API}/api/facility/pulse`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!r.ok) return;
+            const data = await r.json();
+            setEl('kpi-active-now', data.active_users_today ?? '—');
+            setEl('kpi-observations-today', data.observations_today ?? '—');
+            setEl('kpi-wo-touched', data.work_orders_touched ?? '—');
+            setEl('kpi-queries-shift', data.queries_this_shift ?? '—');
+            pulseObsCount = data.observations_today ?? 0;
+            updateObsLimitBadge();
+        } catch(e) {
+            setEl('kpi-active-now', '—');
+        }
+    }
+
+    function updateObsLimitBadge() {
+        const badge = document.getElementById('pulse-obs-limit-badge');
+        if (!badge) return;
+        const isSandbox = document.getElementById('user-display-role')?.textContent?.toLowerCase().includes('sandbox') || false;
+        // Always show count for reference
+        const remaining = Math.max(0, 3 - pulseObsCount);
+        if (pulseObsCount >= 3) {
+            badge.textContent = 'LIMIT REACHED — UPGRADE TO ANALYZE MORE';
+            badge.classList.remove('hidden');
+        }
+    }
+
+    async function loadPulseActivityFeed() {
+        const token = getAuthToken();
+        const container = document.getElementById('pulse-activity-feed');
+        const emptyEl = document.getElementById('pulse-feed-empty');
+        if (!token || !container) return;
+        try {
+            const r = await fetch(`${PULSE_API}/api/facility/pulse?feed=1`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!r.ok) return;
+            const data = await r.json();
+            const events = data.activity_feed || [];
+            if (events.length === 0) {
+                if (emptyEl) emptyEl.classList.remove('hidden');
+                return;
+            }
+            if (emptyEl) emptyEl.classList.add('hidden');
+            // Remove old entries
+            container.querySelectorAll('.pulse-feed-entry').forEach(e => e.remove());
+            events.forEach(ev => {
+                container.insertAdjacentHTML('afterbegin', buildFeedEntry(ev));
+            });
+            const ts = document.getElementById('pulse-last-refresh');
+            if (ts) {
+                const now = new Date();
+                ts.textContent = `Updated ${now.getHours()}:${now.getMinutes().toString().padStart(2,'0')}`;
+            }
+        } catch(e) {}
+    }
+
+    function buildFeedEntry(ev) {
+        const time = ev.time ? `<span class="font-mono text-[#F97316] text-[10px]">[${ev.time}]</span>` : '';
+        const asset = ev.asset ? `<span class="text-[10px] text-slate-500 font-mono"> · ${ev.asset}</span>` : '';
+        return `
+        <div class="pulse-feed-entry px-6 py-3 hover:bg-white/5 transition-colors">
+            <div class="flex items-start gap-2">
+                ${time}
+                <div class="flex-1 min-w-0">
+                    <div class="text-xs text-slate-300 leading-relaxed">${escHtml(ev.user_name || 'User')} — ${escHtml(ev.description || '')}</div>
+                    ${asset}
+                </div>
+            </div>
+        </div>`;
+    }
+
+    async function loadPulseRecentObs() {
+        const token = getAuthToken();
+        const container = document.getElementById('pulse-recent-obs');
+        const emptyEl = document.getElementById('pulse-obs-empty');
+        if (!token || !container) return;
+        try {
+            const r = await fetch(`${PULSE_API}/api/facility/pulse?observations=1`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!r.ok) return;
+            const data = await r.json();
+            const obs = data.recent_observations || [];
+            if (obs.length === 0) {
+                if (emptyEl) emptyEl.classList.remove('hidden');
+                return;
+            }
+            if (emptyEl) emptyEl.classList.add('hidden');
+            container.querySelectorAll('.pulse-obs-row').forEach(e => e.remove());
+            obs.forEach(o => {
+                container.insertAdjacentHTML('beforeend', buildObsRow(o));
+            });
+        } catch(e) {}
+    }
+
+    function buildObsRow(o) {
+        const riskColors = {
+            'CRITICAL': 'bg-red-500/20 text-red-400 border-red-500/30',
+            'HIGH': 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+            'MEDIUM': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+            'LOW': 'bg-green-500/20 text-green-400 border-green-500/30'
+        };
+        const riskClass = riskColors[o.risk_level] || 'bg-white/5 text-slate-400 border-white/10';
+        const preview = (o.description || '').substring(0, 60) + (o.description?.length > 60 ? '...' : '');
+        const aiAnalyzed = o.ai_analyzed ? `<span class="text-[9px] font-bold px-1.5 py-0.5 bg-[#06B6D4]/15 text-[#06B6D4] border border-[#06B6D4]/30 rounded font-mono uppercase tracking-wider">AI</span>` : '';
+        const rowId = `obs-row-${o.id || Math.random().toString(36).substr(2,6)}`;
+        return `
+        <div class="pulse-obs-row" id="${rowId}">
+            <div class="px-5 py-4 hover:bg-white/5 cursor-pointer transition-colors" onclick="toggleObsRow('${rowId}')">
+                <div class="flex items-start gap-3">
+                    <div class="flex-1 min-w-0 space-y-1">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-[10px] font-mono text-[#F97316]">${o.time || ''}</span>
+                            <span class="text-[10px] text-slate-300 font-semibold">${escHtml(o.user_name || '')}</span>
+                            ${o.asset_name ? `<span class="text-[10px] text-slate-500">· ${escHtml(o.asset_name)}</span>` : ''}
+                        </div>
+                        <p class="text-xs text-slate-300">${escHtml(preview)}</p>
+                    </div>
+                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                        ${aiAnalyzed}
+                        ${o.risk_level ? `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded border font-mono uppercase tracking-wider ${riskClass}">${o.risk_level}</span>` : ''}
+                        <i class="fas fa-chevron-down text-slate-600 text-[10px]"></i>
                     </div>
                 </div>
             </div>
+            ${o.ai_analysis ? `
+            <div class="obs-row-expanded hidden px-5 pb-4 border-t border-white/5 bg-black/10">
+                <div class="pt-4 space-y-2 text-xs text-slate-300">
+                    ${o.ai_analysis.cause ? `<div><span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Likely Cause:</span><p class="mt-1">${escHtml(o.ai_analysis.cause)}</p></div>` : ''}
+                    ${o.ai_analysis.action ? `<div><span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Recommended Action:</span><p class="mt-1">${escHtml(o.ai_analysis.action)}</p></div>` : ''}
+                    ${o.ai_analysis.source ? `<div class="text-[10px] text-slate-500 font-mono">Source: ${escHtml(o.ai_analysis.source)}</div>` : ''}
+                </div>
+            </div>` : ''}
+        </div>`;
+    }
 
-            <!-- Knowledge Vault View -->
-            
-{% endblock %}
+    window.toggleObsRow = function(rowId) {
+        const row = document.getElementById(rowId);
+        if (!row) return;
+        const expanded = row.querySelector('.obs-row-expanded');
+        if (expanded) expanded.classList.toggle('hidden');
+        const chevron = row.querySelector('.fa-chevron-down, .fa-chevron-up');
+        if (chevron) { chevron.classList.toggle('fa-chevron-down'); chevron.classList.toggle('fa-chevron-up'); }
+    };
+
+    async function loadPulseActiveUsers() {
+        const token = getAuthToken();
+        const container = document.getElementById('pulse-active-users');
+        const emptyEl = document.getElementById('pulse-users-empty');
+        const cta = document.getElementById('pulse-invite-cta');
+        if (!token || !container) return;
+        try {
+            const r = await fetch(`${PULSE_API}/api/facility/pulse?users=1`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!r.ok) return;
+            const data = await r.json();
+            const users = data.active_users || [];
+            if (emptyEl) emptyEl.classList.add('hidden');
+            container.querySelectorAll('.pulse-user-row').forEach(e => e.remove());
+            users.forEach(u => {
+                container.insertAdjacentHTML('beforeend', buildUserRow(u));
+            });
+            if (users.length <= 1 && cta) cta.classList.remove('hidden');
+        } catch(e) {
+            // Show self at minimum
+            const self = getUserDisplayName();
+            const initials = self.split(' ').map(p=>p[0]).join('').toUpperCase().substring(0,2);
+            container.querySelectorAll('.pulse-user-row').forEach(e => e.remove());
+            if (emptyEl) emptyEl.classList.add('hidden');
+            container.insertAdjacentHTML('beforeend', buildUserRow({name: self, initials: initials, role: 'Operator', last_action: 'Active now', last_active: 'just now'}));
+            if (cta) cta.classList.remove('hidden');
+        }
+    }
+
+    function buildUserRow(u) {
+        const initials = u.initials || (u.name || 'U').split(' ').map(p=>p[0]).join('').toUpperCase().substring(0,2);
+        const roleBadgeClass = {owner:'bg-[#F97316]/15 text-[#F97316]', supervisor:'bg-[#06B6D4]/15 text-[#06B6D4]', technician:'bg-white/10 text-slate-300', viewer:'bg-white/5 text-slate-500'}[u.role?.toLowerCase()] || 'bg-white/5 text-slate-400';
+        return `
+        <div class="pulse-user-row flex items-center gap-3 px-5 py-3 hover:bg-white/5 transition-colors">
+            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#F97316]/20 to-[#22C55E]/20 border border-white/10 flex items-center justify-center flex-shrink-0">
+                <span class="text-xs font-bold text-[#F97316]">${escHtml(initials)}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-semibold text-white truncate">${escHtml(u.name || 'User')}</span>
+                    ${u.role ? `<span class="text-[9px] px-1.5 py-0.5 rounded font-mono uppercase ${roleBadgeClass}">${escHtml(u.role)}</span>` : ''}
+                </div>
+                <div class="text-[10px] text-slate-500 truncate">${escHtml(u.last_action || '')} · ${escHtml(u.last_active || '')}</div>
+            </div>
+        </div>`;
+    }
+
+    // ---- SUBMIT OBSERVATION ----
+    window.submitFloorObservation = async function() {
+        const text = document.getElementById('pulse-obs-input')?.value?.trim();
+        if (!text) { showToast('Enter an observation first.', 'warning'); return; }
+        const token = getAuthToken();
+        if (!token) { showToast('Please log in.', 'error'); return; }
+
+        // Sandbox limit check (client hint only — server checks definitively)
+        if (pulseObsCount >= 3) {
+            triggerPaywall('facility_observe');
+            return;
+        }
+
+        const assetSel = document.getElementById('pulse-obs-asset');
+        const assetId = assetSel?.value || null;
+        const assetName = assetId ? assetSel.options[assetSel.selectedIndex]?.text : null;
+
+        // Show loading
+        const loadingEl = document.getElementById('pulse-obs-loading');
+        const analysisEl = document.getElementById('pulse-obs-analysis');
+        const btn = document.getElementById('pulse-log-btn');
+        if (analysisEl) analysisEl.classList.add('hidden');
+        if (loadingEl) loadingEl.classList.remove('hidden');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>ANALYZING...'; }
+
+        const terminal = document.getElementById('pulse-obs-terminal');
+        const loadingText = document.getElementById('pulse-obs-loading-text');
+        const steps = [
+            'Saving observation...',
+            'Scanning facility manuals...',
+            'Running AI analysis...',
+            'Building response...'
+        ];
+        let stepIdx = 0;
+        const stepTimer = setInterval(() => {
+            if (loadingText && stepIdx < steps.length) {
+                loadingText.textContent = steps[stepIdx];
+                if (terminal) {
+                    terminal.insertAdjacentHTML('beforeend', `<div class="text-[#F97316]">[▸] ${escHtml(steps[stepIdx])}</div>`);
+                }
+                stepIdx++;
+            }
+        }, 800);
+
+        try {
+            const res = await fetch(`${PULSE_API}/api/facility/observe`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ observation: text, asset_id: assetId })
+            });
+
+            clearInterval(stepTimer);
+
+            if (res.status === 402) {
+                if (loadingEl) loadingEl.classList.add('hidden');
+                triggerPaywall('facility_observe');
+                return;
+            }
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Request failed');
+
+            // Show analysis
+            if (loadingEl) loadingEl.classList.add('hidden');
+            showPulseAnalysis(data, text, assetName || data.detected_asset || 'Unknown');
+            // Refresh lists
+            await Promise.all([loadPulseKPIs(), loadPulseRecentObs(), loadPulseActivityFeed()]);
+            // Clear input
+            if (document.getElementById('pulse-obs-input')) document.getElementById('pulse-obs-input').value = '';
+            if (terminal) terminal.innerHTML = '';
+            pulseCurrentAnalysis = { ...data, observation: text, assetId, assetName };
+
+        } catch (e) {
+            clearInterval(stepTimer);
+            if (loadingEl) loadingEl.classList.add('hidden');
+            showToast('Observation logged. AI analysis unavailable: ' + e.message, 'warning');
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-eye"></i> LOG OBSERVATION'; }
+        }
+    };
+
+    function showPulseAnalysis(data, observation, assetLabel) {
+        const el = document.getElementById('pulse-obs-analysis');
+        if (!el) return;
+        const riskColors = { CRITICAL:'bg-red-500/20 text-red-400 border-red-500/30', HIGH:'bg-orange-500/20 text-orange-400 border-orange-500/30', MEDIUM:'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', LOW:'bg-green-500/20 text-green-400 border-green-500/30' };
+        const risk = (data.safety_risk || 'LOW').toUpperCase();
+        const riskBadge = document.getElementById('pulse-analysis-risk');
+        if (riskBadge) { riskBadge.className = `text-[9px] font-bold px-2 py-1 rounded border font-mono uppercase tracking-wider ${riskColors[risk] || 'bg-white/5 text-slate-400'}`; riskBadge.textContent = `Safety Risk: ${risk}`; }
+        setEl('pulse-analysis-asset', (data.detected_asset || assetLabel || 'AUTO-DETECT').toUpperCase());
+        const now = new Date();
+        setEl('pulse-analysis-time', `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')} · ${getUserDisplayName()}`);
+        setEl('pulse-analysis-cause', data.likely_cause || '—');
+        setEl('pulse-analysis-action', data.recommended_action || '—');
+        const sourceRow = document.getElementById('pulse-analysis-source-row');
+        if (sourceRow && data.manual_source) {
+            sourceRow.textContent = `Source: ${data.manual_source}`;
+            sourceRow.classList.remove('hidden');
+        } else if (sourceRow) {
+            sourceRow.classList.add('hidden');
+        }
+        el.classList.remove('hidden');
+    }
+
+    window.pulseCreateWorkOrder = function() {
+        if (!pulseCurrentAnalysis) return;
+        // Pre-fill work order form via the existing work orders system
+        if (typeof showView === 'function') {
+            window._prefilledWO = {
+                title: `Observation: ${(pulseCurrentAnalysis.observation || '').substring(0,80)}`,
+                asset_id: pulseCurrentAnalysis.assetId,
+                asset_name: pulseCurrentAnalysis.assetName,
+                description: `Observation: ${pulseCurrentAnalysis.observation}\n\nAI Analysis:\n${pulseCurrentAnalysis.likely_cause || ''}\n\nRecommended Action: ${pulseCurrentAnalysis.recommended_action || ''}`,
+                priority: pulseCurrentAnalysis.safety_risk === 'CRITICAL' ? 'CRITICAL' : pulseCurrentAnalysis.safety_risk === 'HIGH' ? 'HIGH' : 'MEDIUM'
+            };
+            showView('workorders');
+        }
+    };
+
+    window.pulseAddToShiftLog = async function() {
+        if (!pulseCurrentAnalysis) return;
+        const token = getAuthToken();
+        if (!token) return;
+        try {
+            await fetch(`${PULSE_API}/api/shift/events`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    event_type: 'SHIFT_NOTE',
+                    description: `[OBSERVATION] ${pulseCurrentAnalysis.observation}`,
+                    asset_id: pulseCurrentAnalysis.assetId
+                })
+            });
+            showToast('Added to shift log.', 'success');
+            pulseDismissAnalysis();
+        } catch(e) {
+            showToast('Failed to add to shift log.', 'error');
+        }
+    };
+
+    window.pulseDismissAnalysis = function() {
+        const el = document.getElementById('pulse-obs-analysis');
+        if (el) el.classList.add('hidden');
+        pulseCurrentAnalysis = null;
+    };
+
+    // ---- VOICE INPUT ----
+    window.togglePulseVoice = function() {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            showToast('Voice input not supported in this browser.', 'warning');
+            return;
+        }
+        if (pulseIsRecording) {
+            if (pulseRecognition) pulseRecognition.stop();
+            pulseIsRecording = false;
+            document.getElementById('pulse-voice-indicator')?.classList.add('hidden');
+            document.getElementById('pulse-mic-btn')?.classList.remove('text-[#F97316]','border-[#F97316]/40');
+            return;
+        }
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        pulseRecognition = new SR();
+        pulseRecognition.continuous = false;
+        pulseRecognition.interimResults = false;
+        pulseRecognition.lang = 'en-US';
+        pulseRecognition.onresult = (e) => {
+            const transcript = e.results[0][0].transcript;
+            const input = document.getElementById('pulse-obs-input');
+            if (input) input.value += (input.value ? ' ' : '') + transcript;
+        };
+        pulseRecognition.onend = () => {
+            pulseIsRecording = false;
+            document.getElementById('pulse-voice-indicator')?.classList.add('hidden');
+            document.getElementById('pulse-mic-btn')?.classList.remove('text-[#F97316]','border-[#F97316]/40');
+        };
+        pulseRecognition.start();
+        pulseIsRecording = true;
+        document.getElementById('pulse-voice-indicator')?.classList.remove('hidden');
+        document.getElementById('pulse-mic-btn')?.classList.add('text-[#F97316]','border-[#F97316]/40');
+    };
+
+    // ---- AUTO REFRESH ----
+    function setupPulseAutoRefresh() {
+        if (pulseRefreshTimer) clearInterval(pulseRefreshTimer);
+        pulseRefreshTimer = setInterval(async () => {
+            const telView = document.getElementById('telemetry-view');
+            if (telView && !telView.classList.contains('hidden')) {
+                await loadPulseActivityFeed();
+                updatePulseShiftTime();
+            }
+        }, 30000);
+    }
+
+    // ---- HELPERS ----
+    function setEl(id, val) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+    }
+
+    function escHtml(s) {
+        if (!s) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ---- showView hook ----
+    const _origShowView = typeof window.showView === 'function' ? window.showView : null;
+    window.showView = function(viewId) {
+        if (_origShowView) _origShowView(viewId);
+        if (viewId === 'telemetry') {
+            setTimeout(() => window.initFacilityPulse(), 100);
+        }
+    };
+
+    // Auto-init if this page is already active
+    const telView = document.getElementById('telemetry-view');
+    if (telView && !telView.classList.contains('hidden')) {
+        setTimeout(() => window.initFacilityPulse(), 200);
+    }
+
+    // Listen for view changes via mutation (fallback)
+    if (telView) {
+        const observer = new MutationObserver((mutations) => {
+            for (const m of mutations) {
+                if (m.type === 'attributes' && m.attributeName === 'class') {
+                    if (!telView.classList.contains('hidden')) {
+                        window.initFacilityPulse();
+                    }
+                }
+            }
+        });
+        observer.observe(telView, { attributes: true });
+    }
+
+    function showToast(msg, type='info') {
+        if (typeof window.showToast === 'function' && window.showToast !== showToast) {
+            window.showToast(msg, type); return;
+        }
+        const container = document.getElementById('toast-container');
+        if (!container) { console.log(`[Toast] ${msg}`); return; }
+        const colors = { success:'bg-green-500/15 border-green-500/30 text-green-300', error:'bg-red-500/15 border-red-500/30 text-red-300', warning:'bg-yellow-500/15 border-yellow-500/30 text-yellow-300', info:'bg-blue-500/15 border-blue-500/30 text-blue-300' };
+        const toast = document.createElement('div');
+        toast.className = `px-4 py-3 rounded-xl border text-xs font-medium ${colors[type] || colors.info} animate-in shadow-xl`;
+        toast.textContent = msg;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    }
+
+    function triggerPaywall(feature) {
+        // Fire existing paywall if available
+        if (typeof window.showPaywall === 'function') { window.showPaywall(feature); return; }
+        showToast('Upgrade to Pro to unlock unlimited access.', 'warning');
+    }
+})();
+</script>

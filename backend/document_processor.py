@@ -1,4 +1,10 @@
-import fitz  # PyMuPDF
+try:
+    import fitz  # PyMuPDF
+    HAS_PYMUPDF = True
+except Exception:
+    fitz = None
+    HAS_PYMUPDF = False
+    print("[WARN] PyMuPDF not available — PDF features disabled.")
 from typing import List, Dict, Any
 from dataclasses import dataclass
 import re
@@ -32,6 +38,19 @@ class DocumentProcessor:
         chunks = []
         chunk_index = 0
         
+        if not HAS_PYMUPDF:
+            print(f"[WARN] process_pdf called but PyMuPDF not installed: {file_path}")
+            # Fallback: return a single placeholder chunk indicating PDF couldn't be parsed
+            chunk = DocumentChunk(
+                text=f"[PDF file: {os.path.basename(file_path)} - PDF parsing unavailable. Install PyMuPDF to enable full parsing.]",
+                page_number=0,
+                chunk_index=0,
+                manual_id=manual_id,
+                manual_name=manual_name,
+                metadata={"file_type": "pdf", "parsed": False}
+            )
+            return [chunk]
+
         with fitz.open(file_path) as doc:
             for page_num, page in enumerate(doc, start=1):
                 # Extract text from page
@@ -287,7 +306,10 @@ class DocumentProcessor:
     def extract_tables(self, file_path: str, page_num: int) -> List[dict]:
         """Extract table data from a specific page."""
         tables = []
-        
+        if not HAS_PYMUPDF:
+            print(f"[WARN] extract_tables called but PyMuPDF not installed: {file_path}")
+            return tables
+
         with fitz.open(file_path) as doc:
             if page_num <= len(doc):
                 page = doc[page_num - 1]

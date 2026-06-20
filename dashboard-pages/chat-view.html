@@ -71,34 +71,14 @@
                             </div>
                         </div>
 
-                        <!-- Column 2: Shift Log (Tribal Knowledge) -->
-                        <div class="panel-section p-5 pb-8 h-full">
-                            <div class="flex items-center gap-2 mb-3">
-                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">2. SHIFT LOG</span>
-                            </div>
-                            <div class="space-y-2">
-                                <textarea id="shift-log-input" placeholder="Write a quick shift note..." 
-                                    class="w-full h-16 px-4 py-2.5 bg-black/30 border border-white/20 rounded-lg text-sm text-white placeholder-slate-500 focus:border-[#F97316]/50 focus:outline-none resize-none"></textarea>
-                                <button onclick="saveShiftLog()"
-                                    class="w-full py-2 px-4 bg-[#F97316] text-black font-semibold rounded-lg text-sm hover:bg-[#EA580C] transition flex items-center justify-center gap-2">
-                                    <i class="fas fa-save"></i> Save Note to Plant Memory
-                                </button>
-                                <div class="border-t border-white/10 pt-2">
-                                    <div class="text-[9px] text-slate-500 uppercase tracking-wider mb-2">Last 3 Shift Logs</div>
-                                    <div id="recent-shift-logs" class="space-y-2 max-h-24 overflow-y-auto">
-                                        <div class="p-2 bg-white/5 rounded border border-white/10">
-                                            <div class="text-[9px] text-slate-300">Pump 3-A vibrating; tightened casing bolts</div>
-                                            <div class="text-[8px] text-slate-500 mt-1">19:42 · Operator</div>
-                                        </div>
-                                        <div class="p-2 bg-white/5 rounded border border-white/10">
-                                            <div class="text-[9px] text-slate-300">Valve V-12 seal replacement completed</div>
-                                            <div class="text-[8px] text-slate-500 mt-1">18:30 · Maintenance</div>
-                                        </div>
-                                        <div class="p-2 bg-white/5 rounded border border-white/10">
-                                            <div class="text-[9px] text-slate-300">Boiler pressure sensor recalibrated</div>
-                                            <div class="text-[8px] text-slate-500 mt-1">17:15 · Technician</div>
-                                        </div>
-                                    </div>
+                        <!-- Column 2: Recent AI Answers -->
+                        <div class="panel-section p-5 pb-8 h-full flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center gap-2 mb-3">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">2. RECENT AI ANSWERS</span>
+                                </div>
+                                <div id="recent-ai-answers-list" class="space-y-3.5">
+                                    <!-- Populated dynamically by JS -->
                                 </div>
                             </div>
                         </div>
@@ -200,8 +180,11 @@
 
         <!-- Right Panel: Source Verification & Context -->
         <div class="pdf-viewer-container flex flex-col bg-[#0f1419] min-h-0">
-            <!-- Live Activity Feed (Top Half) -->
-            <div class="h-1/2 border-b border-white/10 flex flex-col">
+            <!-- Full Height Onboarding Checklist (Shown when no manuals exist) -->
+            <div id="chat-onboarding-checklist" class="h-full flex flex-col overflow-y-auto p-3"></div>
+
+            <!-- Live Activity Feed (Top Half - Shown only when manuals exist) -->
+            <div id="chat-live-feed" class="h-1/2 border-b border-white/10 flex flex-col">
                 <div class="h-10 border-b border-white/10 flex items-center justify-between px-3">
                     <div class="flex items-center gap-2">
                         <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">Live Activity Feed</span>
@@ -228,8 +211,8 @@
                 </div>
             </div>
 
-            <!-- Document Viewer (Bottom Half) -->
-            <div class="h-1/2 flex flex-col">
+            <!-- Document Viewer (Bottom Half - Shown only when manuals exist) -->
+            <div id="chat-doc-viewer" class="h-1/2 flex flex-col">
                 <!-- Panel Header -->
                 <div id="pdf-panel-header"
                     class="h-10 border-b border-white/10 flex items-center justify-between px-3 panel-header hidden">

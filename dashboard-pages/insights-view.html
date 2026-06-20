@@ -37,12 +37,12 @@
                         <div class="glass-card rounded-xl p-4">
                             <div class="text-[10px] text-light-slate uppercase tracking-wider mb-1">Questions Asked</div>
                             <div id="total-queries" class="text-2xl font-bold gradient-text">0</div>
-                            <div class="text-[10px] text-[#22C55E] mt-1">Awaiting data</div>
+                            <div id="total-queries-sub" class="text-[10px] text-[#22C55E] mt-1">Ask your first question</div>
                         </div>
                         <div class="glass-card rounded-xl p-4">
                             <div class="text-[10px] text-light-slate uppercase tracking-wider mb-1">Most Searched Asset</div>
                             <div id="most-searched-asset" class="text-xl font-bold">--</div>
-                            <div class="text-[10px] text-light-slate mt-1">Not enough data</div>
+                            <div id="most-searched-asset-sub" class="text-[10px] text-light-slate mt-1">Upload documentation to populate</div>
                         </div>
                         <div class="glass-card rounded-xl p-4">
                             <div class="text-[10px] text-light-slate uppercase tracking-wider mb-1">Verified Answers</div>
@@ -56,8 +56,69 @@
                         </div>
                     </div>
                     
-                    <!-- ROI Dashboard Widget -->
-                    <div class="glass-card rounded-xl p-6 mb-6 border border-white/10 bg-white/5 relative overflow-hidden" id="roi-dashboard-widget">
+                    <!-- Getting Started Checklist (FIX 8) — replaces empty ROI panel until all steps complete -->
+                    <div class="glass-card rounded-xl p-6 mb-6 border border-white/10 relative overflow-hidden" id="getting-started-panel">
+                        <div class="flex items-center justify-between mb-1">
+                            <div>
+                                <h3 class="font-bold text-white flex items-center gap-2">
+                                    <i class="fas fa-rocket text-[#F97316]"></i>
+                                    GETTING STARTED
+                                </h3>
+                                <p class="text-[11px] text-light-slate mt-1">Complete these steps to unlock full analytics</p>
+                            </div>
+                            <div id="checklist-count" class="text-[11px] font-mono text-light-slate">0 of 6 complete</div>
+                        </div>
+                        <div class="mt-4 border-t border-white/10 pt-4 space-y-3" id="checklist-steps">
+                            <div class="flex items-center gap-3 text-sm" id="step-account">
+                                <div class="w-5 h-5 rounded-full border-2 border-[#22C55E] bg-[#22C55E]/20 flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-check text-[#22C55E] text-[9px]"></i>
+                                </div>
+                                <span class="text-slate-300 line-through opacity-60">Account created &amp; setup complete</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-sm" id="step-manual">
+                                <div class="w-5 h-5 rounded-full border-2 border-white/20 flex items-center justify-center flex-shrink-0 step-circle" data-step="manual">
+                                    <i class="fas fa-circle text-white/10 text-[6px]"></i>
+                                </div>
+                                <span class="text-white" id="step-manual-label">Upload your first manual</span>
+                                <button onclick="showUploadModal()" class="ml-auto text-[10px] px-2 py-1 bg-[#F97316]/20 border border-[#F97316]/40 text-[#F97316] rounded hover:bg-[#F97316]/30 transition">Upload →</button>
+                            </div>
+                            <div class="flex items-center gap-3 text-sm" id="step-question">
+                                <div class="w-5 h-5 rounded-full border-2 border-white/20 flex items-center justify-center flex-shrink-0 step-circle" data-step="question">
+                                    <i class="fas fa-circle text-white/10 text-[6px]"></i>
+                                </div>
+                                <span class="text-white" id="step-question-label">Ask your first AI question</span>
+                                <button onclick="showView('chat')" class="ml-auto text-[10px] px-2 py-1 bg-white/5 border border-white/15 text-slate-300 rounded hover:bg-white/10 transition">Ask →</button>
+                            </div>
+                            <div class="flex items-center gap-3 text-sm" id="step-asset">
+                                <div class="w-5 h-5 rounded-full border-2 border-white/20 flex items-center justify-center flex-shrink-0 step-circle" data-step="asset">
+                                    <i class="fas fa-circle text-white/10 text-[6px]"></i>
+                                </div>
+                                <span class="text-white" id="step-asset-label">Add your first asset</span>
+                                <button onclick="showView('assets')" class="ml-auto text-[10px] px-2 py-1 bg-white/5 border border-white/15 text-slate-300 rounded hover:bg-white/10 transition">Add →</button>
+                            </div>
+                            <div class="flex items-center gap-3 text-sm" id="step-workorder">
+                                <div class="w-5 h-5 rounded-full border-2 border-white/20 flex items-center justify-center flex-shrink-0 step-circle" data-step="workorder">
+                                    <i class="fas fa-circle text-white/10 text-[6px]"></i>
+                                </div>
+                                <span class="text-white" id="step-workorder-label">Create your first work order</span>
+                                <button onclick="showView('workorders')" class="ml-auto text-[10px] px-2 py-1 bg-white/5 border border-white/15 text-slate-300 rounded hover:bg-white/10 transition">Create →</button>
+                            </div>
+                            <div class="flex items-center gap-3 text-sm" id="step-handover">
+                                <div class="w-5 h-5 rounded-full border-2 border-white/20 flex items-center justify-center flex-shrink-0 step-circle" data-step="handover">
+                                    <i class="fas fa-circle text-white/10 text-[6px]"></i>
+                                </div>
+                                <span class="text-white" id="step-handover-label">Generate first shift handover</span>
+                                <button onclick="showView('handover')" class="ml-auto text-[10px] px-2 py-1 bg-white/5 border border-white/15 text-slate-300 rounded hover:bg-white/10 transition">Generate →</button>
+                            </div>
+                        </div>
+                        <!-- Progress bar -->
+                        <div class="mt-4 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                            <div id="checklist-progress-bar" class="h-full bg-[#F97316] rounded-full transition-all duration-700" style="width: 16.67%"></div>
+                        </div>
+                    </div>
+
+                    <!-- ROI Dashboard Widget — shown only when all checklist steps complete -->
+                    <div class="glass-card rounded-xl p-6 mb-6 border border-white/10 bg-white/5 relative overflow-hidden hidden" id="roi-dashboard-widget">
                         <div class="flex items-center justify-center py-8">
                             <div class="text-center">
                                 <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-slate-800/50 border border-slate-700/50 flex items-center justify-center">
@@ -120,3 +181,122 @@
             <!-- Asset Registry View -->
             
 {% endblock %}
+
+<script>
+// Getting Started Checklist logic (FIX 8)
+(function() {
+    async function checkGettingStartedSteps() {
+        const ctx = window.userContext;
+        if (!ctx) return;
+
+        const token = (() => {
+            try { return supabaseClient?.auth?.session?.()?.access_token; } catch(e) { return null; }
+        })();
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+        const steps = { manual: false, question: false, asset: false, workorder: false, handover: false };
+
+        try {
+            // Check manuals
+            const manualsRes = await fetch('/api/manuals', { headers });
+            if (manualsRes.ok) {
+                const manualsData = await manualsRes.json();
+                steps.manual = (manualsData.manuals || manualsData.documents || []).length > 0;
+            }
+        } catch(e) {}
+
+        try {
+            // Check query count from context
+            steps.question = (ctx.query_count || 0) > 0;
+        } catch(e) {}
+
+        try {
+            // Check assets
+            const assetsRes = await fetch('/api/assets', { headers });
+            if (assetsRes.ok) {
+                const assetsData = await assetsRes.json();
+                steps.asset = (assetsData.assets || assetsData.items || []).length > 0;
+            }
+        } catch(e) {}
+
+        try {
+            // Check work orders
+            const woRes = await fetch('/api/work-orders', { headers });
+            if (woRes.ok) {
+                const woData = await woRes.json();
+                steps.workorder = (woData.work_orders || woData.items || []).length > 0;
+            }
+        } catch(e) {}
+
+        try {
+            // Check handover logs
+            const hoRes = await fetch('/api/handover/logs', { headers });
+            if (hoRes.ok) {
+                const hoData = await hoRes.json();
+                steps.handover = (hoData.logs || hoData.handovers || []).length > 0;
+            }
+        } catch(e) {}
+
+        updateChecklistUI(steps);
+    }
+
+    function updateChecklistUI(steps) {
+        const stepKeys = Object.keys(steps);
+        let completedCount = 1; // account step is always done
+        
+        stepKeys.forEach(key => {
+            const stepEl = document.getElementById('step-' + key);
+            const circle = stepEl?.querySelector('.step-circle');
+            const label = document.getElementById('step-' + key + '-label');
+            
+            if (steps[key]) {
+                completedCount++;
+                if (circle) {
+                    circle.className = 'w-5 h-5 rounded-full border-2 border-[#22C55E] bg-[#22C55E]/20 flex items-center justify-center flex-shrink-0';
+                    circle.innerHTML = '<i class="fas fa-check text-[#22C55E] text-[9px]"></i>';
+                }
+                if (label) {
+                    label.classList.add('line-through', 'opacity-60');
+                    label.classList.remove('text-white');
+                    label.classList.add('text-slate-300');
+                }
+                // Hide the action button for completed steps
+                const btn = stepEl?.querySelector('button');
+                if (btn) btn.classList.add('hidden');
+            }
+        });
+
+        const totalSteps = 6;
+        const pct = Math.round((completedCount / totalSteps) * 100);
+        
+        const countEl = document.getElementById('checklist-count');
+        if (countEl) countEl.textContent = `${completedCount} of ${totalSteps} complete`;
+        
+        const bar = document.getElementById('checklist-progress-bar');
+        if (bar) bar.style.width = pct + '%';
+
+        // If all complete, hide checklist and show ROI panel
+        if (completedCount >= totalSteps) {
+            const gsp = document.getElementById('getting-started-panel');
+            const roi = document.getElementById('roi-dashboard-widget');
+            if (gsp) gsp.classList.add('hidden');
+            if (roi) roi.classList.remove('hidden');
+        }
+    }
+
+    // Run when insights view becomes visible
+    const observer = new MutationObserver(() => {
+        const insightsView = document.getElementById('insights-view');
+        if (insightsView && !insightsView.classList.contains('hidden') && insightsView.style.display !== 'none') {
+            checkGettingStartedSteps();
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const insightsView = document.getElementById('insights-view');
+        if (insightsView) {
+            observer.observe(insightsView, { attributes: true, attributeFilter: ['class', 'style'] });
+        }
+    });
+})();
+</script>

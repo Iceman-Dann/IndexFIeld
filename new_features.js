@@ -4,11 +4,236 @@
 // Shift Handover, and Facility Health Score functionality
 // ============================================================================
 
-// API_URL is defined in dashboard.html
+// Global Mock Data for Demo Sandbox Facility
+const DEMO_ASSETS = [
+    { id: "A1", name: "Hydraulic Press #3", type: "Press", location: "Zone A", last_service: "2026-05-10", next_due: "2026-07-10", health: 98, status: "OPERATIONAL" },
+    { id: "A2", name: "Boiler Room Unit #2", type: "Boiler", location: "Zone B", last_service: "2026-06-01", next_due: "2026-06-25", health: 89, status: "REQUIRES INSPECTION" },
+    { id: "A3", name: "Main Turbine #1", type: "Turbine", location: "Zone C", last_service: "2026-04-15", next_due: "2026-07-15", health: 95, status: "OPERATIONAL" },
+    { id: "A4", name: "Fuel Valve V-102", type: "Valve", location: "Zone B", last_service: "2026-05-20", next_due: "2026-06-20", health: 76, status: "WARNING" },
+    { id: "A5", name: "Water Pump 3-A", type: "Pump", location: "Zone A", last_service: "2026-06-18", next_due: "2026-08-18", health: 92, status: "OPERATIONAL" },
+    { id: "A6", name: "Air Compressor AC-4", type: "Compressor", location: "Zone D", last_service: "2026-03-10", next_due: "2026-06-10", health: 64, status: "WARNING" },
+    { id: "A7", name: "Reciprocating Compressor RC-1", type: "Compressor", location: "Zone D", last_service: "2026-05-05", next_due: "2026-08-05", health: 94, status: "OPERATIONAL" },
+    { id: "A8", name: "Boiler Room Unit #1", type: "Boiler", location: "Zone B", last_service: "2026-01-10", next_due: "2026-07-10", health: 97, status: "OPERATIONAL" },
+    { id: "A9", name: "Water Pump 3-B", type: "Pump", location: "Zone A", last_service: "2026-06-12", next_due: "2026-08-12", health: 99, status: "OPERATIONAL" },
+    { id: "A10", name: "Fuel Valve V-101", type: "Valve", location: "Zone B", last_service: "2026-05-18", next_due: "2026-08-18", health: 96, status: "OPERATIONAL" },
+    { id: "A11", name: "Turbine Generator #2", type: "Generator", location: "Zone C", last_service: "2026-02-28", next_due: "2026-08-28", health: 93, status: "OPERATIONAL" },
+    { id: "A12", name: "Cooling Tower Pump", type: "Pump", location: "Zone E", last_service: "2026-06-10", next_due: "2026-09-10", health: 91, status: "OPERATIONAL" },
+    { id: "A13", name: "Condenser C-102", type: "Condenser", location: "Zone C", last_service: "2026-04-01", next_due: "2026-10-01", health: 88, status: "OPERATIONAL" },
+    { id: "A14", name: "Deaerator Tank DA-1", type: "Tank", location: "Zone B", last_service: "2026-03-15", next_due: "2026-09-15", health: 95, status: "OPERATIONAL" },
+    { id: "A15", name: "Nitrogen Purge Valve", type: "Valve", location: "Zone D", last_service: "2026-05-12", next_due: "2026-11-12", health: 97, status: "OPERATIONAL" }
+];
 
-// ============================================================================
-// FEATURE 1: Voice Query
-// ============================================================================
+const DEMO_MANUALS = [
+    { id: "M1", filename: "Hydraulic Press Operating Manual Rev 4.pdf", page_count: 94, chunk_count: 320 },
+    { id: "M2", filename: "Boiler Unit 2 OEM Specification.pdf", page_count: 145, chunk_count: 512 },
+    { id: "M3", filename: "Main Turbine 1 Maintenance Guide.pdf", page_count: 210, chunk_count: 780 },
+    { id: "M4", filename: "Industrial Valve Safety & Clearances SOP.pdf", page_count: 48, chunk_count: 180 },
+    { id: "M5", filename: "Water Pump 3 Series Operation Manual.pdf", page_count: 86, chunk_count: 290 },
+    { id: "M6", filename: "Air Compressor AC-4 Service Manual.pdf", page_count: 74, chunk_count: 240 },
+    { id: "M7", filename: "Reciprocating Compressor Specs.pdf", page_count: 112, chunk_count: 410 },
+    { id: "M8", filename: "General Plant Safety & LOTO Guidelines.pdf", page_count: 35, chunk_count: 120 }
+];
+
+const DEMO_WORK_ORDERS = [
+    { id: "W1", work_order_id: "WO-1031", title: "IMP-03: Realign impeller shaft on Water Pump 3-A", asset_id: "A5", asset_name: "Water Pump 3-A", assigned_to: "Alex Rivers", priority: "CRITICAL", status: "OPEN", due_date: new Date().toISOString().split('T')[0], estimated_hours: 4.5, ai_briefed: true, description: "Check shaft deflection, align coupling using laser toolkit, replace motor-side sleeve bearings if wear > 0.05mm." },
+    { id: "W2", work_order_id: "WO-1032", title: "BOI-02: Calibrate pressure transducer on Boiler #2", asset_id: "A2", asset_name: "Boiler Room Unit #2", assigned_to: "Sarah Connor", priority: "CRITICAL", status: "OPEN", due_date: new Date().toISOString().split('T')[0], estimated_hours: 2.0, ai_briefed: true, description: "Calibrate pressure transmitter PT-202. Loop verify to DCS panel. Record span calibration deviations." },
+    { id: "W3", work_order_id: "WO-1033", title: "VAL-102: Replace seals on Fuel Valve V-102", asset_id: "A4", asset_name: "Fuel Valve V-102", assigned_to: "Sarah Connor", priority: "HIGH", status: "IN_PROGRESS", due_date: new Date(Date.now() + 86400000).toISOString().split('T')[0], estimated_hours: 6.0, ai_briefed: true, description: "Isolate gas line, vent section. Replace PTFE seals on stem. Check LOTO protocol before starting." },
+    { id: "W4", work_order_id: "WO-1034", title: "TUR-01: Vibration analysis on Turbine #1 casing", asset_id: "A3", asset_name: "Main Turbine #1", assigned_to: "John Smith", priority: "HIGH", status: "OPEN", due_date: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0], estimated_hours: 3.5, ai_briefed: true, description: "Measure bearing vibration levels across spectra. Log raw readings and compare with baseline." },
+    { id: "W5", work_order_id: "WO-1035", title: "COMP-04: Replace intake air filter AC-4", asset_id: "A6", asset_name: "Air Compressor AC-4", assigned_to: "Alex Rivers", priority: "MEDIUM", status: "OPEN", due_date: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0], estimated_hours: 1.5, ai_briefed: false, description: "Swap out filter panel F-401. Vacuum housing interior. Record differential pressure." },
+    { id: "W6", work_order_id: "WO-1036", title: "HYD-03: Annual oil flushing on Press #3", asset_id: "A1", asset_name: "Hydraulic Press #3", assigned_to: "John Smith", priority: "MEDIUM", status: "IN_PROGRESS", due_date: new Date(Date.now() + 86400000 * 10).toISOString().split('T')[0], estimated_hours: 8.0, ai_briefed: true, description: "Flush hydraulic fluid tank. Replace suction filter. Verify fluid cleanliness is ISO 4406 16/14/11 or better." },
+    { id: "W7", work_order_id: "WO-1037", title: "PLT-01: Compliance check on safety relief valves", asset_id: "A15", asset_name: "Nitrogen Purge Valve", assigned_to: "Alex Rivers", priority: "LOW", status: "OPEN", due_date: new Date(Date.now() + 86400000 * 14).toISOString().split('T')[0], estimated_hours: 3.0, ai_briefed: false, description: "Verify safety pop-off valves. Confirm tag details and verification history." },
+    { id: "W8", work_order_id: "WO-1038", title: "TUR-02: Inspect generator stator cooling system", asset_id: "A11", asset_name: "Turbine Generator #2", assigned_to: "John Smith", priority: "LOW", status: "OPEN", due_date: new Date(Date.now() + 86400000 * 30).toISOString().split('T')[0], estimated_hours: 5.0, ai_briefed: false, description: "Perform check on stator cooling fluid conductivity and pressure drops." },
+    { id: "W9", work_order_id: "WO-1039", title: "BOI-01: Annual combustion analysis Boiler #1", asset_id: "A8", asset_name: "Boiler Room Unit #1", assigned_to: "Alex Rivers", priority: "MEDIUM", status: "COMPLETE", due_date: new Date(Date.now() - 86400000 * 5).toISOString().split('T')[0], estimated_hours: 4.0, ai_briefed: true, completed_at: new Date(Date.now() - 86400000 * 5).toISOString(), description: "DCS emissions verification, adjust gas-to-air ratio. Completed with CO2 at 9.4%." },
+    { id: "W10", work_order_id: "WO-1040", title: "PMP-02: General service of Cooling Tower Pump", asset_id: "A12", asset_name: "Cooling Tower Pump", assigned_to: "Sarah Connor", priority: "LOW", status: "COMPLETE", due_date: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0], estimated_hours: 2.5, ai_briefed: false, completed_at: new Date(Date.now() - 86400000 * 2).toISOString(), description: "Grease bearings and tighten packing glands." },
+    { id: "W11", work_order_id: "WO-1041", title: "VAL-101: Test safety interlock on Fuel Valve V-101", asset_id: "A10", asset_name: "Fuel Valve V-101", assigned_to: "Sarah Connor", priority: "HIGH", status: "COMPLETE", due_date: new Date(Date.now() - 86400000).toISOString().split('T')[0], estimated_hours: 2.0, ai_briefed: true, completed_at: new Date(Date.now() - 86400000).toISOString(), description: "Verify ESD trigger loops. Confirmed response in 1.4 seconds (limit 2.0s)." },
+    { id: "W12", work_order_id: "WO-1042", title: "COMP-05: Inspect RC-1 compressor discharge valves", asset_id: "A7", asset_name: "Reciprocating Compressor RC-1", assigned_to: "John Smith", priority: "MEDIUM", status: "CANCELLED", due_date: new Date(Date.now() - 86400000 * 8).toISOString().split('T')[0], estimated_hours: 3.0, description: "Inspected earlier during preventive shift overhaul." }
+];
+
+const DEMO_LOTO_PERMITS = [
+    { id: "L1", asset_id: "A2", asset_name: "Boiler Room Unit #2", status: "ACTIVE", initiated_by: "Sarah Connor", initiated_at: new Date(Date.now() - 3600000 * 2).toISOString(), procedure_source: "Boiler Unit 2 OEM Specification.pdf", steps_completed: { "pre-1": true, "iso-1": true, "iso-2": true }, procedure_content: { "pre-lockout": [{ id: "pre-1", text: "Notify Zone B operators of Boiler Room Unit #2 shutdown." }], "energy-isolation": [{ id: "iso-1", text: "Close gas inlet valve GV-202 and apply padlock." }, { id: "iso-2", text: "Open electrical breaker CB-202 and apply lockout tag." }], "verification": [{ id: "ver-1", text: "Verify local pressure indicator reads 0 PSI." }] } },
+    { id: "L2", asset_id: "A4", asset_name: "Fuel Valve V-102", status: "ACTIVE", initiated_by: "Sarah Connor", initiated_at: new Date(Date.now() - 3600000 * 5).toISOString(), procedure_source: "Industrial Valve Safety & Clearances SOP.pdf", steps_completed: { "pre-1": true, "iso-1": true }, procedure_content: { "pre-lockout": [{ id: "pre-1", text: "Coordinate with control room to bypass ESD system." }], "energy-isolation": [{ id: "iso-1", text: "Chain and lock fuel line block valve V-102-B." }], "verification": [{ id: "ver-1", text: "Drain lines and verify no residual product remains." }] } },
+    { id: "L3", asset_id: "A6", asset_name: "Air Compressor AC-4", status: "ACTIVE", initiated_by: "Alex Rivers", initiated_at: new Date(Date.now() - 3600000 * 12).toISOString(), procedure_source: "Air Compressor AC-4 Service Manual.pdf", steps_completed: { "pre-1": true, "iso-1": true, "ver-1": true }, procedure_content: { "pre-lockout": [{ id: "pre-1", text: "Notify pneumatic tool stations of pressure drop." }], "energy-isolation": [{ id: "iso-1", text: "Lock out breaker panel panel-AC4." }], "verification": [{ id: "ver-1", text: "Bleed air receiver tank to atmosphere." }] } }
+];
+
+const DEMO_SHIFT_LOGS = [
+    { id: "S1", event_type: "OBSERVATION", description: "Water Pump 3-A bearing housing running hot (68C). Oil level checked OK. Monitor closely.", asset_id: "A5", asset_name: "Water Pump 3-A", user_name: "Alex Rivers", time: "11:20", date: new Date().toISOString().split('T')[0], risk_level: "MEDIUM", ai_analyzed: true, ai_analysis: { cause: "High shaft misalignment or coupling wear", action: "Perform laser alignment on next shift", source: "Water Pump 3 Series Operation Manual.pdf" } },
+    { id: "S2", event_type: "SAFETY", description: "Completed isolation of Boiler #2 for calibration work order. Confirmed LOTO permit active.", asset_id: "A2", asset_name: "Boiler Room Unit #2", user_name: "Sarah Connor", time: "10:15", date: new Date().toISOString().split('T')[0], risk_level: "LOW" },
+    { id: "S3", event_type: "EQUIPMENT_ISSUE", description: "Fuel Valve V-102 packing gland showing minor leak of gas product. Ingressed high priority WO.", asset_id: "A4", asset_name: "Fuel Valve V-102", user_name: "Sarah Connor", time: "08:45", date: new Date().toISOString().split('T')[0], risk_level: "HIGH", ai_analyzed: true, ai_analysis: { cause: "Teflon seal degradation", action: "Isolate and replace valve seals ASAP", source: "Industrial Valve Safety & Clearances SOP.pdf" } }
+];
+
+// Fetch Interceptor for Demo Mode
+(function() {
+    const originalFetch = window.fetch;
+    window.fetch = async function(resource, init) {
+        if (localStorage.getItem("indexfield_demo_loaded") !== "true") {
+            return originalFetch.apply(this, arguments);
+        }
+
+        const url = typeof resource === "string" ? resource : resource.url;
+        console.log(`[Demo Fetch Interceptor] Intercepted: ${url}`);
+
+        if (url.includes("/api/assets")) {
+            return new Response(JSON.stringify(DEMO_ASSETS), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
+        if (url.includes("/api/workorders/stats")) {
+            const stats = { critical_open: 2, high_priority: 2, due_today: 2, completed_this_week: 3 };
+            return new Response(JSON.stringify(stats), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
+        if (url.includes("/api/workorders")) {
+            return new Response(JSON.stringify(DEMO_WORK_ORDERS), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
+        if (url.includes("/api/loto/permit")) {
+            return new Response(JSON.stringify(DEMO_LOTO_PERMITS), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
+        if (url.includes("/api/loto/procedure")) {
+            // Return a realistic mock procedure for any requested asset ID
+            const body = init && init.body ? JSON.parse(init.body) : {};
+            const asset = DEMO_ASSETS.find(a => a.id === body.asset_id) || { name: "Boiler Room Unit #2" };
+            const proc = {
+                asset_name: asset.name,
+                procedure_source: "Boiler Unit 2 OEM Specification.pdf",
+                procedure_content: {
+                    "pre-lockout": [{ id: "pre-1", text: `Notify operators of ${asset.name} shutdown.` }],
+                    "energy-isolation": [
+                        { id: "iso-1", text: "Close inlet fuel isolation valve and apply lockout lock." },
+                        { id: "iso-2", text: "Turn breaker switch to OFF position and apply tag." }
+                    ],
+                    "verification": [{ id: "ver-1", text: "Verify that pressure gauge reads 0 and rotation has stopped." }]
+                }
+            };
+            return new Response(JSON.stringify(proc), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
+        if (url.includes("/api/ai/recent-answers")) {
+            // Mock recent AI answers based on shift logs for demo purposes
+            const answers = DEMO_SHIFT_LOGS.map(log => ({
+                time: log.time,
+                user_name: log.user_name,
+                answer: `AI suggestion for ${log.asset_name}: ${log.description}`
+            }));
+            return new Response(JSON.stringify({answers}), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
+        if (url.includes("/api/facility/pulse")) {
+            const parsed = new URL(url, window.location.origin);
+            if (parsed.searchParams.get("users")) {
+                return new Response(JSON.stringify({
+                    active_users: [
+                        { name: "John Smith", role: "Plant Manager", last_action: "Viewed Main Turbine #1", last_active: "5m ago" },
+                        { name: "Sarah Connor", role: "Supervisor", last_action: "Initiated permit for V-102", last_active: "12m ago" },
+                        { name: "Alex Rivers", role: "Technician", last_action: "Logged observation on Pump 3-A", last_active: "22m ago" }
+                    ]
+                }), { status: 200, headers: { "Content-Type": "application/json" } });
+            }
+            if (parsed.searchParams.get("feed")) {
+                const activityFeed = [
+                    { time: "11:20", user_name: "Alex Rivers", description: "Logged observation on Water Pump 3-A", asset: "Water Pump 3-A" },
+                    { time: "10:15", user_name: "Sarah Connor", description: "Activated LOTO permit for Boiler Unit #2", asset: "Boiler Room Unit #2" },
+                    { time: "08:45", user_name: "Sarah Connor", description: "Logged leak observation on V-102", asset: "Fuel Valve V-102" }
+                ];
+                return new Response(JSON.stringify({ activity_feed: activityFeed }), { status: 200, headers: { "Content-Type": "application/json" } });
+            }
+            if (parsed.searchParams.get("observations")) {
+                return new Response(JSON.stringify({ recent_observations: DEMO_SHIFT_LOGS }), { status: 200, headers: { "Content-Type": "application/json" } });
+            }
+            return new Response(JSON.stringify({ active_users_today: 3, observations_today: 3, work_orders_touched: 12, queries_this_shift: 18 }), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
+        if (url.includes("/api/shift/briefing")) {
+            const brief = {
+                id: "B1",
+                user_name: "John Smith",
+                last_shift_summary: "Day shift completed with V-102 leak identified and tagged. Water Pump 3-A runs warm.",
+                priorities: [
+                    { level: "CRITICAL", title: "Water Pump 3-A Alignment", subtitle: "Alex Rivers reported housing at 68C. Laser realign required." },
+                    { level: "CRITICAL", title: "Calibrate pressure transducer Boiler #2", subtitle: "Calibrate transmitter PT-202. Loop verify." },
+                    { level: "HIGH", title: "Replace seals V-102", subtitle: "Gas product leak detected at packing gland." }
+                ],
+                acknowledged_at: null
+            };
+            return new Response(JSON.stringify(brief), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
+        if (url.includes("/api/maintenance/items")) {
+            const maint = [
+                { id: "Maint1", asset_name: "Main Turbine #1", task_name: "Vibration Analysis", interval: "3 months", next_due_date: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0], status: "SCHEDULED", compliance_standard: "API 612" },
+                { id: "Maint2", asset_name: "Boiler Room Unit #2", task_name: "Safety Valve Pop Test", interval: "6 months", next_due_date: new Date(Date.now() - 86400000).toISOString().split('T')[0], status: "OVERDUE", compliance_standard: "ASME Sec I" },
+                { id: "Maint3", asset_name: "Hydraulic Press #3", task_name: "Fluid Cleanliness Test", interval: "1 month", next_due_date: new Date(Date.now() + 86400000 * 20).toISOString().split('T')[0], status: "SCHEDULED", compliance_standard: "ISO 4406" }
+            ];
+            return new Response(JSON.stringify(maint), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
+        if (url.includes("/api/maintenance/priorities")) {
+            return new Response(JSON.stringify({
+                priorities: [
+                    { level: "CRITICAL", asset: "Boiler Room Unit #2", task: "Safety Valve Pop Test", reason: "Mandatory pop test 1 day overdue. High compliance pressure.", compliance: "ASME Sec I" },
+                    { level: "HIGH", asset: "Main Turbine #1", task: "Vibration Analysis", reason: "Scheduled vibration log due in 5 days.", compliance: "API 612" }
+                ]
+            }), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
+        if (url.includes("/query")) {
+            // Custom mock responses for standard queries in O&G
+            const body = init && init.body ? JSON.parse(init.body) : {};
+            const query = body.query ? body.query.toLowerCase() : "";
+            let responseText = "Based on Harwick Processing facility manuals, safety guidelines and standard operating procedures: ";
+            if (query.includes("turbine") || query.includes("vibration")) {
+                responseText += "Turbine vibration levels should be monitored at bearing housing 1 and 2. Maximum allowable velocity is 2.8 mm/s RMS under API 612 standards. If readings exceed 4.0 mm/s RMS, initiate emergency shutdown procedure immediately.";
+            } else if (query.includes("boiler") || query.includes("valve")) {
+                responseText += "Boiler unit safety relief valves (ASME Section I) must pop-test at 150 PSI (+/- 2%). Manual lifting levers must only be operated above 75% of full set pressure to prevent seat damage.";
+            } else {
+                responseText += "The requested spec or standard requires verified documentation. Please consult the Water Pump 3 Series Operation Manual or LOTO safety procedures for Zone B equipment.";
+            }
+            return new Response(responseText, { status: 200 });
+        }
+        if (url.includes("/api/voice/transcribe")) {
+            return new Response(JSON.stringify({ success: true, text: "Show LOTO isolation steps for Fuel Valve V-102" }), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
+        if (url.includes("/api/handover/history")) {
+            return new Response(JSON.stringify([
+                { id: "H1", created_at: new Date(Date.now() - 86400000).toISOString(), overall_status: "AMBER", critical_items: ["V-102 Valve Gland Leak"], acknowledged_by: "John Smith", acknowledged_at: new Date(Date.now() - 86400000 + 1800000).toISOString() },
+                { id: "H2", created_at: new Date(Date.now() - 86400000 * 2).toISOString(), overall_status: "GREEN", critical_items: [], acknowledged_by: "Sarah Connor", acknowledged_at: new Date(Date.now() - 86400000 * 2 + 1800000).toISOString() }
+            ]), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
+        if (url.includes("/api/manuals")) {
+            return new Response(JSON.stringify(DEMO_MANUALS), { status: 200, headers: { "Content-Type": "application/json" } });
+        }
+
+        return originalFetch.apply(this, arguments);
+    };
+})();
+
+// Action helper to load demo data
+window.loadDemoFacilityData = function() {
+    localStorage.setItem("indexfield_demo_loaded", "true");
+    localStorage.setItem("indexfield_demo_assets", JSON.stringify(DEMO_ASSETS));
+    localStorage.setItem("indexfield_demo_manuals", JSON.stringify(DEMO_MANUALS));
+    localStorage.setItem("indexfield_demo_work_orders", JSON.stringify(DEMO_WORK_ORDERS));
+    localStorage.setItem("indexfield_demo_loto_permits", JSON.stringify(DEMO_LOTO_PERMITS));
+    localStorage.setItem("indexfield_demo_shift_logs", JSON.stringify(DEMO_SHIFT_LOGS));
+    
+    // Update local variables in memory if page is active
+    if (typeof manuals !== "undefined") manuals = DEMO_MANUALS;
+    if (typeof currentWorkOrders !== "undefined") currentWorkOrders = DEMO_WORK_ORDERS;
+    if (typeof assets !== "undefined") assets = DEMO_ASSETS;
+    if (typeof updateChatPanels !== "undefined") updateChatPanels();
+
+    // Reload UI state
+    if (window.showToast) {
+        window.showToast("Demo Facility Loaded Successfully!", "brand");
+    } else {
+        alert("Demo Facility Loaded Successfully!");
+    }
+    
+    // Refresh page state and update UI
+    setTimeout(() => {
+        window.location.reload();
+    }, 1000);
+};
+
+window.clearDemoFacilityData = function() {
+    localStorage.removeItem("indexfield_demo_loaded");
+    localStorage.removeItem("indexfield_demo_assets");
+    localStorage.removeItem("indexfield_demo_manuals");
+    localStorage.removeItem("indexfield_demo_work_orders");
+    localStorage.removeItem("indexfield_demo_loto_permits");
+    localStorage.removeItem("indexfield_demo_shift_logs");
+    window.location.reload();
+};
 
 let isRecording = false;
 let mediaRecorder = null;
@@ -201,6 +426,53 @@ let currentStatusFilter = '';
 let currentSearchFilter = '';
 let selectedPriorities = new Set(['all']);
 let searchDebounceTimer = null;
+
+// ---------------------------------------------------------------------------
+// Helper: Update onboarding vs live feed panels based on manuals availability
+function updateChatPanels() {
+    const manuals = JSON.parse(localStorage.getItem('indexfield_demo_manuals') || '[]');
+    const onboarding = document.getElementById('chat-onboarding-checklist');
+    const liveFeed = document.getElementById('chat-live-feed');
+    const docViewer = document.getElementById('chat-doc-viewer');
+    if (manuals.length > 0) {
+        if (onboarding) onboarding.classList.add('hidden');
+        if (liveFeed) liveFeed.classList.remove('hidden');
+        if (docViewer) docViewer.classList.remove('hidden');
+    } else {
+        if (onboarding) onboarding.classList.remove('hidden');
+        if (liveFeed) liveFeed.classList.add('hidden');
+        if (docViewer) docViewer.classList.add('hidden');
+    }
+}
+
+// Load Recent AI Answers into the sidebar panel
+async function loadRecentAIAnswers() {
+    const container = document.getElementById('recent-ai-answers-list');
+    if (!container) return;
+    try {
+        const token = sessionStorage.getItem('access_token') || localStorage.getItem('access_token');
+        const response = await fetch(`${API_URL}/api/ai/recent-answers`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        container.innerHTML = '';
+        data.answers.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'p-2 bg-white/5 rounded border border-white/10';
+            div.innerHTML = `<div class="text-xs text-slate-400">${item.time} – ${item.user_name}</div>`+
+                `<div class="text-sm text-white">${item.answer}</div>`;
+            container.appendChild(div);
+        });
+    } catch (e) {
+        console.error('Failed to load recent AI answers', e);
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    updateChatPanels();
+    loadRecentAIAnswers();
+});
 
 // Priority selection
 function setNewWOPriority(priority) {
@@ -2336,7 +2608,7 @@ window.handleManualsUpload = async function(input) {
         const result = await response.json();
 
         if (result.success) {
-            alert(`Manual uploaded successfully: ${file.filename}\n${result.message}`);
+            alert(`Manual uploaded successfully: ${file.name}\n${result.message}`);
             // Refresh manuals list
             if (window.loadManuals) {
                 window.loadManuals();

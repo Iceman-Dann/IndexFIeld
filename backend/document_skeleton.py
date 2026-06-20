@@ -1,5 +1,11 @@
 """Skeleton-based document processing - fast, lightweight extraction."""
-import fitz
+try:
+    import fitz
+    HAS_PYMUPDF = True
+except Exception:
+    fitz = None
+    HAS_PYMUPDF = False
+    print("[WARN] PyMuPDF not available — PDF skeleton extraction disabled.")
 from typing import List, Dict, Optional
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -10,7 +16,7 @@ from PIL import Image
 import pytesseract
 import requests
 import io
-from tribal_vault import record_tribal_note
+from .tribal_vault import record_tribal_note
 
 class VisionProcessor:
     """Two-tier OCR: fast layer (PyMuPDF) + deep layer (Tesseract)."""
@@ -70,6 +76,27 @@ class SkeletonExtractor:
     
     def _extract_pdf_skeleton(self, file_path: str, manual_id: str, manual_name: str) -> DocumentSkeleton:
         """Extract skeleton from PDF."""
+        if not HAS_PYMUPDF:
+            print(f"[WARN] _extract_pdf_skeleton called but PyMuPDF not installed: {file_path}")
+            # Return minimal skeleton informing user
+            return DocumentSkeleton(
+                manual_id=manual_id,
+                manual_name=manual_name,
+                title=os.path.basename(file_path),
+                total_pages=0,
+                sections=[{
+                    'page': 0,
+                    'type': 'pdf_unavailable',
+                    'heading': 'PDF parsing unavailable',
+                    'summary': 'PyMuPDF not installed; enable PyMuPDF to extract PDF structure.',
+                    'topics': []
+                }],
+                key_specs={},
+                procedures=[],
+                troubleshooting=[],
+                topic_index={}
+            )
+
         with fitz.open(file_path) as doc:
             total_pages = len(doc)
             title = doc[0].get_text().split('\n')[0][:100] if doc else "Manual"
@@ -435,48 +462,52 @@ class SkeletonExtractor:
         import asyncio
         file_ext = os.path.splitext(file_path)[1].lower()
         file_size_mb = os.path.getsize(file_path) / (1024 * 1024)
-        
+
         yield f"data: {json.dumps({'status': 'SYSTEM', 'message': f'Ingesting {manual_name} ({file_size_mb:.1f}MB)...'})}\n\n"
         await asyncio.sleep(0.5)
-        
+
         if file_ext == '.pdf':
+            if not HAS_PYMUPDF:
+                yield f"data: {json.dumps({'status': 'ERROR', 'message': 'PyMuPDF not installed; PDF streaming unavailable.'})}\n\n"
+                return
+
             with fitz.open(file_path) as doc:
                 total_pages = len(doc)
                 yield f"data: {json.dumps({'status': 'SCANNING', 'message': f'{total_pages} pages detected...'})}\n\n"
                 await asyncio.sleep(0.5)
-                
+
                 # Metadata Phase
-                title = doc[0].get_text().split('\\n')[0][:100] if doc else "Manual"
+                title = doc[0].get_text().split('\n')[0][:100] if doc else "Manual"
                 yield f"data: {json.dumps({'status': 'METADATA', 'message': f'Title identified: {title}'})}\n\n"
                 await asyncio.sleep(0.5)
-                
+
                 # Structural Phase & Technical Extraction
                 for i in range(min(total_pages, 8)):  # Stream a few to look realistic
                     page = doc[i]
                     text = page.get_text()
                     image_list = page.get_images()
-                    
+
                     # Triage Logic (Density Check)
                     if len(text.strip()) < 100 and len(image_list) > 0:
-                        yield f"data: {json.dumps({'status': 'VISION', 'message': f'Page {i+1} detected as legacy scan. Initializing OCR...'})}\\n\\n"
-                        
+                        yield f"data: {json.dumps({'status': 'VISION', 'message': f'Page {i+1} detected as legacy scan. Initializing OCR...'})}\n\n"
+
                         # Tier 1: Tesseract Speed Layer
                         pix = page.get_pixmap(dpi=300)
                         img_data = pix.tobytes("png")
                         img = Image.open(io.BytesIO(img_data))
-                        
+
                         ocr_text = pytesseract.image_to_string(img)
                         confidence = 0.5 # Placeholder for Tesseract confidence
-                        
+
                         if len(ocr_text.strip()) < 50:
-                            yield f"data: {json.dumps({'status': 'VISION', 'message': f'Low confidence OCR. Escalating to Vision-LLM...'})}\\n\\n"
-                            
+                            yield f"data: {json.dumps({'status': 'VISION', 'message': f'Low confidence OCR. Escalating to Vision-LLM...'})}\n\n"
+
                             # Tier 2: Ollama/LLaVA Intelligence Layer
                             try:
                                 # Prepare base64 for Ollama
                                 import base64
                                 encoded_img = base64.b64encode(img_data).decode('utf-8')
-                                
+
                                 ollama_response = requests.post(
                                     "http://localhost:11434/api/generate",
                                     json={
@@ -487,19 +518,19 @@ class SkeletonExtractor:
                                     },
                                     timeout=30
                                 )
-                                
+
                                 if ollama_response.status_code == 200:
                                     vision_description = ollama_response.json().get('response', '')
                                     ocr_text = f"[VISION EXTRACTION]: {vision_description}"
-                                    yield f"data: {json.dumps({'status': 'SKELETON', 'message': f'Vision-LLM identified tribal knowledge on Page {i+1}'})}\\n\\n"
+                                    yield f"data: {json.dumps({'status': 'SKELETON', 'message': f'Vision-LLM identified tribal knowledge on Page {i+1}'})}\n\n"
                                 else:
-                                    yield f"data: {json.dumps({'status': 'VISION', 'message': 'Vision-LLM pass failed. Using basic OCR data.'})}\\n\\n"
+                                    yield f"data: {json.dumps({'status': 'VISION', 'message': 'Vision-LLM pass failed. Using basic OCR data.'})}\n\n"
                             except Exception as ve:
                                 print(f"Vision LLM Error: {ve}")
-                                yield f"data: {json.dumps({'status': 'VISION', 'message': 'Vision-LLM unavailable. Falling back to base OCR.'})}\\n\\n"
+                                yield f"data: {json.dumps({'status': 'VISION', 'message': 'Vision-LLM unavailable. Falling back to base OCR.'})}\n\n"
                         else:
-                            yield f"data: {json.dumps({'status': 'SKELETON', 'message': f'OCR extracted {len(ocr_text)} chars from Page {i+1}'})}\\n\\n"
-                        
+                            yield f"data: {json.dumps({'status': 'SKELETON', 'message': f'OCR extracted {len(ocr_text)} chars from Page {i+1}'})}\n\n"
+
                         # Record this to the tribal_notes table for verification vault
                         try:
                             record_tribal_note(
@@ -509,22 +540,22 @@ class SkeletonExtractor:
                                 img_url=None, # In production, this would be a path to the cropped PNG
                                 ocr=ocr_text
                             )
-                            yield f"data: {json.dumps({'status': 'SKELETON', 'message': f'Tribal knowledge queued for verification (Page {i+1})'})}\\n\\n"
+                            yield f"data: {json.dumps({'status': 'SKELETON', 'message': f'Tribal knowledge queued for verification (Page {i+1})'})}\n\n"
                         except Exception as re:
                             print(f"Recording Error: {re}")
-                        
+
                         text = ocr_text
 
                     elif "troubleshooting" in text.lower()[:1000]:
-                        yield f"data: {json.dumps({'status': 'SKELETON', 'message': f'Found: Troubleshooting Section on page {i+1}...'})}\\n\\n"
+                        yield f"data: {json.dumps({'status': 'SKELETON', 'message': f'Found: Troubleshooting Section on page {i+1}...'})}\n\n"
                         await asyncio.sleep(0.5)
                     elif "torque" in text.lower()[:1000] or "spec" in text.lower()[:1000] or "rating" in text.lower()[:1000]:
-                        yield f"data: {json.dumps({'status': 'TECHNICAL', 'message': f'Found: Technical Specs on page {i+1}...'})}\\n\\n"
+                        yield f"data: {json.dumps({'status': 'TECHNICAL', 'message': f'Found: Technical Specs on page {i+1}...'})}\n\n"
                         await asyncio.sleep(0.5)
                     else:
-                        yield f"data: {json.dumps({'status': 'VECTOR', 'message': f'Mapping chunk page {i+1}/{total_pages}...'})}\\n\\n"
+                        yield f"data: {json.dumps({'status': 'VECTOR', 'message': f'Mapping chunk page {i+1}/{total_pages}...'})}\n\n"
                         await asyncio.sleep(0.3)
-                        
+
                 if total_pages > 8:
                     yield f"data: {json.dumps({'status': 'HEARTBEAT', 'message': f'Processing remaining {total_pages - 8} pages in background...'})}\n\n"
                     await asyncio.sleep(0.5)
@@ -535,7 +566,7 @@ class SkeletonExtractor:
             await asyncio.sleep(0.5)
             yield f"data: {json.dumps({'status': 'VECTOR', 'message': 'Mapping chunks...'})}\n\n"
             await asyncio.sleep(0.5)
-            
+
         yield f"data: {json.dumps({'status': 'READY', 'message': 'Knowledge index compiled successfully.', 'session_id': manual_id})}\n\n"
 
 

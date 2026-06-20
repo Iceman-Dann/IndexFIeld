@@ -4,10 +4,10 @@ from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
 from supabase import create_client
-from config import settings
+from ..config import settings
 
 router = APIRouter()
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 class TribalKnowledgeAdd(BaseModel):
     asset_id: Optional[str] = None
@@ -30,29 +30,36 @@ class TribalKnowledgeResponse(BaseModel):
     asset_name: Optional[str] = None
     manual_name: Optional[str] = None
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Verify JWT token and return user info from Supabase."""
+async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
+    """Return guest user when no valid credentials are provided; otherwise verify."""
     from jose import jwt, JWTError
-    
+    import uuid
+
+    if not credentials:
+        guest_id = f"guest_{uuid.uuid4().hex[:8]}"
+        return {"user_id": guest_id, "token": f"guest_token_{guest_id}", "is_guest": True}
+
     try:
         token = credentials.credentials
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
         user_id = payload.get("sub")
         if user_id is None:
             raise HTTPException(status_code=401, detail="Invalid authentication")
-        
+
         supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_ANON_KEY)
         user_response = supabase.auth.get_user(token)
-        
+
         return {
             "user_id": user_id,
             "token": token,
             "email": user_response.user.email if user_response.user else None
         }
     except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid authentication")
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
+        guest_id = f"guest_{uuid.uuid4().hex[:8]}"
+        return {"user_id": guest_id, "token": f"guest_token_{guest_id}", "is_guest": True}
+    except Exception:
+        guest_id = f"guest_{uuid.uuid4().hex[:8]}"
+        return {"user_id": guest_id, "token": f"guest_token_{guest_id}", "is_guest": True}
 
 def check_sandbox_limit(user_id: str, feature: str, limit: int):
     """Check if sandbox user has exceeded limit for a feature."""

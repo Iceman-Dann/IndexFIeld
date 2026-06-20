@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup | IndexField</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+                    colors: {
+                        charcoal: '#111827',
+                        graphite: '#1F2937',
+                        slate: '#475569',
+                        'safety-orange': '#F97316',
+                        'burnt-orange': '#EA580C',
+                        'success-green': '#22C55E',
+                        'warning-amber': '#FACC15',
+                        'critical-red': '#EF4444',
+                        'data-cyan': '#06B6D4',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #111827; color: #F8FAFC; overflow-x: hidden; }
+        
+        .glass-card { background: linear-gradient(180deg, rgba(31,41,55,0.95) 0%, rgba(24,31,46,0.98) 100%); border: 1px solid rgba(100,116,139,0.12); backdrop-filter: blur(10px); }
+        .glass-input { background: rgba(31,41,55,0.5); border: 1px solid rgba(100,116,139,0.25); transition: all 0.3s ease; }
+        .glass-input:focus { background: rgba(31,41,55,0.7); border-color: rgba(249, 115, 22, 0.4); box-shadow: 0 0 20px rgba(249, 115, 22, 0.1); }
+        
+        .gradient-text { background: linear-gradient(135deg, #F97316 0%, #EA580C 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.3); } 50% { box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.5); } }
+        .pulse-btn { animation: pulse-glow 2s ease-in-out infinite; }
+        
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
+        @keyframes module-pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+        .module-active { animation: module-pulse 0.5s ease-in-out; }
+        
+        .step-tile { transition: all 0.2s ease; }
+        .step-tile:hover { border-color: rgba(249, 115, 22, 0.5); }
+        .step-tile.selected { border-color: #F97316; background: rgba(249, 115, 22, 0.05); }
+        
+        .drag-handle { cursor: grab; }
+        .drag-handle:active { cursor: grabbing; }
+        
+        .terminal-line { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+        
+        /* Custom slider */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: rgba(100, 116, 139, 0.3);
+            border-radius: 3px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #F97316;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        /* Toggle switch */
+        .toggle-switch { position: relative; width: 44px; height: 24px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute; cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(100, 116, 139, 0.3);
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+        .toggle-slider:before {
+            position: absolute; content: "";
+            height: 18px; width: 18px;
+            left: 3px; bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        input:checked + .toggle-slider { background-color: #F97316; }
+        input:checked + .toggle-slider:before { transform: translateX(20px); }
+        
+        .progress-bar { background: rgba(100, 116, 139, 0.2); }
+        .progress-fill { background: #F97316; transition: width 0.5s ease; }
+        
+        .error-text { color: #F97316; font-size: 11px; font-family: 'JetBrains Mono', monospace; margin-top: 4px; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Progress Bar -->
+    <div class="fixed top-0 left-0 right-0 h-1 progress-bar z-50">
+        <div id="progress-fill" class="h-full progress-fill" style="width: 16.66%"></div>
+    </div>
+    
+    <!-- Step Indicator -->
+    <div class="fixed top-4 left-0 right-0 z-40 flex justify-center">
+        <div id="step-indicator" class="glass-card px-4 py-2 rounded-full">
+            <span class="text-xs font-mono text-slate-400">STEP 1 OF 6 · FACILITY IDENTITY</span>
+        </div>
+    </div>
+    
+    <!-- Main Container -->
+    <div id="wizard-container" class="min-h-screen pt-20">
+        <!-- Content will be injected by JavaScript -->
+    </div>
+    
+    <!-- Deploy Overlay -->
+    <div id="deploy-overlay" class="hidden fixed inset-0 z-[200] bg-black/95 flex items-center justify-center">
+        <div class="max-w-2xl w-full p-8">
+            <div id="deploy-terminal" class="font-mono text-sm space-y-2">
+                <!-- Terminal lines will be injected -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =============================================
+        // SETUP WIZARD STATE
+        // =============================================
+        let currentStep = 1;
+        const totalSteps = 6;
+        let wizardData = {
+            facilityName: '',
+            location: '',
+            technicianCount: 47,
+            language: 'ENGLISH',
+            industry: '',
+            industryOther: '',
+            role: '',
+            modules: [],
+            priorities: [
+                'downtime',
+                'compliance',
+                'accountability',
+                'lifecycle'
+            ],
+            criticalAsset: '',
+            manualFile: null
+        };
+        
+        let isInvitedUser = false;
+        let inviteFacilityName = '';
+        let inviteRole = '';
+        
+        const INDUSTRIES = [
+            { id: 'manufacturing', name: 'MANUFACTURING', desc: 'General production and assembly', icon: 'fa-industry' },
+            { id: 'oil_gas', name: 'OIL & GAS', desc: 'Upstream, midstream, downstream operations', icon: 'fa-oil-can' },
+            { id: 'chemical', name: 'CHEMICAL PROCESSING', desc: 'Process safety and EPA compliance focus', icon: 'fa-flask' },
+            { id: 'food_beverage', name: 'FOOD & BEVERAGE', desc: 'HACCP, FDA, and sanitation protocols', icon: 'fa-utensils' },
+            { id: 'pharmaceutical', name: 'PHARMACEUTICAL', desc: 'FDA 21 CFR, GMP, batch record compliance', icon: 'fa-pills' },
+            { id: 'utilities', name: 'UTILITIES & ENERGY', desc: 'Power generation and grid operations', icon: 'fa-bolt' },
+            { id: 'mining', name: 'MINING & EXTRACTION', desc: 'Heavy equipment and hazardous operations', icon: 'fa-mountain' },
+            { id: 'water', name: 'WATER & WASTEWATER', desc: 'EPA compliance and treatment operations', icon: 'fa-water' },
+            { id: 'other', name: 'OTHER', desc: 'Custom configuration — specify below', icon: 'fa-cog' }
+        ];
+        
+        const ROLES = [
+            { id: 'plant_manager', name: 'PLANT MANAGER / OWNER', desc: 'Full facility oversight and control', access: 'FULL ACCESS', canSee: ['all'] },
+            { id: 'operations_supervisor', name: 'OPERATIONS SUPERVISOR', desc: 'Shift and operations management', access: 'OPERATIONAL ACCESS', canSee: ['operations', 'assets', 'manuals', 'workorders'] },
+            { id: 'maintenance_technician', name: 'MAINTENANCE TECHNICIAN', desc: 'Daily maintenance and floor operations', access: 'TECHNICIAN ACCESS', canSee: ['assets', 'manuals', 'workorders'] },
+            { id: 'safety_officer', name: 'SAFETY OFFICER', desc: 'Safety compliance and incident management', access: 'SAFETY ACCESS', canSee: ['incidents', 'manuals', 'loto', 'compliance'] },
+            { id: 'quality_manager', name: 'QUALITY / COMPLIANCE MANAGER', desc: 'Documentation and regulatory compliance', access: 'COMPLIANCE ACCESS', canSee: ['documents', 'compliance', 'audits'] },
+            { id: 'read_only', name: 'READ ONLY / CONTRACTOR', desc: 'Temporary or view-only access', access: 'VIEW ONLY', canSee: ['manuals', 'assets'] }
+        ];
+        
+        const MODULES = [
+            { id: 'document_control', name: 'DOCUMENT CONTROL', desc: 'SOPs, manuals, compliance docs — AI-indexed and searchable in seconds', icon: 'fa-file-alt' },
+            { id: 'asset_registry', name: 'ASSET REGISTRY', desc: 'Every machine, every spec, every service history. One record per asset', icon: 'fa-server' },
+            { id: 'maintenance_intelligence', name: 'MAINTENANCE INTELLIGENCE', desc: 'Scheduled and predictive PM built around your shift patterns and manual data', icon: 'fa-tools' },
+            { id: 'incident_command', name: 'INCIDENT COMMAND', desc: 'First report to root cause close-out with full audit trail', icon: 'fa-exclamation-triangle' },
+            { id: 'loto_command', name: 'LOTO COMMAND', desc: 'Lockout/Tagout permit logging, procedure runner, and compliance export', icon: 'fa-lock' },
+            { id: 'shift_intelligence', name: 'SHIFT INTELLIGENCE', desc: 'Pre-shift briefing, shift log, and AI-generated handover briefs', icon: 'fa-users-clock' }
+        ];
+        
+        const PRIORITIES = [
+            { id: 'downtime', name: 'REDUCE UNPLANNED DOWNTIME', desc: 'Surface overdue maintenance, flag equipment observations, predict failures before they happen' },
+            { id: 'compliance', name: 'COMPLIANCE DOCUMENTATION', desc: 'Keep audit trails clean, track certification deadlines, generate compliance reports fast' },
+            { id: 'accountability', name: 'TECHNICIAN ACCOUNTABILITY', desc: 'Know who did what and when. Work orders, LOTO permits, shift logs all signed' },
+            { id: 'lifecycle', name: 'ASSET LIFECYCLE TRACKING', desc: 'Full history on every machine from install to decommission' }
+        ];
+        
+        const COMPLIANCE_MAP = {
+            'pharmaceutical': 'FDA 21 CFR PART 11',
+            'chemical': 'EPA PSM / RMP',
+            'oil_gas': 'API RP 54',
+            'food_beverage': 'FDA FSMA',
+            'mining': 'MSHA'
+        };
+        
+        const MODULE_TERMINOLOGY_MAP = {
+            'oil_gas': { assets: 'Pressure Systems' },
+            'pharmaceutical': { documents: 'Batch Records' },
+            'chemical': { incidents: 'Process Safety Events' },
+            'food_beverage': { documents: 'Recipe & SOP Vault' },
+            'mining': { assets: 'Heavy Equipment Registry' }
+        };
+
+        // =============================================
+        // INITIALIZATION
+        // =============================================
+        async function initWizard() {
+            // Check for invite token in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const inviteToken = urlParams.get('invite');
+            
+            if (inviteToken) {
+                await handleInviteToken(inviteToken);
+            }
+            
+            // Check if user has facility
+            await checkUserFacility();
+            
+            renderStep(currentStep);
+        }
+        
+        async function checkUserFacility() {
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (!session) {
+                    window.location.href = 'signin.html';
+                    return;
+                }
+                
+                const { data: profile } = await supabaseClient
+                    .from('profiles')
+                    .select('current_facility_id')
+                    .eq('id', session.user.id)
+                    .single();
+                
+                if (profile && profile.current_facility_id) {
+                    // User already has facility, check if setup is complete
+                    const { data: facility } = await supabaseClient
+                        .from('facilities')
+                        .select('setup_complete')
+                        .eq('id', profile.current_facility_id)
+                        .single();
+                    
+                    if (facility && facility.setup_complete) {
+                        // Setup already complete, redirect to dashboard
+                        window.location.href = 'dashboard.html';
+                        return;
+                    } else if (facility) {
+                        // Facility exists but setup not complete - invited user
+                        isInvitedUser = true;
+                        const { data: facilityData } = await supabaseClient
+                            .from('facilities')
+                            .select('name, industry')
+                            .eq('id', profile.current_facility_id)
+                            .single();
+                        
+                        if (facilityData) {
+                            inviteFacilityName = facilityData.name;
+                            wizardData.industry = facilityData.industry;
+                        }
+                        
+                        // Check if role is pre-set
+                        const { data: member } = await supabaseClient
+                            .from('facility_members')
+                            .select('role')
+                            .eq('facility_id', profile.current_facility_id)
+                            .eq('user_id', session.user.id)
+                            .single();
+                        
+                        if (member && member.role) {
+                            inviteRole = member.role;
+                            wizardData.role = member.role;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('Facility check failed:', e);
+            }
+        }
+        
+        async function handleInviteToken(token) {
+            try {
+                const response = await fetch(`${window.location.origin}/api/facility/accept-invite`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                
+                if (response.ok) {
+                    // Invite accepted, reload to check facility
+                    window.location.href = 'setup-wizard.html';
+                }
+            } catch (e) {
+                console.warn('Invite handling failed:', e);
+            }
+        }
+
+        // =============================================
+        // STEP RENDERING
+        // =============================================
+        function renderStep(step) {
+            console.log('renderStep called with:', step);
+            updateProgress(step);
+            updateStepIndicator(step);
+
+            const container = document.getElementById('wizard-container');
+
+            try {
+                switch(step) {
+                    case 1:
+                        container.innerHTML = getStep1HTML();
+                        break;
+                    case 2:
+                        container.innerHTML = getStep2HTML();
+                        break;
+                    case 3:
+                        container.innerHTML = getStep3HTML();
+                        break;
+                    case 4:
+                        container.innerHTML = getStep4HTML();
+                        break;
+                    case 5:
+                        console.log('Rendering step 5');
+                        container.innerHTML = getStep5HTML();
+                        console.log('Step 5 rendered successfully');
+                        break;
+                    case 6:
+                        container.innerHTML = getStep6HTML();
+                        break;
+                    default:
+                        console.log('Unknown step:', step);
+                }
+            } catch (error) {
+                console.error('Error rendering step:', step, error);
+                container.innerHTML = `<div class="p-8 text-red-500">Error loading step: ${error.message}</div>`;
+            }
+
+            // Initialize event listeners after rendering
+            setTimeout(() => initializeStepEvents(step), 0);
+        }
+        
+        function updateProgress(step) {
+            const progress = (step / totalSteps) * 100;
+            document.getElementById('progress-fill').style.width = `${progress}%`;
+        }
+        
+        function updateStepIndicator(step) {
+            const stepNames = [
+                'FACILITY IDENTITY',
+                'INDUSTRY AND COMPLIANCE',
+                'YOUR ROLE',
+                'MODULE ACTIVATION',
+                'YOUR PRIORITIES',
+                'YOUR CRITICAL ASSET'
+            ];
+            
+            const indicator = document.getElementById('step-indicator');
+            indicator.innerHTML = `<span class="text-xs font-mono text-slate-400">STEP ${step} OF ${totalSteps} · ${stepNames[step - 1]}</span>`;
+        }
+
+        // =============================================
+        // STEP 1: FACILITY IDENTITY
+        // =============================================
+        function getStep1HTML() {
+            const nodeId = wizardData.facilityName ? `${wizardData.facilityName.split(' ')[0].toUpperCase()}-PLANT-01` : 'NODE-PLANT-01';
+            
+            return `
+                <div class="flex flex-col lg:flex-row min-h-screen">
+                    <!-- Left Panel - Form (55%) -->
+                    <div class="w-full lg:w-[55%] p-8 lg:p-16 flex flex-col justify-center">
+                        <div class="max-w-xl mx-auto w-full space-y-8 animate-in">
+                            <!-- Eyebrow -->
+                            <div class="text-xs font-mono text-safety-orange">STEP 1 OF 6</div>
+                            
+                            <!-- Heading -->
+                            <h1 class="text-3xl lg:text-4xl font-bold tracking-tight">Let's build your facility node.</h1>
+                            <p class="text-slate-400">This becomes your operational command center. Everything IndexField does will be configured around your facility.</p>
+                            
+                            <!-- Form -->
+                            <div class="space-y-6">
+                                <!-- Facility Name -->
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-300 mb-2">Facility Name *</label>
+                                    <input type="text" id="facility-name" value="${wizardData.facilityName}" placeholder="e.g. Harwick Processing, Valley Manufacturing"
+                                        class="w-full px-4 py-3 glass-input rounded-lg text-white placeholder-slate-500 text-lg"
+                                        oninput="updateFacilityName(this.value)">
+                                    <div id="facility-name-error" class="error-text hidden">FACILITY NAME REQUIRED</div>
+                                </div>
+                                
+                                <!-- Location -->
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-300 mb-2">Location *</label>
+                                    <input type="text" id="location" value="${wizardData.location}" placeholder="City, State"
+                                        class="w-full px-4 py-3 glass-input rounded-lg text-white placeholder-slate-500"
+                                        oninput="wizardData.location = this.value">
+                                    <div id="location-error" class="error-text hidden">LOCATION REQUIRED</div>
+                                </div>
+                                
+                                <!-- Technician Count -->
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-300 mb-4">Number of Technicians</label>
+                                    <div class="text-4xl font-bold text-white mb-4">${wizardData.technicianCount}</div>
+                                    <input type="range" id="technician-count" min="1" max="500" value="${wizardData.technicianCount}"
+                                        class="w-full"
+                                        oninput="updateTechnicianCount(this.value)">
+                                    <div class="flex justify-between text-xs text-slate-500 mt-2">
+                                        <span>SMALL (1-25)</span>
+                                        <span>MID-SIZE (26-100)</span>
+                                        <span>LARGE (100+)</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Language -->
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-300 mb-3">Primary Language of Operations</label>
+                                    <div class="flex flex-wrap gap-2">
+                                        ${['ENGLISH', 'SPANISH', 'FRENCH', 'OTHER'].map(lang => `
+                                            <button onclick="selectLanguage('${lang}')" 
+                                                class="px-4 py-2 rounded-full text-sm font-medium transition ${wizardData.language === lang ? 'bg-safety-orange text-white' : 'glass-input text-slate-300 hover:border-safety-orange/50'}">
+                                                ${lang}
+                                            </button>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Navigation -->
+                            <div class="flex justify-end pt-6">
+                                <button id="step1-continue" onclick="validateAndContinue(1)" class="px-8 py-3 bg-safety-orange hover:bg-burnt-orange text-white font-semibold rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed" disabled>
+                                    [CONTINUE →]
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Panel - Preview (45%) -->
+                    <div class="w-full lg:w-[45%] bg-charcoal p-8 lg:p-12 flex flex-col justify-center border-l border-slate-800">
+                        <div class="glass-card rounded-xl p-6 space-y-4">
+                            <!-- Preview Header -->
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-lg font-bold">${wizardData.facilityName || 'Your Facility'}</h3>
+                                <div class="text-xs font-mono text-slate-400">${nodeId}</div>
+                            </div>
+                            
+                            <!-- Terminal -->
+                            <div class="bg-black rounded-lg p-4 font-mono text-xs space-y-1">
+                                <div class="text-slate-400">[▸] PROVISIONING NODE: ${wizardData.facilityName || '...'}...</div>
+                                <div class="text-slate-400">[▸] LOCATION: ${wizardData.location || '...'}...</div>
+                                <div class="text-slate-400">[▸] TEAM SIZE: ${wizardData.technicianCount} TECHNICIANS...</div>
+                                ${wizardData.facilityName && wizardData.location ? '<div class="text-success-green">[✓] FACILITY PROFILE CONFIGURED</div>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function updateFacilityName(value) {
+            wizardData.facilityName = value;
+            // Update preview elements directly without full re-render
+            const previewTitle = document.querySelector('.glass-card h3');
+            if (previewTitle) {
+                previewTitle.textContent = wizardData.facilityName || 'Your Facility';
+            }
+            const terminalLines = document.querySelector('.bg-black.terminal-line') || document.querySelector('.bg-black');
+            if (terminalLines) {
+                // Update terminal preview text
+                const lines = terminalLines.innerHTML;
+                if (wizardData.facilityName && wizardData.location) {
+                    if (!lines.includes('[✓] FACILITY PROFILE CONFIGURED')) {
+                        terminalLines.innerHTML = lines + '<div class="text-success-green">[✓] FACILITY PROFILE CONFIGURED</div>';
+                    }
+                }
+            }
+        }
+        
+        function updateTechnicianCount(value) {
+            wizardData.technicianCount = parseInt(value);
+            // Update the count display directly
+            const countDisplay = document.querySelector('.text-4xl.font-bold');
+            if (countDisplay) {
+                countDisplay.textContent = wizardData.technicianCount;
+            }
+        }
+        
+        function selectLanguage(lang) {
+            wizardData.language = lang;
+            // Update button styles directly without re-render
+            const buttons = document.querySelectorAll('[onclick^="selectLanguage"]');
+            buttons.forEach(btn => {
+                const btnLang = btn.getAttribute('onclick').match(/'([^']+)'/)[1];
+                if (btnLang === lang) {
+                    btn.className = 'px-4 py-2 rounded-full text-sm font-medium transition bg-safety-orange text-white';
+                } else {
+                    btn.className = 'px-4 py-2 rounded-full text-sm font-medium transition glass-input text-slate-300 hover:border-safety-orange/50';
+                }
+            });
+        }
+        
+        function initializeStepEvents(step) {
+            if (step === 1) {
+                const facilityInput = document.getElementById('facility-name');
+                const locationInput = document.getElementById('location');
+                const continueBtn = document.getElementById('step1-continue');
+
+                const checkForm = () => {
+                    const isValid = facilityInput.value.trim() && locationInput.value.trim();
+                    continueBtn.disabled = !isValid;
+                };
+
+                facilityInput.addEventListener('input', checkForm);
+                locationInput.addEventListener('input', checkForm);
+            } else if (step === 2) {
+                const continueBtn = document.getElementById('step2-continue');
+                if (continueBtn && wizardData.industry) {
+                    continueBtn.disabled = false;
+                }
+            } else if (step === 4) {
+                const continueBtn = document.getElementById('step4-continue');
+                const errorElement = document.getElementById('modules-error');
+                if (continueBtn) {
+                    if (wizardData.modules.length === 0) {
+                        continueBtn.disabled = true;
+                        continueBtn.setAttribute('disabled', 'disabled');
+                    } else {
+                        continueBtn.disabled = false;
+                        continueBtn.removeAttribute('disabled');
+                    }
+                }
+                if (errorElement) {
+                    if (wizardData.modules.length === 0) {
+                        errorElement.classList.remove('hidden');
+                    } else {
+                        errorElement.classList.add('hidden');
+                    }
+                }
+            }
+        }
+
+        // =============================================
+        // STEP 2: INDUSTRY AND COMPLIANCE
+        // =============================================
+        function getStep2HTML() {
+            const compliance = COMPLIANCE_MAP[wizardData.industry];
+            
+            return `
+                <div class="flex flex-col lg:flex-row min-h-screen">
+                    <!-- Left Panel -->
+                    <div class="w-full lg:w-[55%] p-8 lg:p-16 flex flex-col justify-center">
+                        <div class="max-w-xl mx-auto w-full space-y-8 animate-in">
+                            <div class="text-xs font-mono text-safety-orange">STEP 2 OF 6</div>
+                            
+                            <h1 class="text-3xl lg:text-4xl font-bold tracking-tight">What industry are you operating in?</h1>
+                            <p class="text-slate-400">IndexField configures its terminology, compliance frameworks, and AI behavior to match your specific industry.</p>
+                            
+                            <!-- Industry Grid -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                ${INDUSTRIES.map(ind => `
+                                    <div onclick="selectIndustry('${ind.id}')" 
+                                        class="step-tile p-4 rounded-lg border cursor-pointer ${wizardData.industry === ind.id ? 'selected' : 'glass-input'}">
+                                        <i class="fas ${ind.icon} text-2xl text-slate-400 mb-3"></i>
+                                        <div class="font-semibold text-sm">${ind.name}</div>
+                                        <div class="text-xs text-slate-500 mt-1">${ind.desc}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            
+                            ${wizardData.industry === 'other' ? `
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-300 mb-2">Describe your operation (optional)</label>
+                                    <input type="text" id="industry-other" value="${wizardData.industryOther}" placeholder="Brief description of your operation"
+                                        class="w-full px-4 py-3 glass-input rounded-lg text-white placeholder-slate-500"
+                                        oninput="wizardData.industryOther = this.value">
+                                </div>
+                            ` : ''}
+                            
+                            <div id="industry-error" class="error-text hidden">SELECT YOUR INDUSTRY TO CONTINUE</div>
+                            
+                            <div class="flex justify-between pt-6">
+                                <button onclick="goToStep(1)" class="px-6 py-3 glass-input rounded-lg text-white hover:border-safety-orange/50 transition">
+                                    [← BACK]
+                                </button>
+                                <button id="step2-continue" onclick="validateAndContinue(2)" class="px-8 py-3 bg-safety-orange hover:bg-burnt-orange text-white font-semibold rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed" disabled>
+                                    [CONTINUE →]
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Panel -->
+                    <div class="w-full lg:w-[45%] bg-charcoal p-8 lg:p-12 flex flex-col justify-center border-l border-slate-800">
+                        <div class="glass-card rounded-xl p-6 space-y-4">
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-lg font-bold">${wizardData.facilityName || 'Your Facility'}</h3>
+                                ${wizardData.industry ? `<span class="px-2 py-1 bg-safety-orange/20 text-safety-orange text-xs rounded-full">${INDUSTRIES.find(i => i.id === wizardData.industry)?.name}</span>` : ''}
+                            </div>
+                            
+                            ${compliance ? `<div class="px-2 py-1 bg-success-green/20 text-success-green text-xs rounded-full">${compliance}</div>` : ''}
+                            
+                            <!-- Terminal -->
+                            <div class="bg-black rounded-lg p-4 font-mono text-xs space-y-1">
+                                ${wizardData.industry ? `
+                                    <div class="text-success-green">[✓] INDUSTRY MODULE SET: ${INDUSTRIES.find(i => i.id === wizardData.industry)?.name}</div>
+                                    ${compliance ? `<div class="text-success-green">[✓] COMPLIANCE FRAMEWORK: ${compliance} LOADED</div>` : ''}
+                                    <div class="text-slate-400">[▸] LOADING ASSET SCHEMA...</div>
+                                ` : '<div class="text-slate-400">[▸] WAITING FOR INDUSTRY SELECTION...</div>'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function selectIndustry(industryId) {
+            wizardData.industry = industryId;
+            
+            // Update step tile styles directly
+            const stepTiles = document.querySelectorAll('.step-tile');
+            stepTiles.forEach(tile => {
+                const onclick = tile.getAttribute('onclick');
+                if (onclick && onclick.includes(`'${industryId}'`)) {
+                    tile.className = 'step-tile p-4 rounded-lg border cursor-pointer selected';
+                } else {
+                    tile.className = 'step-tile p-4 rounded-lg border cursor-pointer glass-input';
+                }
+            });
+            
+            // Enable the continue button
+            const continueBtn = document.getElementById('step2-continue');
+            if (continueBtn) {
+                continueBtn.disabled = false;
+            }
+            
+            // Update right panel preview
+            const previewHeader = document.querySelector('.glass-card .flex.items-center.gap-2');
+            if (previewHeader && !previewHeader.querySelector('.bg-safety-orange\\/20')) {
+                const industry = INDUSTRIES.find(i => i.id === industryId);
+                if (industry) {
+                    const badge = document.createElement('span');
+                    badge.className = 'px-2 py-1 bg-safety-orange/20 text-safety-orange text-xs rounded-full';
+                    badge.textContent = industry.name;
+                    previewHeader.appendChild(badge);
+                }
+            }
+            
+            // Update terminal preview
+            const terminal = document.querySelector('.bg-black.rounded-lg');
+            if (terminal) {
+                const industry = INDUSTRIES.find(i => i.id === industryId);
+                const compliance = COMPLIANCE_MAP[industryId];
+                terminal.innerHTML = `
+                    <div class="text-success-green">[✓] INDUSTRY MODULE SET: ${industry?.name}</div>
+                    ${compliance ? `<div class="text-success-green">[✓] COMPLIANCE FRAMEWORK: ${compliance} LOADED</div>` : ''}
+                    <div class="text-slate-400">[▸] LOADING ASSET SCHEMA...</div>
+                `;
+                
+                // Add compliance badge if it exists
+                if (compliance && previewHeader) {
+                    const complianceBadge = document.createElement('div');
+                    complianceBadge.className = 'px-2 py-1 bg-success-green/20 text-success-green text-xs rounded-full';
+                    complianceBadge.textContent = compliance;
+                    previewHeader.appendChild(complianceBadge);
+                }
+            }
+            
+            // Handle "other" industry input field
+            const otherInput = document.getElementById('industry-other');
+            if (industryId === 'other' && !otherInput) {
+                // Add the other input field if it doesn't exist
+                const industryGrid = document.querySelector('.grid.grid-cols-1.md\\:grid-cols-3');
+                if (industryGrid) {
+                    const otherDiv = document.createElement('div');
+                    otherDiv.innerHTML = `
+                        <label class="block text-sm font-medium text-slate-300 mb-2">Describe your operation (optional)</label>
+                        <input type="text" id="industry-other" value="${wizardData.industryOther}" placeholder="Brief description of your operation"
+                            class="w-full px-4 py-3 glass-input rounded-lg text-white placeholder-slate-500"
+                            oninput="wizardData.industryOther = this.value">
+                    `;
+                    industryGrid.parentNode.appendChild(otherDiv);
+                }
+            } else if (industryId !== 'other' && otherInput) {
+                // Remove the other input field if it exists
+                otherInput.parentNode.remove();
+            }
+        }
+
+        // =============================================
+        // STEP 3: YOUR ROLE
+        // =============================================
+        function getStep3HTML() {
+            const selectedRole = ROLES.find(r => r.id === wizardData.role);
+            
+            return `
+                <div class="flex flex-col lg:flex-row min-h-screen">
+                    <!-- Left Panel -->
+                    <div class="w-full lg:w-[55%] p-8 lg:p-16 flex flex-col justify-center">
+                        <div class="max-w-xl mx-auto w-full space-y-8 animate-in">
+                            ${isInvitedUser ? `
+                                <div class="p-4 bg-safety-orange/10 border border-safety-orange/30 rounded-lg">
+                                    <div class="text-sm text-safety-orange font-medium">YOU HAVE BEEN INVITED TO JOIN ${inviteFacilityName}</div>
+                                </div>
+                            ` : ''}
+                            
+                            <div class="text-xs font-mono text-safety-orange">STEP ${isInvitedUser ? '3 OF 4' : '3 OF 6'}</div>
+                            
+                            <h1 class="text-3xl lg:text-4xl font-bold tracking-tight">What is your role in this facility?</h1>
+                            <p class="text-slate-400">Your dashboard, permissions, and daily view are configured around what you actually need to do every day.</p>
+                            
+                            <!-- Role Cards -->
+                            <div class="space-y-3">
+                                ${ROLES.map(role => `
+                                    <div onclick="${!inviteRole ? `selectRole('${role.id}')` : ''}" 
+                                        class="step-tile p-4 rounded-lg border cursor-pointer ${wizardData.role === role.id ? 'selected' : 'glass-input'} ${inviteRole && inviteRole !== role.id ? 'opacity-50 cursor-not-allowed' : ''}">
+                                        <div class="flex justify-between items-start">
+                                            <div>
+                                                <div class="font-semibold">${role.name}</div>
+                                                <div class="text-sm text-slate-400 mt-1">${role.desc}</div>
+                                            </div>
+                                            <span class="px-2 py-1 bg-safety-orange/20 text-safety-orange text-xs rounded-full">${role.access}</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            
+                            <div id="role-error" class="error-text hidden">SELECT YOUR ROLE TO CONTINUE</div>
+                            
+                            <div class="flex justify-between pt-6">
+                                <button onclick="goToStep(${isInvitedUser ? 4 : 2})" class="px-6 py-3 glass-input rounded-lg text-white hover:border-safety-orange/50 transition">
+                                    [← BACK]
+                                </button>
+                                <button id="step3-continue" onclick="validateAndContinue(3)" class="px-8 py-3 bg-safety-orange hover:bg-burnt-orange text-white font-semibold rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed" ${inviteRole ? '' : 'disabled'}>
+                                    [CONTINUE →]
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Panel -->
+                    <div class="w-full lg:w-[45%] bg-charcoal p-8 lg:p-12 flex flex-col justify-center border-l border-slate-800">
+                        <div class="glass-card rounded-xl p-6 space-y-4">
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-lg font-bold">${wizardData.facilityName || 'Your Facility'}</h3>
+                                ${selectedRole ? `<span class="px-2 py-1 bg-safety-orange/20 text-safety-orange text-xs rounded-full">${selectedRole.access}</span>` : ''}
+                            </div>
+                            
+                            <!-- Terminal -->
+                            <div class="bg-black rounded-lg p-4 font-mono text-xs space-y-1">
+                                ${selectedRole ? `
+                                    <div class="text-success-green">[✓] ROLE CONFIGURED: ${selectedRole.name}</div>
+                                    <div class="text-success-green">[✓] ACCESS LEVEL: ${selectedRole.access}</div>
+                                    <div class="text-slate-400">[▸] CONFIGURING DASHBOARD LAYOUT...</div>
+                                ` : '<div class="text-slate-400">[▸] WAITING FOR ROLE SELECTION...</div>'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function selectRole(roleId) {
+            wizardData.role = roleId;
+            
+            // Update role tile styles directly
+            const roleTiles = document.querySelectorAll('.step-tile');
+            roleTiles.forEach(tile => {
+                const onclick = tile.getAttribute('onclick');
+                if (onclick && onclick.includes(`'${roleId}'`)) {
+                    tile.className = 'step-tile p-4 rounded-lg border cursor-pointer selected';
+                } else {
+                    tile.className = 'step-tile p-4 rounded-lg border cursor-pointer glass-input';
+                }
+            });
+            
+            // Enable the continue button
+            const continueBtn = document.getElementById('step3-continue');
+            if (continueBtn) {
+                continueBtn.disabled = false;
+            }
+            
+            // Update right panel preview if it exists
+            const roleDetails = document.querySelector('.glass-card .space-y-2');
+            if (roleDetails) {
+                const role = ROLES.find(r => r.id === roleId);
+                if (role) {
+                    roleDetails.innerHTML = `
+                        <div class="text-sm font-medium text-slate-300">ACCESS LEVEL</div>
+                        <div class="text-lg font-bold text-white">${role.access}</div>
+                        <div class="text-sm font-medium text-slate-300 mt-3">YOU CAN SEE</div>
+                        <div class="text-sm text-slate-400">${role.canSee.join(', ')}</div>
+                    `;
+                }
+            }
+        }
+
+        // =============================================
+        // STEP 4: MODULE ACTIVATION
+        // =============================================
+        function getStep4HTML() {
+            const activeCount = wizardData.modules.length;
+            const capabilityPercent = Math.round((activeCount / MODULES.length) * 100);
+            const selectedRole = ROLES.find(r => r.id === wizardData.role);
+            
+            return `
+                <div class="flex flex-col lg:flex-row min-h-screen">
+                    <!-- Left Panel -->
+                    <div class="w-full lg:w-[55%] p-8 lg:p-16 flex flex-col justify-center">
+                        <div class="max-w-xl mx-auto w-full space-y-8 animate-in">
+                            <div class="text-xs font-mono text-safety-orange">STEP ${isInvitedUser ? '4 OF 5' : '4 OF 6'}</div>
+                            
+                            <h1 class="text-3xl lg:text-4xl font-bold tracking-tight">Activate your operational modules.</h1>
+                            <p class="text-slate-400">Choose what IndexField manages for your facility. You can change this anytime from settings.</p>
+                            
+                            ${selectedRole?.id === 'maintenance_technician' ? `
+                                <div class="p-3 bg-slate-800/50 rounded-lg text-xs text-slate-400">
+                                    <i class="fas fa-info-circle mr-2"></i>Modules shown for your role. Your plant manager can activate others.
+                                </div>
+                            ` : ''}
+                            
+                            <!-- Module Grid -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                ${MODULES.map(mod => {
+                                    const isAvailable = !selectedRole || selectedRole.canSee.includes('all') || selectedRole.canSee.some(m => mod.id.includes(m));
+                                    const isActive = wizardData.modules.includes(mod.id);
+                                    return `
+                                        <div data-module-id="${mod.id}" onclick="${isAvailable ? `toggleModule('${mod.id}')` : ''}" class="p-4 rounded-lg border cursor-pointer ${isActive ? 'border-safety-orange bg-safety-orange/5' : 'glass-input'} ${!isAvailable ? 'opacity-40 cursor-not-allowed' : 'hover:border-safety-orange/50'}">
+                                            <div class="flex justify-between items-start">
+                                                <div class="flex-1">
+                                                    <i class="fas ${mod.icon} text-slate-400 mb-2"></i>
+                                                    <div class="font-semibold text-sm">${mod.name}</div>
+                                                    <div class="text-xs text-slate-500 mt-1">${mod.desc}</div>
+                                                </div>
+                                                ${isAvailable ? `
+                                                    <label class="toggle-switch ml-4" onclick="event.stopPropagation()">
+                                                        <input type="checkbox" ${isActive ? 'checked' : ''} onchange="toggleModule('${mod.id}')">
+                                                        <span class="toggle-slider"></span>
+                                                    </label>
+                                                ` : ''}
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                            
+                            <div id="modules-error" class="error-text hidden">SELECT AT LEAST ONE MODULE</div>
+                            
+                            <div class="flex justify-between pt-6">
+                                <button onclick="goToStep(${isInvitedUser ? 3 : 3})" class="px-6 py-3 glass-input rounded-lg text-white hover:border-safety-orange/50 transition">
+                                    [← BACK]
+                                </button>
+                                <button id="step4-continue" onclick="validateAndContinue(4)" class="px-8 py-3 bg-safety-orange hover:bg-burnt-orange text-white font-semibold rounded-lg transition disabled:opacity-30 disabled:cursor-not-allowed">
+                                    [CONTINUE →]
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Panel -->
+                    <div class="w-full lg:w-[45%] bg-charcoal p-8 lg:p-12 flex flex-col justify-center border-l border-slate-800">
+                        <div class="glass-card rounded-xl p-6 space-y-4">
+                            <!-- Capability Bar -->
+                            <div>
+                                <div class="flex justify-between text-xs mb-2">
+                                    <span class="text-slate-400">SYSTEM CAPABILITY</span>
+                                    <span id="capability-percent" class="text-slate-400">${capabilityPercent}% OPERATIONAL</span>
+                                </div>
+                                <div class="h-2 bg-slate-700 rounded-full overflow-hidden">
+                                    <div id="capability-bar-fill" class="h-full bg-safety-orange transition-all" style="width: ${capabilityPercent}%"></div>
+                                </div>
+                                <div id="fully-operational-msg" class="${activeCount === MODULES.length ? '' : 'hidden'} text-success-green text-xs mt-2 flex items-center">
+                                    <span class="w-2 h-2 bg-success-green rounded-full mr-2 animate-pulse"></span>
+                                    FULLY OPERATIONAL
+                                </div>
+                            </div>
+
+                            <!-- Terminal -->
+                            <div id="module-terminal" class="bg-black rounded-lg p-4 font-mono text-xs space-y-1">
+                                ${wizardData.modules.map(modId => {
+                                    const mod = MODULES.find(m => m.id === modId);
+                                    return `<div class="text-success-green">[✓] ${mod.name.toUpperCase()} — ONLINE</div>`;
+                                }).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function toggleModule(moduleId) {
+            console.log('toggleModule called with:', moduleId);
+            const index = wizardData.modules.indexOf(moduleId);
+            const isAdding = index === -1;
+
+            if (isAdding) {
+                wizardData.modules.push(moduleId);
+            } else {
+                wizardData.modules.splice(index, 1);
+            }
+
+            console.log('Current modules:', wizardData.modules);
+
+            // Update specific module card styling
+            const card = document.querySelector(`[data-module-id="${moduleId}"]`);
+            const checkbox = card?.querySelector('input[type="checkbox"]');
+            
+            if (card) {
+                if (isAdding) {
+                    card.className = card.className.replace('glass-input', 'border-safety-orange bg-safety-orange/5');
+                    if (checkbox) checkbox.checked = true;
+                } else {
+                    card.className = card.className.replace('border-safety-orange bg-safety-orange/5', 'glass-input');
+                    if (checkbox) checkbox.checked = false;
+                }
+            }
+
+            // Update capability bar
+            const activeCount = wizardData.modules.length;
+            const capabilityPercent = Math.round((activeCount / MODULES.length) * 100);
+            const capabilityBar = document.getElementById('capability-bar-fill');
+            const capabilityText = document.getElementById('capability-percent');
+            const fullyOperationalMsg = document.getElementById('fully-operational-msg');
+            if (capabilityBar) capabilityBar.style.width = `${capabilityPercent}%`;
+            if (capabilityText) capabilityText.textContent = `${capabilityPercent}% OPERATIONAL`;
+            if (fullyOperationalMsg) {
+                if (activeCount === MODULES.length) {
+                    fullyOperationalMsg.classList.remove('hidden');
+                } else {
+                    fullyOperationalMsg.classList.add('hidden');
+                }
+            }
+
+            // Update terminal
+            const terminal = document.getElementById('module-terminal');
+            if (terminal) {
+                terminal.innerHTML = wizardData.modules.map(modId => {
+                    const mod = MODULES.find(m => m.id === modId);
+                    return `<div class="text-success-green">[✓] ${mod.name.toUpperCase()} — ONLINE</div>`;
+                }).join('');
+            }
+
+            // Update continue button
+            const continueBtn = document.getElementById('step4-continue');
+            const errorElement = document.getElementById('modules-error');
+            if (continueBtn) {
+                if (wizardData.modules.length === 0) {
+                    continueBtn.disabled = true;
+                    continueBtn.setAttribute('disabled', 'disabled');
+                } else {
+                    continueBtn.disabled = false;
+                    continueBtn.removeAttribute('disabled');
+                }
+                console.log('Continue button disabled:', continueBtn.disabled, 'Modules count:', wizardData.modules.length);
+            }
+            if (errorElement) {
+                if (wizardData.modules.length === 0) {
+                    errorElement.classList.remove('hidden');
+                } else {
+                    errorElement.classList.add('hidden');
+                }
+            }
+        }
+
+        // =============================================
+        // STEP 5: YOUR PRIORITIES
+        // =============================================
+        function getStep5HTML() {
+            return `
+                <div class="flex flex-col lg:flex-row min-h-screen">
+                    <!-- Left Panel -->
+                    <div class="w-full lg:w-[55%] p-8 lg:p-16 flex flex-col justify-center">
+                        <div class="max-w-xl mx-auto w-full space-y-8 animate-in">
+                            <div class="text-xs font-mono text-safety-orange">STEP ${isInvitedUser ? '5 OF 6' : '5 OF 6'}</div>
+                            
+                            <h1 class="text-3xl lg:text-4xl font-bold tracking-tight">Rank what matters most to you.</h1>
+                            <p class="text-slate-400">IndexField reorganizes your dashboard layout and AI focus around your top priority. Drag to reorder.</p>
+                            
+                            <!-- Priority List -->
+                            <div id="priority-list" class="space-y-3">
+                                ${wizardData.priorities.map((priorityId, index) => {
+                                    const priority = PRIORITIES.find(p => p.id === priorityId);
+                                    return `
+                                        <div draggable="true" data-index="${index}" 
+                                            class="flex items-center gap-4 p-4 rounded-lg glass-input cursor-move"
+                                            ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondrop="handleDrop(event)">
+                                            <div class="drag-handle text-slate-500">
+                                                <i class="fas fa-grip-vertical"></i>
+                                            </div>
+                                            <div class="w-8 h-8 rounded-full bg-safety-orange/20 text-safety-orange flex items-center justify-center text-sm font-bold">
+                                                ${index + 1}
+                                            </div>
+                                            <div class="flex-1">
+                                                <div class="font-semibold">${priority.name}</div>
+                                                <div class="text-sm text-slate-400">${priority.desc}</div>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                            
+                            <div class="flex justify-between pt-6">
+                                <button onclick="goToStep(${isInvitedUser ? 4 : 4})" class="px-6 py-3 glass-input rounded-lg text-white hover:border-safety-orange/50 transition">
+                                    [← BACK]
+                                </button>
+                                <button onclick="goToStep(${isInvitedUser ? 6 : 6})" class="px-8 py-3 bg-safety-orange hover:bg-burnt-orange text-white font-semibold rounded-lg transition">
+                                    [CONTINUE →]
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Panel -->
+                    <div class="w-full lg:w-[45%] bg-charcoal p-8 lg:p-12 flex flex-col justify-center border-l border-slate-800">
+                        <div class="glass-card rounded-xl p-6 space-y-4">
+                            <h3 class="text-lg font-bold">Dashboard Preview</h3>
+                            
+                            <!-- Preview Sidebar -->
+                            <div class="space-y-2">
+                                ${wizardData.priorities.slice(0, 3).map((priorityId, index) => {
+                                    const priority = PRIORITIES.find(p => p.id === priorityId);
+                                    const module = MODULES[index];
+                                    return `
+                                        <div class="flex items-center gap-3 p-2 rounded ${index === 0 ? 'bg-safety-orange/10' : 'opacity-60'}">
+                                            <i class="fas ${module?.icon || 'fa-circle'} text-slate-400"></i>
+                                            <span class="text-sm">${index + 1}. ${module?.name || 'Module'}</span>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                            
+                            <!-- Terminal -->
+                            <div class="bg-black rounded-lg p-4 font-mono text-xs space-y-1">
+                                <div class="text-slate-400">[▸] APPLYING PRIORITY CONFIGURATION...</div>
+                                <div class="text-success-green">[✓] DASHBOARD LAYOUT OPTIMIZED</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        let draggedIndex = null;
+        
+        function handleDragStart(e) {
+            draggedIndex = parseInt(e.target.dataset.index);
+            e.target.style.opacity = '0.5';
+        }
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            const target = e.target.closest('[draggable]');
+            if (!target) return;
+            
+            const targetIndex = parseInt(target.dataset.index);
+            if (draggedIndex === targetIndex) return;
+            
+            // Reorder priorities
+            const item = wizardData.priorities.splice(draggedIndex, 1)[0];
+            wizardData.priorities.splice(targetIndex, 0, item);
+            
+            renderStep(currentStep);
+        }
+
+        // =============================================
+        // STEP 6: YOUR CRITICAL ASSET
+        // =============================================
+        function getStep6HTML() {
+            return `
+                <div class="flex flex-col lg:flex-row min-h-screen">
+                    <!-- Left Panel -->
+                    <div class="w-full lg:w-[55%] p-8 lg:p-16 flex flex-col justify-center">
+                        <div class="max-w-xl mx-auto w-full space-y-8 animate-in">
+                            <div class="text-xs font-mono text-safety-orange">STEP ${isInvitedUser ? '6 OF 6' : '6 OF 6'}</div>
+                            
+                            <h1 class="text-3xl lg:text-4xl font-bold tracking-tight">Name your most critical asset.</h1>
+                            <p class="text-slate-400">The single piece of equipment your facility cannot afford to have go down. This becomes the first entry in your Asset Registry.</p>
+                            
+                            <!-- Critical Asset Input -->
+                            <div>
+                                <input type="text" id="critical-asset" value="${wizardData.criticalAsset}" 
+                                    placeholder="e.g. Hydraulic Press #3, Boiler Unit B, Conveyor Drive System"
+                                    class="w-full px-4 py-4 glass-input rounded-lg text-white placeholder-slate-500 text-lg"
+                                    oninput="updateCriticalAsset(this.value)">
+                            </div>
+                            
+                            <!-- Manual Upload -->
+                            <div class="pt-6 border-t border-slate-700">
+                                <div class="text-sm font-medium text-slate-300 mb-3">UPLOAD YOUR FIRST MANUAL (OPTIONAL)</div>
+                                <div class="text-xs text-slate-500 mb-4">Upload the manual for your critical asset to immediately activate AI coverage.</div>
+                                
+                                <div id="dropzone" class="border-2 border-dashed border-slate-600 rounded-lg p-8 text-center cursor-pointer hover:border-safety-orange/50 transition"
+                                    onclick="document.getElementById('manual-file').click()"
+                                    ondragover="event.preventDefault(); this.classList.add('border-safety-orange/50')"
+                                    ondragleave="this.classList.remove('border-safety-orange/50')"
+                                    ondrop="handleFileDrop(event)">
+                                    ${wizardData.manualFile ? `
+                                        <div class="space-y-2">
+                                            <i class="fas fa-file-pdf text-3xl text-safety-orange"></i>
+                                            <div class="text-sm text-white">${wizardData.manualFile.name}</div>
+                                            <div class="text-xs text-slate-400">${(wizardData.manualFile.size / 1024 / 1024).toFixed(2)} MB</div>
+                                        </div>
+                                    ` : `
+                                        <div class="space-y-2">
+                                            <i class="fas fa-cloud-upload-alt text-3xl text-slate-500"></i>
+                                            <div class="text-sm text-slate-400">Drop file here or click to browse</div>
+                                            <div class="text-xs text-slate-500">PDF, DOCX, TXT · MAX 500MB</div>
+                                        </div>
+                                    `}
+                                </div>
+                                <input type="file" id="manual-file" accept=".pdf,.docx,.txt" class="hidden" onchange="handleFileSelect(event)">
+                                
+                                <div class="text-center mt-2">
+                                    <button onclick="skipManual()" class="text-xs text-slate-500 hover:text-slate-300 underline">SKIP — I'LL DO THIS LATER</button>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-between pt-6">
+                                <button onclick="goToStep(${isInvitedUser ? 5 : 5})" class="px-6 py-3 glass-input rounded-lg text-white hover:border-safety-orange/50 transition">
+                                    [← BACK]
+                                </button>
+                                <button onclick="deployEnvironment()" class="px-8 py-3 bg-safety-orange hover:bg-burnt-orange text-white font-semibold rounded-lg transition">
+                                    DEPLOY MY INDEXFIELD ENVIRONMENT
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Panel -->
+                    <div class="w-full lg:w-[45%] bg-charcoal p-8 lg:p-12 flex flex-col justify-center border-l border-slate-800">
+                        <div class="glass-card rounded-xl p-6 space-y-4">
+                            <h3 class="text-lg font-bold">Asset Registry Preview</h3>
+                            
+                            ${wizardData.criticalAsset ? `
+                                <div class="p-3 rounded-lg bg-safety-orange/5 border border-safety-orange/20 animate-pulse">
+                                    <div class="flex items-center gap-3">
+                                        <span class="w-2 h-2 rounded-full bg-safety-orange"></span>
+                                        <div class="flex-1">
+                                            <div class="font-medium">${wizardData.criticalAsset}</div>
+                                            <div class="text-xs text-slate-400 mt-1">Status: ● UNDOCUMENTED</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-xs text-slate-500 mt-2">Last Service: UNKNOWN · Maintenance: UNSCHEDULED</div>
+                                </div>
+                            ` : `
+                                <div class="text-slate-500 text-sm text-center py-8">
+                                    Asset will appear here when named
+                                </div>
+                            `}
+                            
+                            <!-- Terminal -->
+                            <div class="bg-black rounded-lg p-4 font-mono text-xs space-y-1">
+                                ${wizardData.criticalAsset ? `
+                                    <div class="text-slate-400">[▸] REGISTERING ASSET: ${wizardData.criticalAsset}...</div>
+                                    <div class="text-success-green">[✓] ASSET REGISTERED — AWAITING MANUAL</div>
+                                ` : '<div class="text-slate-400">[▸] WAITING FOR ASSET NAME...</div>'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function updateCriticalAsset(value) {
+            wizardData.criticalAsset = value;
+            renderStep(currentStep);
+        }
+        
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                wizardData.manualFile = file;
+                renderStep(currentStep);
+            }
+        }
+        
+        function handleFileDrop(event) {
+            event.preventDefault();
+            const file = event.dataTransfer.files[0];
+            if (file && (file.type === 'application/pdf' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.type === 'text/plain')) {
+                wizardData.manualFile = file;
+                renderStep(currentStep);
+            }
+        }
+        
+        function skipManual() {
+            wizardData.manualFile = null;
+            document.getElementById('manual-file').value = '';
+            renderStep(currentStep);
+        }
+
+        // =============================================
+        // VALIDATION & NAVIGATION
+        // =============================================
+        function validateAndContinue(step) {
+            console.log('validateAndContinue called for step:', step);
+            let isValid = true;
+            let errorElementId = '';
+            
+            switch(step) {
+                case 1:
+                    if (!wizardData.facilityName.trim()) {
+                        isValid = false;
+                        errorElementId = 'facility-name-error';
+                        document.getElementById('facility-name-error').classList.remove('hidden');
+                    } else {
+                        document.getElementById('facility-name-error').classList.add('hidden');
+                    }
+                    
+                    if (!wizardData.location.trim()) {
+                        isValid = false;
+                        errorElementId = 'location-error';
+                        document.getElementById('location-error').classList.remove('hidden');
+                    } else {
+                        document.getElementById('location-error').classList.add('hidden');
+                    }
+                    break;
+                    
+                case 2:
+                    if (!wizardData.industry) {
+                        isValid = false;
+                        errorElementId = 'industry-error';
+                        document.getElementById('industry-error').classList.remove('hidden');
+                    } else {
+                        document.getElementById('industry-error').classList.add('hidden');
+                    }
+                    break;
+                    
+                case 3:
+                    if (!wizardData.role) {
+                        isValid = false;
+                        errorElementId = 'role-error';
+                        document.getElementById('role-error').classList.remove('hidden');
+                    } else {
+                        document.getElementById('role-error').classList.add('hidden');
+                    }
+                    break;
+                    
+                case 4:
+                    if (wizardData.modules.length === 0) {
+                        isValid = false;
+                        errorElementId = 'modules-error';
+                        document.getElementById('modules-error').classList.remove('hidden');
+                    } else {
+                        document.getElementById('modules-error').classList.add('hidden');
+                    }
+                    console.log('Step 4 validation - isValid:', isValid, 'modules:', wizardData.modules);
+                    break;
+            }
+            
+            if (isValid) {
+                const nextStep = step + 1;
+                console.log('Validation passed, going to step:', nextStep);
+                if (isInvitedUser) {
+                    // Skip steps for invited users
+                    if (step === 3) goToStep(6);
+                    else goToStep(nextStep);
+                } else {
+                    goToStep(nextStep);
+                }
+            }
+        }
+        
+        function goToStep(step) {
+            console.log('goToStep called with:', step);
+            currentStep = step;
+            renderStep(step);
+        }
+
+        // =============================================
+        // DEPLOY
+        // =============================================
+        async function deployEnvironment() {
+            const overlay = document.getElementById('deploy-overlay');
+            const terminal = document.getElementById('deploy-terminal');
+            overlay.classList.remove('hidden');
+            
+            const lines = [
+                `[▸] PROVISIONING FACILITY NODE: ${wizardData.facilityName}...`,
+                `[▸] ASSIGNING ROLE: ${ROLES.find(r => r.id === wizardData.role)?.name}...`,
+                `[▸] ACTIVATING MODULES: ${wizardData.modules.length}/6...`,
+                `[▸] LOADING ${INDUSTRIES.find(i => i.id === wizardData.industry)?.name} SCHEMA...`,
+                `[▸] IMPORTING ASSET: ${wizardData.criticalAsset}...`,
+                `[▸] APPLYING PRIORITY CONFIGURATION...`
+            ];
+            
+            if (wizardData.industry && COMPLIANCE_MAP[wizardData.industry]) {
+                lines.push(`[▸] CONFIGURING COMPLIANCE FRAMEWORK: ${COMPLIANCE_MAP[wizardData.industry]}...`);
+            }
+            
+            if (wizardData.manualFile) {
+                lines.push(`[▸] UPLOADING MANUAL: ${wizardData.manualFile.name}...`);
+                lines.push(`[▸] EXTRACTING MAINTENANCE INTERVALS...`);
+                lines.push(`[▸] BUILDING KNOWLEDGE GRAPH...`);
+                lines.push(`[▸] INDEXING DOCUMENT...`);
+            }
+            
+            lines.push(`[✓] INDEXFIELD ENVIRONMENT READY`);
+            lines.push(`[✓] WELCOME TO ${wizardData.facilityName.toUpperCase()} DASHBOARD`);
+            
+            // Display lines with animation
+            for (let i = 0; i < lines.length; i++) {
+                await new Promise(resolve => setTimeout(resolve, 400));
+                terminal.innerHTML += `<div class="terminal-line ${lines[i].includes('✓') ? 'text-success-green' : 'text-slate-400'}">${lines[i]}</div>`;
+            }
+            
+            // Hold on final line
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            // Save data to Supabase
+            await saveWizardData();
+            
+            // Fade out and redirect
+            overlay.style.opacity = '0';
+            overlay.style.transition = 'opacity 800ms';
+            
+            setTimeout(() => {
+                window.location.href = 'dashboard.html';
+            }, 800);
+        }
+        
+        async function saveWizardData() {
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (!session) return;
+                
+                const token = session.access_token;
+                
+                const payload = {
+                    facility_name: wizardData.facilityName,
+                    location: wizardData.location,
+                    technician_count: wizardData.technicianCount,
+                    industry: wizardData.industry,
+                    primary_equipment: wizardData.primaryEquipment || wizardData.criticalAsset || 'Centrifugal Pump',
+                    modules_selected: wizardData.modules,
+                    priorities: wizardData.priorities,
+                    critical_asset: wizardData.criticalAsset || '',
+                    role: wizardData.role
+                };
+                
+                const response = await fetch(`${window.location.origin}/api/facility/setup`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    console.error('Facility setup request failed:', await response.text());
+                }
+                
+                // Upload manual if provided
+                if (wizardData.manualFile) {
+                    const formData = new FormData();
+                    formData.append('file', wizardData.manualFile);
+                    
+                    await fetch(`${window.location.origin}/api/sandbox/upload`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: formData
+                    });
+                }
+                
+            } catch (e) {
+                console.error('Failed to save wizard data:', e);
+                // Show error but continue to dashboard
+            }
+        }
+        
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', initWizard);
+    </script>
+</body>
+</html>

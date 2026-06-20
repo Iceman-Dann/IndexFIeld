@@ -12,6 +12,7 @@
     <script src="supabase-config.js"></script>
     <!-- Note: In a true air-gapped deployment, this library is served locally from the node -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
     
     <script>
         tailwind.config = {
@@ -509,48 +510,52 @@
             
             <nav class="flex-1 py-4">
                 <div class="px-4 mb-1 mt-2 text-[10px] font-bold text-white uppercase tracking-wider">Operations</div>
-                <a href="#" onclick="showView('chat')" id="nav-chat" class="sidebar-item active flex items-center gap-3 px-4 py-3 text-sm text-white font-semibold">
+                <a href="#" onclick="showView('chat')" id="nav-chat" data-role-required="owner,plant_manager,admin,supervisor,operations_supervisor,technician,maintenance_technician,safety_officer,quality_manager,viewer,read_only" class="sidebar-item active flex items-center gap-3 px-4 py-3 text-sm text-white font-semibold">
                     <i class="fas fa-comments text-[#F97316]"></i>
                     <span>Ask Questions</span>
                 </a>
-                <a href="#" onclick="routeGuard('insights')" id="nav-insights" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
+                <a href="#" onclick="routeGuard('insights')" id="nav-insights" data-role-required="owner,plant_manager,admin,supervisor,operations_supervisor" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
                     <i class="fas fa-chart-network"></i>
                     <span>Performance Summary</span>
                 </a>
-                <a href="#" onclick="routeGuard('manuals')" id="nav-manuals" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
+                <a href="#" onclick="routeGuard('manuals')" id="nav-manuals" data-role-required="owner,plant_manager,admin,supervisor,operations_supervisor,technician,maintenance_technician,safety_officer,quality_manager,viewer,read_only" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
                     <i class="fas fa-folder-open"></i>
                     <span>Manuals</span>
                     <span id="manual-count" class="ml-auto text-[10px] bg-white/5 px-2 py-0.5 rounded-full hidden">0</span>
                 </a>
-                <a href="#" onclick="routeGuard('history')" id="nav-history" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
+                <a href="#" onclick="routeGuard('history')" id="nav-history" data-role-required="owner,plant_manager,admin,supervisor,operations_supervisor" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
                     <i class="fas fa-clipboard-list"></i>
                     <span>Knowledge Audit</span>
                 </a>
                 <!-- FEATURE 2 & 5: New Operations Items -->
-                <a href="#" onclick="routeGuard('workorders')" id="nav-workorders" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
+                <a href="#" onclick="routeGuard('workorders')" id="nav-workorders" data-role-required="owner,plant_manager,admin,supervisor,operations_supervisor,technician,maintenance_technician,safety_officer,quality_manager" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
                     <i class="fas fa-clipboard-check"></i>
                     <span>Work Orders</span>
                     <span id="work-orders-badge" class="ml-auto text-[10px] bg-white/5 text-slate-200 font-medium px-1.5 py-0.5 rounded border border-white/10 hidden">0</span>
                 </a>
-                <a href="#" onclick="routeGuard('handover')" id="nav-handover" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
+                <a href="#" onclick="routeGuard('handover')" id="nav-handover" data-role-required="owner,plant_manager,admin,supervisor,operations_supervisor,technician,maintenance_technician,safety_officer,quality_manager" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
                     <i class="fas fa-handshake"></i>
                     <span>Shift Handover</span>
                 </a>
+                <a href="#" onclick="routeGuard('team')" id="nav-team" data-role-required="owner,plant_manager,admin" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
+                    <i class="fas fa-users text-[#06B6D4]"></i>
+                    <span>Team Management</span>
+                </a>
                 
                 <div class="px-4 mb-1 mt-4 text-[10px] font-bold text-white uppercase tracking-wider border-t border-white/10 pt-4">Fleet</div>
-                <a href="#" onclick="routeGuard('assets')" id="nav-assets" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
+                <a href="#" onclick="routeGuard('assets')" id="nav-assets" data-role-required="owner,plant_manager,admin,supervisor,operations_supervisor,technician,maintenance_technician,safety_officer,quality_manager" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
                     <i class="fas fa-industry"></i>
                     <span>Asset Registry</span>
                 </a>
-                <a href="#" onclick="routeGuard('telemetry')" id="nav-telemetry" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
+                <a href="#" onclick="routeGuard('telemetry')" id="nav-telemetry" data-role-required="owner,plant_manager,admin,supervisor,operations_supervisor" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
                     <i class="fas fa-broadcast-tower"></i>
-                    <span>Live Monitoring</span>
+                    <span>Facility Pulse</span>
                 </a>
-                <a href="#" onclick="routeGuard('prognostics')" id="nav-prognostics" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
+                <a href="#" onclick="routeGuard('prognostics')" id="nav-prognostics" data-role-required="owner,plant_manager,admin,supervisor,operations_supervisor" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
                     <i class="fas fa-chart-line text-[#22C55E]"></i>
-                    <span>Maintenance Forecast</span>
+                    <span>AI Maintenance</span>
                 </a>
-                <a href="#" onclick="routeGuard('loto')" id="nav-loto" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
+                <a href="#" onclick="routeGuard('loto')" id="nav-loto" data-role-required="owner,plant_manager,admin,supervisor,operations_supervisor" class="sidebar-item flex items-center gap-3 px-4 py-3 text-sm text-slate-100 font-semibold hover:text-white">
                     <i class="fas fa-lock text-yellow-500"></i>
                     <span>Lockout / Tagout</span>
                     <span class="ml-auto text-[9px] bg-yellow-500/10 text-yellow-500 font-bold px-1.5 py-0.5 rounded border border-yellow-500/30">SAFETY</span>
@@ -667,22 +672,22 @@
             </header>
             <!-- Status Bar -->
             <div class="h-8 border-b border-white/5 flex items-center px-4 lg:px-6 bg-[#0d1117]">
-                <div class="flex items-center gap-4 text-[10px] font-mono text-slate-500 w-full">
-                    <span>FACILITY: HARWICK PROCESSING</span>
+                <div id="status-bar-inner" class="flex items-center gap-4 text-[10px] font-mono text-slate-500 w-full">
+                    <span id="status-facility">FACILITY: INDEXFIELD</span>
                     <span class="text-slate-700">·</span>
-                    <span>INDUSTRY: OIL & GAS</span>
+                    <span id="status-industry">INDUSTRY: —</span>
                     <span class="text-slate-700">·</span>
-                    <span>MODULES: 6 ACTIVE</span>
+                    <span id="status-modules">MODULES: 6 ACTIVE</span>
                     <span class="text-slate-700">·</span>
-                    <span>HEALTH: 73/100</span>
+                    <span onclick="openHealthDrawer()" class="cursor-pointer hover:text-white transition-colors flex items-center gap-1">HEALTH: <span id="bar-health-score" class="font-bold text-[#F97316]">73</span>/100</span>
                     <span class="text-slate-700">·</span>
-                    <span class="flex items-center gap-1.5">NODE STATUS: <span class="w-1.5 h-1.5 rounded-full bg-[#22C55E]"></span> OPERATIONAL</span>
+                    <span id="status-node" class="flex items-center gap-1.5">NODE STATUS: <span class="w-1.5 h-1.5 rounded-full bg-[#22C55E]"></span> OPERATIONAL</span>
                 </div>
             </div>
 
             
             <!-- Chat View -->
-            <div id="chat-view" class="dashboard-view chat-view-layout" data-fragment="chat-view"></div><div id="insights-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="insights-view"></div><div id="assets-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="assets-view"></div><div id="telemetry-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="telemetry-view"></div><div id="vault-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="vault-view"></div><div id="field-view" class="dashboard-view hidden flex-1 overflow-y-auto" data-fragment="field-view"></div><div id="loto-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="loto-view"></div><div id="prognostics-view" class="dashboard-view hidden flex-col flex-1 overflow-y-auto p-6 font-mono text-white" data-fragment="prognostics-view"></div><div id="history-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6 font-mono text-white" data-fragment="history-view"></div><div id="help-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="help-view"></div><div id="manuals-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="manuals-view"></div><div id="workorders-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="workorders-view"></div><div id="handover-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="handover-view"></div>        </main>
+            <div id="chat-view" class="dashboard-view chat-view-layout" data-fragment="chat-view"></div><div id="insights-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="insights-view"></div><div id="assets-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="assets-view"></div><div id="telemetry-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="telemetry-view"></div><div id="vault-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="vault-view"></div><div id="field-view" class="dashboard-view hidden flex-1 overflow-y-auto" data-fragment="field-view"></div><div id="loto-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="loto-view"></div><div id="prognostics-view" class="dashboard-view hidden flex-col flex-1 overflow-y-auto p-6 font-mono text-white" data-fragment="prognostics-view"></div><div id="history-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6 font-mono text-white" data-fragment="history-view"></div><div id="help-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="help-view"></div><div id="manuals-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="manuals-view"></div><div id="workorders-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="workorders-view"></div><div id="team-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="team-view"></div><div id="handover-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6" data-fragment="handover-view"></div>        </main>
     </div>
     
     <!-- First-Time Onboarding Wizard -->
@@ -917,6 +922,10 @@
                         <i class="fas fa-credit-card text-light-slate w-4"></i>
                         Billing
                     </button>
+                    <button onclick="switchSettingsTab('demo')" class="settings-tab-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm hover:bg-white/5 transition" data-tab="demo">
+                        <i class="fas fa-database text-light-slate w-4"></i>
+                        Demo Sandbox
+                    </button>
                 </nav>
                 <div class="p-4 border-t border-white/10">
                     <button onclick="hideSettings()" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm transition">
@@ -986,6 +995,13 @@
                         Save Changes
                     </button>
                 </div>
+                    
+                    <div class="mt-6 pt-6 border-t border-white/10">
+                        <button onclick="resetAccountForTesting()" class="px-4 py-2 bg-red-600/20 border border-red-600/50 text-red-400 rounded text-sm font-medium hover:bg-red-600/30 transition">
+                            Reset Account (Testing)
+                        </button>
+                        <p class="text-xs text-light-slate mt-2">Clears all facility data and resets setup. Email remains intact.</p>
+                    </div>
                 
                 <!-- Workspace Tab -->
                 <div id="tab-workspace" class="settings-tab-content p-6 hidden">
@@ -1332,6 +1348,35 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Demo Tab -->
+                <div id="tab-demo" class="settings-tab-content p-6 hidden">
+                    <h3 class="text-lg font-semibold mb-2">Demo Facility Sandbox</h3>
+                    <p class="text-xs text-light-slate mb-6">Populate your workspace with a complete set of realistic Oil & Gas facility data to experience the full power of IndexField.</p>
+                    
+                    <div class="settings-section p-6 border border-[#F97316]/30 bg-[#F97316]/5 rounded-xl">
+                        <h4 class="font-bold text-white mb-2">Load Demo Facility</h4>
+                        <p class="text-xs text-slate-300 leading-relaxed mb-6">This will populate the following assets, manuals, work orders, LOTO permits, and logs into your workspace, letting you instantly demonstrate the platform's capabilities.</p>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6 text-xs text-slate-300">
+                            <div class="flex items-center gap-2"><i class="fas fa-cogs text-[#F97316] w-4"></i> 15 Active Assets</div>
+                            <div class="flex items-center gap-2"><i class="fas fa-book text-[#F97316] w-4"></i> 8 Indexfield Manuals</div>
+                            <div class="flex items-center gap-2"><i class="fas fa-clipboard-list text-[#F97316] w-4"></i> 12 Work Orders</div>
+                            <div class="flex items-center gap-2"><i class="fas fa-key text-[#F97316] w-4"></i> 3 LOTO Permits</div>
+                            <div class="flex items-center gap-2"><i class="fas fa-history text-[#F97316] w-4"></i> 30 Days Shift Logs</div>
+                            <div class="flex items-center gap-2"><i class="fas fa-heartbeat text-[#F97316] w-4"></i> Fully Calculated Health Score</div>
+                        </div>
+                        
+                        <div class="flex gap-4">
+                            <button onclick="loadDemoFacilityData()" class="px-6 py-3 bg-[#F97316] text-black font-semibold rounded-lg hover:bg-[#EA580C] transition-all flex items-center gap-2">
+                                <i class="fas fa-magic"></i> Load Demo Facility
+                            </button>
+                            <button onclick="clearDemoFacilityData()" class="px-6 py-3 bg-white/5 border border-white/20 text-white font-semibold rounded-lg hover:bg-white/10 transition-all flex items-center gap-2">
+                                <i class="fas fa-trash-alt"></i> Clear Demo Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1406,6 +1451,133 @@
         </div>
     </div>
     
+    <!-- Facility Health Score Slide-Out Drawer -->
+    <div id="health-score-drawer" class="fixed inset-y-0 right-0 w-80 lg:w-96 bg-[#0f172a]/95 border-l border-white/10 shadow-2xl transform translate-x-full transition-transform duration-300 z-[100] flex flex-col font-sans text-white">
+        <div class="p-5 border-b border-white/10 flex items-center justify-between bg-black/20">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-heartbeat text-[#F97316]"></i>
+                <h3 class="text-sm font-bold uppercase tracking-wider">Facility Health Status</h3>
+            </div>
+            <button onclick="closeHealthDrawer()" class="text-slate-400 hover:text-white transition"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-5 space-y-6">
+            <!-- Score Indicator -->
+            <div class="flex items-center gap-4 bg-white/5 border border-white/10 rounded-xl p-4">
+                <div class="relative w-16 h-16 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-full h-full transform -rotate-90">
+                        <circle cx="32" cy="32" r="28" stroke="rgba(255,255,255,0.1)" stroke-width="4" fill="transparent"/>
+                        <circle id="health-ring-fill" cx="32" cy="32" r="28" stroke="#F97316" stroke-width="4" fill="transparent"
+                                stroke-dasharray="175.9" stroke-dashoffset="47.5" stroke-linecap="round"/>
+                    </svg>
+                    <span id="health-drawer-score" class="absolute text-lg font-black font-mono text-white">73%</span>
+                </div>
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300">Harwick Processing</h4>
+                    <p class="text-[10px] text-slate-400 mt-0.5" id="health-score-status-desc">Amber Status · Active monitoring</p>
+                </div>
+            </div>
+
+            <!-- Categories -->
+            <div class="space-y-3">
+                <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Category Scores</h4>
+                <div class="space-y-2.5">
+                    <div>
+                        <div class="flex justify-between text-[11px] mb-1">
+                            <span class="text-slate-300">Document Coverage</span>
+                            <span class="font-mono font-bold text-[#F97316]" id="score-val-doc">34%</span>
+                        </div>
+                        <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                            <div class="h-full bg-[#F97316]" id="score-bar-doc" style="width: 34%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-[11px] mb-1">
+                            <span class="text-slate-300">LOTO Safety</span>
+                            <span class="font-mono font-bold text-[#22C55E]" id="score-val-loto">92%</span>
+                        </div>
+                        <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                            <div class="h-full bg-[#22C55E]" id="score-bar-loto" style="width: 92%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-[11px] mb-1">
+                            <span class="text-slate-300">AI Maintenance Readiness</span>
+                            <span class="font-mono font-bold text-yellow-500" id="score-val-maint">65%</span>
+                        </div>
+                        <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                            <div class="h-full bg-yellow-500" id="score-bar-maint" style="width: 65%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Issues -->
+            <div class="space-y-2.5">
+                <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Top Issues Identified</h4>
+                <div class="space-y-2 text-xs" id="health-issues-list">
+                    <div class="p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-start gap-2.5">
+                        <span class="text-red-400 mt-0.5">⚠️</span>
+                        <div>
+                            <p class="font-semibold text-white">Missing Electrical System Docs</p>
+                            <p class="text-[10px] text-slate-400 mt-0.5">Electrical maintenance logs cannot resolve without OEM specs.</p>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-start gap-2.5">
+                        <span class="text-amber-400 mt-0.5">⚠️</span>
+                        <div>
+                            <p class="font-semibold text-white">Active Lockout Compliance Gap</p>
+                            <p class="text-[10px] text-slate-400 mt-0.5">2 assets have active work orders but no LOTO procedures.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Next Recommended Actions -->
+            <div class="space-y-2.5">
+                <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Recommended Actions</h4>
+                <div class="space-y-2 text-xs" id="health-actions-list">
+                    <button onclick="showView('manuals'); closeHealthDrawer();" class="w-full text-left p-2.5 bg-white/5 border border-white/10 rounded-lg hover:border-[#F97316]/50 transition flex items-center justify-between">
+                        <div>
+                            <p class="font-semibold text-white">Upload Electrical OEM Specs</p>
+                            <p class="text-[9px] text-slate-400">Increases document coverage by +12%</p>
+                        </div>
+                        <i class="fas fa-chevron-right text-[10px] text-[#F97316]"></i>
+                    </button>
+                    <button onclick="showView('loto'); closeHealthDrawer();" class="w-full text-left p-2.5 bg-white/5 border border-white/10 rounded-lg hover:border-[#F97316]/50 transition flex items-center justify-between">
+                        <div>
+                            <p class="font-semibold text-white">Document Lockout Protocols</p>
+                            <p class="text-[9px] text-slate-400">Apply safety rules to Boiler #2 and V-102</p>
+                        </div>
+                        <i class="fas fa-chevron-right text-[10px] text-[#F97316]"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="health-drawer-backdrop" class="fixed inset-0 bg-black/60 hidden z-[99]" onclick="closeHealthDrawer()"></div>
+
+    <!-- Universal Cross-Page Search Modal (Ctrl+K / Cmd+K) -->
+    <div id="global-search-modal" class="hidden fixed inset-0 z-[200] flex items-start justify-center bg-black/80 backdrop-blur-sm p-4 pt-[10vh]">
+        <div class="w-full max-w-2xl bg-[#0f172a] border border-white/15 rounded-2xl shadow-2xl overflow-hidden font-sans text-white">
+            <!-- Search Header -->
+            <div class="p-4 border-b border-white/10 flex items-center gap-3">
+                <i class="fas fa-search text-slate-400 text-lg"></i>
+                <input id="global-search-input" type="text" placeholder="Search manuals, assets, work orders, LOTO procedures..."
+                       class="flex-1 bg-transparent border-0 text-white placeholder-slate-400 text-base focus:ring-0 focus:outline-none"
+                       onkeyup="runGlobalSearch(this.value)">
+                <span class="text-[9px] bg-white/10 text-slate-400 px-2 py-1 rounded font-mono">ESC</span>
+                <button onclick="closeGlobalSearch()" class="text-slate-400 hover:text-white transition px-2"><i class="fas fa-times"></i></button>
+            </div>
+            <!-- Results Pane -->
+            <div id="global-search-results" class="max-h-[60vh] overflow-y-auto p-4 space-y-4">
+                <div class="text-center py-8 text-slate-500 text-sm">
+                    <i class="fas fa-search-plus text-2xl mb-2 block"></i>
+                    Type any keyword (e.g. "Boiler", "Lockout", "V-102", "Pump") to search the facility.
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="toast-container" class="fixed bottom-6 right-6 z-50 space-y-2"></div>
 
     <script>
@@ -1457,7 +1629,312 @@
 
         // App-wide route guard for empty state
         function routeGuard(viewId) {
+            // Check if the nav item for this view is hidden (role-restricted)
+            const navEl = document.getElementById('nav-' + viewId);
+            if (navEl && navEl.classList.contains('hidden')) {
+                showView('chat');
+                showToast("You don't have access to that page.", 'warning');
+                return;
+            }
             showView(viewId);
+        }
+
+        // Apply role-based sidebar rendering
+        function applyRoleBasedSidebar(userRole) {
+            // Normalize role to handle variations
+            const normalizedRole = userRole ? userRole.toLowerCase().replace(/[_\s]/g, '_') : 'viewer';
+            
+            // Map backend roles to display roles for checking
+            const roleMappings = {
+                'owner': ['owner', 'plant_manager', 'admin'],
+                'plant_manager': ['owner', 'plant_manager', 'admin'],
+                'supervisor': ['supervisor', 'operations_supervisor'],
+                'technician': ['technician', 'maintenance_technician'],
+                'viewer': ['viewer', 'read_only'],
+                'safety_officer': ['safety_officer'],
+                'quality_manager': ['quality_manager']
+            };
+            
+            // Get all allowed roles for the user
+            const allowedRoles = roleMappings[normalizedRole] || [normalizedRole];
+            
+            // Hide/show sidebar items based on role
+            const sidebarItems = document.querySelectorAll('.sidebar-item[data-role-required]');
+            sidebarItems.forEach(item => {
+                const requiredRoles = item.getAttribute('data-role-required').split(',').map(r => r.trim().toLowerCase());
+                const hasAccess = requiredRoles.some(role => allowedRoles.includes(role));
+                
+                if (!hasAccess) {
+                    item.classList.add('hidden');
+                } else {
+                    item.classList.remove('hidden');
+                }
+            });
+        }
+
+        // Apply header personalization
+        function applyHeaderPersonalization(context) {
+            // Update status bar facility name
+            const facilityEl = document.getElementById('status-facility');
+            if (facilityEl && context.facility_name) {
+                facilityEl.textContent = `FACILITY: ${context.facility_name.toUpperCase()}`;
+            }
+            
+            // Update status bar industry
+            const industryEl = document.getElementById('status-industry');
+            if (industryEl && context.industry) {
+                industryEl.textContent = `INDUSTRY: ${context.industry.toUpperCase()}`;
+            }
+            
+            // Update status bar modules count
+            const modulesEl = document.getElementById('status-modules');
+            if (modulesEl && context.modules_selected) {
+                modulesEl.textContent = `MODULES: ${context.modules_selected.length} ACTIVE`;
+            }
+            
+            // Add industry badge if applicable
+            const statusBarInner = document.getElementById('status-bar-inner');
+            if (statusBarInner && context.industry && !statusBarInner.querySelector('.industry-badge')) {
+                const industryBadges = {
+                    'oil & gas': { text: 'OSHA 1910.119', color: 'text-red-400' },
+                    'pharmaceutical': { text: 'FDA 21 CFR', color: 'text-blue-400' },
+                    'chemical processing': { text: 'EPA RMP', color: 'text-yellow-400' },
+                    'food & beverage': { text: 'FSMA', color: 'text-green-400' }
+                };
+                
+                const badge = industryBadges[context.industry.toLowerCase()];
+                if (badge) {
+                    const badgeEl = document.createElement('span');
+                    badgeEl.className = `industry-badge ${badge.color} font-bold`;
+                    badgeEl.textContent = badge.text;
+                    statusBarInner.appendChild(badgeEl);
+                }
+            }
+            
+            // Update user display name in sidebar
+            const userDisplayName = document.getElementById('user-display-name');
+            if (userDisplayName && context.full_name) {
+                userDisplayName.textContent = context.full_name;
+            }
+            
+            // Update user display role in sidebar
+            const userDisplayRole = document.getElementById('user-display-role');
+            if (userDisplayRole && context.role) {
+                const roleDisplayNames = {
+                    'owner': 'Owner',
+                    'plant_manager': 'Plant Manager',
+                    'supervisor': 'Supervisor',
+                    'operations_supervisor': 'Supervisor',
+                    'technician': 'Technician',
+                    'maintenance_technician': 'Technician',
+                    'viewer': 'Viewer',
+                    'read_only': 'Viewer',
+                    'safety_officer': 'Safety Officer',
+                    'quality_manager': 'Quality Manager'
+                };
+                userDisplayRole.textContent = roleDisplayNames[context.role] || context.role;
+            }
+            
+            // Update dropdown user name
+            const dropdownUserName = document.getElementById('dropdown-user-name');
+            if (dropdownUserName && context.full_name) {
+                dropdownUserName.textContent = context.full_name;
+            }
+            
+            // Update dropdown user company
+            const dropdownUserCompany = document.getElementById('dropdown-user-company');
+            if (dropdownUserCompany && context.email) {
+                dropdownUserCompany.textContent = context.email;
+            }
+        }
+
+        // Apply industry terminology substitutions
+        function applyIndustryTerminology(industry) {
+            if (!industry) return;
+            
+            const industryKey = industry.toLowerCase();
+            
+            // Terminology map keyed by industry
+            const terminologyMap = {
+                'oil & gas': {
+                    'Asset': 'Equipment',
+                    'Facility': 'Platform',
+                    'Maintenance': 'Upkeep',
+                    'Technician': 'Operator',
+                    'Work Order': 'Job Ticket'
+                },
+                'pharmaceutical': {
+                    'Asset': 'Equipment',
+                    'Facility': 'Plant',
+                    'Maintenance': 'Calibration',
+                    'Technician': 'Specialist',
+                    'Work Order': 'Change Request'
+                },
+                'chemical processing': {
+                    'Asset': 'Unit',
+                    'Facility': 'Plant',
+                    'Maintenance': 'Turnaround',
+                    'Technician': 'Operator',
+                    'Work Order': 'Work Request'
+                },
+                'food & beverage': {
+                    'Asset': 'Equipment',
+                    'Facility': 'Production Line',
+                    'Maintenance': 'Sanitation',
+                    'Technician': 'Operator',
+                    'Work Order': 'Task'
+                }
+            };
+            
+            const substitutions = terminologyMap[industryKey];
+            if (!substitutions) return;
+            
+            // Apply substitutions to page title
+            const pageTitle = document.getElementById('page-title');
+            if (pageTitle) {
+                let titleText = pageTitle.textContent;
+                for (const [original, replacement] of Object.entries(substitutions)) {
+                    const regex = new RegExp(original, 'gi');
+                    titleText = titleText.replace(regex, replacement);
+                }
+                pageTitle.textContent = titleText;
+            }
+            
+            // Apply substitutions to section headers (h2, h3 elements in main content)
+            const sectionHeaders = document.querySelectorAll('main h2, main h3');
+            sectionHeaders.forEach(header => {
+                let headerText = header.textContent;
+                for (const [original, replacement] of Object.entries(substitutions)) {
+                    const regex = new RegExp(original, 'gi');
+                    headerText = headerText.replace(regex, replacement);
+                }
+                header.textContent = headerText;
+            });
+        }
+
+        // Apply critical asset propagation
+        function applyCriticalAssetPropagation(criticalAsset) {
+            if (!criticalAsset) return;
+            
+            // Asset Registry - pre-populate search field
+            const assetSearchInput = document.querySelector('#assets-view input[type="text"], #assets-view input[placeholder*="search"], #assets-view input[placeholder*="Search"]');
+            if (assetSearchInput) {
+                assetSearchInput.placeholder = `Search assets (e.g., ${criticalAsset})`;
+            }
+            
+            // Facility Pulse - pre-populate asset dropdown
+            const telemetryAssetSelect = document.querySelector('#telemetry-view select, #telemetry-view [data-asset-select]');
+            if (telemetryAssetSelect && telemetryAssetSelect.tagName === 'SELECT') {
+                // Add critical asset as first option if not already present
+                const options = Array.from(telemetryAssetSelect.options);
+                const hasCriticalAsset = options.some(opt => opt.value === criticalAsset || opt.textContent === criticalAsset);
+                if (!hasCriticalAsset) {
+                    const option = document.createElement('option');
+                    option.value = criticalAsset;
+                    option.textContent = criticalAsset;
+                    option.selected = true;
+                    telemetryAssetSelect.insertBefore(option, telemetryAssetSelect.firstChild);
+                }
+            }
+            
+            // Ask Questions - pre-populate first suggested question
+            const suggestedQuestions = document.querySelectorAll('#chat-view .suggested-question, #chat-view [data-suggested-question]');
+            if (suggestedQuestions.length > 0) {
+                const firstQuestion = suggestedQuestions[0];
+                firstQuestion.textContent = `What is the maintenance schedule for ${criticalAsset}?`;
+            }
+            
+            // AI Maintenance - pre-populate placeholder
+            const prognosticsInput = document.querySelector('#prognostics-view input[placeholder], #prognostics-view textarea[placeholder]');
+            if (prognosticsInput) {
+                prognosticsInput.placeholder = `Ask about ${criticalAsset} maintenance predictions...`;
+            }
+            
+            // LOTO Command Center - pre-populate asset dropdown
+            const lotoAssetSelect = document.querySelector('#loto-view select, #loto-view [data-asset-select]');
+            if (lotoAssetSelect && lotoAssetSelect.tagName === 'SELECT') {
+                const options = Array.from(lotoAssetSelect.options);
+                const hasCriticalAsset = options.some(opt => opt.value === criticalAsset || opt.textContent === criticalAsset);
+                if (!hasCriticalAsset) {
+                    const option = document.createElement('option');
+                    option.value = criticalAsset;
+                    option.textContent = criticalAsset;
+                    option.selected = true;
+                    lotoAssetSelect.insertBefore(option, lotoAssetSelect.firstChild);
+                }
+            }
+        }
+
+        // Personalize empty states across all pages (FIX 9)
+        function personalizeEmptyStates(context) {
+            const facilityName = context.facility_name || 'your facility';
+            const criticalAsset = context.critical_asset || 'your critical asset';
+            const industry = context.industry || '';
+            
+            // Assets view - personalize empty state
+            const totalAssetsSub = document.getElementById('total-assets-sub');
+            if (totalAssetsSub && totalAssetsSub.textContent.includes('Add your first asset')) {
+                totalAssetsSub.textContent = `Add ${criticalAsset} to begin tracking`;
+            }
+            
+            const totalAssets = document.getElementById('total-assets');
+            if (totalAssets && totalAssets.textContent === 'No assets yet') {
+                totalAssets.textContent = '0';
+            }
+            
+            // Manuals view - personalize empty state
+            const manualsEmptyState = document.querySelector('#manuals-view td[colspan]');
+            if (manualsEmptyState) {
+                const text = manualsEmptyState.textContent;
+                if (text.includes('No manuals uploaded yet')) {
+                    manualsEmptyState.innerHTML = `
+                        <p class="text-lg font-semibold text-white">📂 No manuals uploaded yet for ${facilityName}</p>
+                        <p class="text-sm text-slate-400">Upload ${industry} documentation for ${criticalAsset} to enable AI-powered search and maintenance insights.</p>
+                    `;
+                }
+            }
+            
+            // Work Orders view - personalize empty state
+            const workOrdersEmptyTitle = document.querySelector('#workorders-view h3');
+            if (workOrdersEmptyTitle && workOrdersEmptyTitle.textContent === 'NO WORK ORDERS YET') {
+                workOrdersEmptyTitle.textContent = 'NO WORK ORDERS YET FOR ' + facilityName.toUpperCase();
+            }
+            
+            const workOrdersEmptyDesc = document.querySelector('#workorders-view p.text-sm.text-slate-400');
+            if (workOrdersEmptyDesc && workOrdersEmptyDesc.textContent.includes('Generate AI suggestions')) {
+                workOrdersEmptyDesc.textContent = `Generate AI suggestions from your uploaded ${criticalAsset} manuals to get started.`;
+            }
+            
+            // LOTO view - personalize empty state
+            const lotoCompliance = document.getElementById('loto-kpi-compliance');
+            if (lotoCompliance && lotoCompliance.textContent === 'No assets yet') {
+                lotoCompliance.textContent = '0%';
+                const lotoComplianceSub = lotoCompliance.nextElementSibling;
+                if (lotoComplianceSub) {
+                    lotoComplianceSub.textContent = `Add ${criticalAsset} to track LOTO procedures`;
+                }
+            }
+            
+            // Performance Summary - personalize empty state messages
+            const mostSearchedAssetSub = document.getElementById('most-searched-asset-sub');
+            if (mostSearchedAssetSub && mostSearchedAssetSub.textContent.includes('Upload documentation')) {
+                mostSearchedAssetSub.textContent = `Upload ${criticalAsset} documentation to populate`;
+            }
+            
+            const verifiedRateSub = document.getElementById('verified-rate-sub');
+            if (verifiedRateSub && verifiedRateSub.textContent === 'Awaiting answers') {
+                verifiedRateSub.textContent = `Upload ${criticalAsset} manual to enable verified answers`;
+            }
+            
+            const riskScoreStatus = document.getElementById('risk-score-status');
+            if (riskScoreStatus && riskScoreStatus.textContent === 'Awaiting first upload') {
+                riskScoreStatus.textContent = `Upload ${criticalAsset} manual to calculate risk`;
+            }
+            
+            const totalQueriesSub = document.getElementById('total-queries-sub');
+            if (totalQueriesSub && totalQueriesSub.textContent.includes('Ask your first question')) {
+                totalQueriesSub.textContent = `Ask your first question about ${criticalAsset}`;
+            }
         }
 
         // =============================================
@@ -1757,6 +2234,552 @@
             "> Synthesizing verified response..."
         ];
         
+        // =============================================
+        // HEALTH SCORE DRAWER CONTROLLER
+        // =============================================
+        function openHealthDrawer() {
+            const drawer = document.getElementById('health-score-drawer');
+            const backdrop = document.getElementById('health-drawer-backdrop');
+            
+            // Sync with current mode
+            const isDemo = localStorage.getItem("indexfield_demo_loaded") === "true";
+            const score = isDemo ? 88 : 73;
+            
+            // Update UI elements in drawer
+            document.getElementById('bar-health-score').textContent = score;
+            document.getElementById('health-drawer-score').textContent = `${score}%`;
+            
+            // Calculate ring dashoffset (radius = 28, circ = 175.9)
+            const strokeOffset = 175.9 - (175.9 * score / 100);
+            document.getElementById('health-ring-fill').setAttribute('stroke-dashoffset', strokeOffset);
+            
+            if (isDemo) {
+                document.getElementById('health-score-status-desc').textContent = "Excellent Status · Plant fully synced";
+                document.getElementById('score-val-doc').textContent = "100%";
+                document.getElementById('score-bar-doc').style.width = "100%";
+                document.getElementById('score-val-loto').textContent = "100%";
+                document.getElementById('score-bar-loto').style.width = "100%";
+                document.getElementById('score-val-maint').textContent = "95%";
+                document.getElementById('score-bar-maint').style.width = "95%";
+                
+                document.getElementById('health-issues-list').innerHTML = `
+                    <div class="p-3 bg-green-500/10 border border-green-500/20 rounded-lg flex items-start gap-2.5">
+                        <span class="text-green-400 mt-0.5">✓</span>
+                        <div>
+                            <p class="font-semibold text-white">All Clear</p>
+                            <p class="text-[10px] text-slate-400 mt-0.5">No safety warnings or coverage gaps detected.</p>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('health-actions-list').innerHTML = `
+                    <div class="text-[10px] text-slate-500 italic text-center py-2">
+                        No recommended actions. Facility is operating at peak efficiency.
+                    </div>
+                `;
+            } else {
+                document.getElementById('health-score-status-desc').textContent = "Amber Status · Active monitoring";
+                document.getElementById('score-val-doc').textContent = "34%";
+                document.getElementById('score-bar-doc').style.width = "34%";
+                document.getElementById('score-val-loto').textContent = "92%";
+                document.getElementById('score-bar-loto').style.width = "92%";
+                document.getElementById('score-val-maint').textContent = "65%";
+                document.getElementById('score-bar-maint').style.width = "65%";
+                
+                document.getElementById('health-issues-list').innerHTML = `
+                    <div class="p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-start gap-2.5">
+                        <span class="text-red-400 mt-0.5">⚠️</span>
+                        <div>
+                            <p class="font-semibold text-white">Missing Electrical System Docs</p>
+                            <p class="text-[10px] text-slate-400 mt-0.5">Electrical maintenance logs cannot resolve without OEM specs.</p>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-start gap-2.5">
+                        <span class="text-amber-400 mt-0.5">⚠️</span>
+                        <div>
+                            <p class="font-semibold text-white">Active Lockout Compliance Gap</p>
+                            <p class="text-[10px] text-slate-400 mt-0.5">2 assets have active work orders but no LOTO procedures.</p>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('health-actions-list').innerHTML = `
+                    <button onclick="showView('manuals'); closeHealthDrawer();" class="w-full text-left p-2.5 bg-white/5 border border-white/10 rounded-lg hover:border-[#F97316]/50 transition flex items-center justify-between">
+                        <div>
+                            <p class="font-semibold text-white">Upload Electrical OEM Specs</p>
+                            <p class="text-[9px] text-slate-400">Increases document coverage by +12%</p>
+                        </div>
+                        <i class="fas fa-chevron-right text-[10px] text-[#F97316]"></i>
+                    </button>
+                    <button onclick="showView('loto'); closeHealthDrawer();" class="w-full text-left p-2.5 bg-white/5 border border-white/10 rounded-lg hover:border-[#F97316]/50 transition flex items-center justify-between">
+                        <div>
+                            <p class="font-semibold text-white">Document Lockout Protocols</p>
+                            <p class="text-[9px] text-slate-400">Apply safety rules to Boiler #2 and V-102</p>
+                        </div>
+                        <i class="fas fa-chevron-right text-[10px] text-[#F97316]"></i>
+                    </button>
+                `;
+            }
+
+            drawer.classList.remove('translate-x-full');
+            backdrop.classList.remove('hidden');
+        }
+
+        function closeHealthDrawer() {
+            document.getElementById('health-score-drawer').classList.add('translate-x-full');
+            document.getElementById('health-drawer-backdrop').classList.add('hidden');
+        }
+
+        // =============================================
+        // UNIVERSAL SEARCH CONTROLLER (Ctrl+K / Cmd+K)
+        // =============================================
+        function openGlobalSearch() {
+            document.getElementById('global-search-modal').classList.remove('hidden');
+            const input = document.getElementById('global-search-input');
+            input.value = '';
+            input.focus();
+            runGlobalSearch('');
+        }
+
+        function closeGlobalSearch() {
+            document.getElementById('global-search-modal').classList.add('hidden');
+        }
+
+        function runGlobalSearch(q) {
+            const query = q.trim().toLowerCase();
+            const resultsPane = document.getElementById('global-search-results');
+            
+            if (!query) {
+                resultsPane.innerHTML = `
+                    <div class="text-center py-8 text-slate-500 text-sm">
+                        <i class="fas fa-search-plus text-2xl mb-2 block"></i>
+                        Type any keyword (e.g. "Boiler", "Lockout", "V-102", "Pump") to search the facility.
+                    </div>
+                `;
+                return;
+            }
+
+            // Mock list elements from demo data or active workspace
+            const assetsList = typeof DEMO_ASSETS !== "undefined" ? DEMO_ASSETS : [];
+            const manualsList = typeof DEMO_MANUALS !== "undefined" ? DEMO_MANUALS : [];
+            const workOrdersList = typeof DEMO_WORK_ORDERS !== "undefined" ? DEMO_WORK_ORDERS : [];
+            const logsList = typeof DEMO_SHIFT_LOGS !== "undefined" ? DEMO_SHIFT_LOGS : [];
+
+            // Filters
+            const filteredAssets = assetsList.filter(a => a.name.toLowerCase().includes(query) || a.location.toLowerCase().includes(query));
+            const filteredManuals = manualsList.filter(m => m.filename.toLowerCase().includes(query));
+            const filteredWorkOrders = workOrdersList.filter(w => w.title.toLowerCase().includes(query) || w.work_order_id.toLowerCase().includes(query));
+            const filteredLogs = logsList.filter(l => l.description.toLowerCase().includes(query) || l.asset_name.toLowerCase().includes(query));
+
+            let html = '';
+
+            // Render Assets
+            if (filteredAssets.length > 0) {
+                html += `
+                    <div>
+                        <h4 class="text-[10px] font-bold text-[#F97316] uppercase tracking-wider mb-2">Assets (${filteredAssets.length})</h4>
+                        <div class="space-y-1.5">
+                            ${filteredAssets.map(a => `
+                                <div onclick="navigateToSearchItem('assets', '${a.id}')" class="p-2 bg-white/5 border border-white/10 hover:border-[#F97316]/50 rounded-lg cursor-pointer transition text-xs flex items-center justify-between">
+                                    <div class="font-semibold">${a.name}</div>
+                                    <div class="text-slate-400 font-mono text-[10px]">${a.location} · ${a.status}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Render Manuals
+            if (filteredManuals.length > 0) {
+                html += `
+                    <div>
+                        <h4 class="text-[10px] font-bold text-[#06B6D4] uppercase tracking-wider mb-2">Manuals (${filteredManuals.length})</h4>
+                        <div class="space-y-1.5">
+                            ${filteredManuals.map(m => `
+                                <div onclick="navigateToSearchItem('manuals', '${m.id}')" class="p-2 bg-white/5 border border-white/10 hover:border-[#06B6D4]/50 rounded-lg cursor-pointer transition text-xs flex items-center justify-between">
+                                    <div class="font-semibold text-slate-200"><i class="fas fa-file-pdf text-red-400 mr-2"></i>${m.filename}</div>
+                                    <div class="text-slate-400 font-mono text-[10px]">${m.page_count} pages</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Render Work Orders
+            if (filteredWorkOrders.length > 0) {
+                html += `
+                    <div>
+                        <h4 class="text-[10px] font-bold text-yellow-500 uppercase tracking-wider mb-2">Work Orders (${filteredWorkOrders.length})</h4>
+                        <div class="space-y-1.5">
+                            ${filteredWorkOrders.map(w => `
+                                <div onclick="navigateToSearchItem('workorders', '${w.id}')" class="p-2 bg-white/5 border border-white/10 hover:border-yellow-500/50 rounded-lg cursor-pointer transition text-xs flex items-center justify-between">
+                                    <div class="font-semibold text-slate-200">${w.work_order_id}: ${w.title}</div>
+                                    <div class="text-slate-400 font-mono text-[10px]">${w.priority} · ${w.status}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Render Shift Handover Findings
+            if (filteredLogs.length > 0) {
+                html += `
+                    <div>
+                        <h4 class="text-[10px] font-bold text-pink-500 uppercase tracking-wider mb-2">Shift Handover & Logs (${filteredLogs.length})</h4>
+                        <div class="space-y-1.5">
+                            ${filteredLogs.map(l => `
+                                <div onclick="navigateToSearchItem('handover', '${l.id}')" class="p-2 bg-white/5 border border-white/10 hover:border-pink-500/50 rounded-lg cursor-pointer transition text-xs flex flex-col gap-1">
+                                    <div class="font-semibold text-slate-200 truncate">${l.description}</div>
+                                    <div class="text-slate-400 font-mono text-[9px]">Logged on ${l.date} at ${l.time} by ${l.user_name}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (!html) {
+                resultsPane.innerHTML = `
+                    <div class="text-center py-8 text-slate-500 text-sm">
+                        <i class="fas fa-exclamation-triangle text-2xl mb-2 block"></i>
+                        No matches found for "${q}". Try another query.
+                    </div>
+                `;
+            } else {
+                resultsPane.innerHTML = `<div class="space-y-4">${html}</div>`;
+            }
+        }
+
+        function navigateToSearchItem(view, id) {
+            closeGlobalSearch();
+            showView(view);
+            
+            // Trigger detail drawer open where applicable
+            setTimeout(() => {
+                if (view === 'workorders' && typeof openWorkOrderDetail === 'function') {
+                    openWorkOrderDetail(id);
+                } else if (view === 'loto' && typeof onAssetSelected === 'function') {
+                    onAssetSelected(id);
+                }
+            }, 250);
+        }
+
+        // Global Keydown Listeners
+        document.addEventListener('keydown', function(e) {
+            // Check for Ctrl+K or Cmd+K
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                openGlobalSearch();
+            }
+            // Check for ESC key to close search modal
+            if (e.key === 'Escape') {
+                closeGlobalSearch();
+                closeHealthDrawer();
+            }
+        });
+
+        // Initialize top health score bar on start
+        // Initialize user context on dashboard load
+        async function initializeDashboard() {
+            try {
+                // Get auth token from Supabase session
+                let token = null;
+                try {
+                    const { data: sessionData } = await supabaseClient.auth.getSession();
+                    token = sessionData?.session?.access_token;
+                } catch (e) {
+                    console.warn('Could not get session token for context fetch');
+                }
+
+                // Load user context with auth token
+                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+                const contextResponse = await fetch('/api/auth/user/context', { headers });
+                if (!contextResponse.ok) {
+                    console.warn('Failed to load user context, redirecting to signin');
+                    window.location.href = 'signin.html';
+                    return;
+                }
+                
+                const context = await contextResponse.json();
+                window.userContext = context;
+                
+                // Check if setup is complete
+                if (!context.setup_complete) {
+                    window.location.href = 'setup-wizard.html';
+                    return;
+                }
+                
+                // Apply personalization
+                applyContextPersonalization(context);
+                
+                // Set health score
+                const isDemo = localStorage.getItem("indexfield_demo_loaded") === "true";
+                const score = isDemo ? 88 : 73;
+                const barScoreEl = document.getElementById('bar-health-score');
+                if (barScoreEl) barScoreEl.textContent = score;
+                
+                // Apply role-based sidebar rendering
+                applyRoleBasedSidebarRendering(context.role);
+                
+                // Apply critical asset propagation
+                applyCriticalAssetPropagation(context);
+                
+            } catch (e) {
+                console.error('Dashboard initialization failed:', e);
+                window.location.href = 'signin.html';
+            }
+        }
+        
+        function applyContextPersonalization(context) {
+            // Update page title with facility name
+            const pageTitle = document.getElementById('page-title');
+            if (pageTitle) {
+                pageTitle.textContent = (context.facility_name || 'IndexField') + ' — MISSION CONTROL';
+            }
+            
+            // Update status bar with facility and industry (using IDs for reliability)
+            const facilitySpan = document.getElementById('status-facility');
+            const industrySpan = document.getElementById('status-industry');
+            if (facilitySpan) facilitySpan.textContent = 'FACILITY: ' + (context.facility_name || 'Unknown');
+            if (industrySpan) industrySpan.textContent = 'INDUSTRY: ' + ((context.industry || 'Unknown').toUpperCase());
+            
+            // Add compliance badge based on industry
+            const complianceBadges = {
+                'pharmaceutical': 'FDA 21 CFR PART 11',
+                'PHARMACEUTICAL': 'FDA 21 CFR PART 11',
+                'chemical': 'EPA PSM',
+                'CHEMICAL PROCESSING': 'EPA PSM',
+                'oil_gas': 'API 510',
+                'OIL & GAS': 'API 510'
+            };
+            
+            const badge = complianceBadges[context.industry];
+            const statusBarInner = document.getElementById('status-bar-inner');
+            if (badge && statusBarInner && !statusBarInner.querySelector('.compliance-badge')) {
+                const nodeStatusSpan = document.getElementById('status-node');
+                if (nodeStatusSpan) {
+                    const sep = document.createElement('span');
+                    sep.className = 'text-slate-700';
+                    sep.textContent = '·';
+                    const badgeEl = document.createElement('span');
+                    badgeEl.className = 'compliance-badge text-[#F97316] font-bold';
+                    badgeEl.innerHTML = `<i class="fas fa-certificate mr-1"></i>${badge}`;
+                    statusBarInner.insertBefore(sep, nodeStatusSpan);
+                    statusBarInner.insertBefore(badgeEl, nodeStatusSpan);
+                }
+            }
+            
+            // Update user display name, role, and dropdown info
+            const userDisplayName = document.getElementById('user-display-name');
+            const userDisplayRole = document.getElementById('user-display-role');
+            const dropdownName = document.getElementById('dropdown-user-name');
+            const dropdownTitle = document.getElementById('dropdown-user-title');
+            const dropdownCompany = document.getElementById('dropdown-user-company');
+            
+            if (context.full_name) {
+                if (userDisplayName) userDisplayName.textContent = context.full_name;
+                if (dropdownName) dropdownName.textContent = context.full_name;
+            }
+            if (dropdownTitle) dropdownTitle.textContent = context.role ? (context.role.charAt(0).toUpperCase() + context.role.slice(1).replace('_', ' ')) : 'Team Member';
+            if (dropdownCompany && context.facility_name) dropdownCompany.textContent = context.facility_name;
+            
+            if (userDisplayRole && context.role) {
+                const roleMap = {
+                    'owner': 'Owner',
+                    'plant_manager': 'Plant Manager',
+                    'admin': 'Admin',
+                    'supervisor': 'Supervisor',
+                    'operations_supervisor': 'Supervisor',
+                    'technician': 'Technician',
+                    'maintenance_technician': 'Technician',
+                    'safety_officer': 'Supervisor',
+                    'quality_manager': 'Supervisor',
+                    'viewer': 'Viewer',
+                    'read_only': 'Viewer'
+                };
+                userDisplayRole.textContent = roleMap[context.role] || 'Viewer';
+            }
+            
+            // Apply industry-specific terminology
+            if (context.industry) {
+                applyIndustryTerminology(context.industry);
+            }
+        }
+        
+        function applyRoleBasedSidebarRendering(role) {
+            // Map old role names to new role categories
+            const roleMap = {
+                'owner': 'owner',
+                'plant_manager': 'owner',
+                'admin': 'owner',
+                'supervisor': 'supervisor',
+                'operations_supervisor': 'supervisor',
+                'technician': 'technician',
+                'maintenance_technician': 'technician',
+                'safety_officer': 'supervisor',
+                'quality_manager': 'supervisor',
+                'viewer': 'viewer',
+                'read_only': 'viewer'
+            };
+            
+            const normalizedRole = roleMap[role] || 'viewer';
+            
+            // Define sidebar items and their required roles
+            const sidebarPermissions = {
+                'nav-chat': ['owner', 'supervisor', 'technician', 'viewer'],
+                'nav-insights': ['owner', 'supervisor'],
+                'nav-manuals': ['owner', 'supervisor', 'technician', 'viewer'],
+                'nav-history': ['owner', 'supervisor'],
+                'nav-workorders': ['owner', 'supervisor', 'technician'],
+                'nav-handover': ['owner', 'supervisor', 'technician'],
+                'nav-team': ['owner'],
+                'nav-assets': ['owner', 'supervisor', 'technician'],
+                'nav-telemetry': ['owner', 'supervisor'],
+                'nav-prognostics': ['owner', 'supervisor'],
+                'nav-loto': ['owner', 'supervisor']
+            };
+            
+            // Apply visibility based on role
+            Object.entries(sidebarPermissions).forEach(([itemId, allowedRoles]) => {
+                const element = document.getElementById(itemId);
+                if (element) {
+                    if (allowedRoles.includes(normalizedRole)) {
+                        element.classList.remove('hidden');
+                    } else {
+                        element.classList.add('hidden');
+                    }
+                }
+            });
+            
+            // If user navigates to a hidden page, redirect
+            const currentViewId = 'nav-' + currentView;
+            const currentViewElement = document.getElementById(currentViewId);
+            if (currentViewElement && currentViewElement.classList.contains('hidden')) {
+                showView('chat');
+                showToast("You don't have access to that page.", 'warning');
+            }
+        }
+        
+        function applyIndustryTerminology(industry) {
+            // Define terminology mappings for different industries
+            const terminologyMap = {
+                'oil_gas': {
+                    'Assets': 'Pressure Systems',
+                    'Documents': 'Technical Specifications',
+                    'Incidents': 'Process Safety Events'
+                },
+                'OIL & GAS': {
+                    'Assets': 'Pressure Systems',
+                    'Documents': 'Technical Specifications',
+                    'Incidents': 'Process Safety Events'
+                },
+                'pharmaceutical': {
+                    'Assets': 'Production Equipment',
+                    'Documents': 'Batch Records',
+                    'Incidents': 'Deviation Reports'
+                },
+                'chemical': {
+                    'Assets': 'Process Equipment',
+                    'Documents': 'Process Documentation',
+                    'Incidents': 'Process Safety Events'
+                },
+                'CHEMICAL PROCESSING': {
+                    'Assets': 'Process Equipment',
+                    'Documents': 'Process Documentation',
+                    'Incidents': 'Process Safety Events'
+                },
+                'food_beverage': {
+                    'Documents': 'Recipe & SOP Vault',
+                    'Incidents': 'Quality Events'
+                },
+                'FOOD & BEVERAGE': {
+                    'Documents': 'Recipe & SOP Vault',
+                    'Incidents': 'Quality Events'
+                }
+            };
+            
+            const mapping = terminologyMap[industry];
+            if (!mapping) return;
+            
+            // Apply terminology substitutions to page headers and titles
+            Object.entries(mapping).forEach(([oldTerm, newTerm]) => {
+                // Find and replace in text nodes and specific elements
+                const walker = document.createTreeWalker(
+                    document.body,
+                    NodeFilter.SHOW_TEXT,
+                    null,
+                    false
+                );
+                
+                let node;
+                while (node = walker.nextNode()) {
+                    if (node.textContent && node.textContent.includes(oldTerm)) {
+                        // Only replace in headers and titles, not in sidebars
+                        const parent = node.parentElement;
+                        if (parent && (parent.classList.contains('panel-header') || 
+                                      parent.tagName === 'H1' || 
+                                      parent.tagName === 'H2' ||
+                                      parent.tagName === 'H3' ||
+                                      parent.id === 'page-title')) {
+                            node.textContent = node.textContent.replace(oldTerm, newTerm);
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Get critical asset from context
+        function getCriticalAsset() {
+            return window.userContext?.critical_asset || null;
+        }
+        
+        // Check if critical asset is set
+        function hasCriticalAsset() {
+            return !!getCriticalAsset();
+        }
+
+        // Apply critical asset data to specific dashboard locations (FIX 6)
+        function applyCriticalAssetPropagation(context) {
+            const asset = context.critical_asset;
+            const industry = context.industry || '';
+            const facilityName = context.facility_name || 'your facility';
+            if (!asset) return;
+
+            // Ask Questions — update first suggested question chip
+            setTimeout(() => {
+                const firstChip = document.querySelector('#quick-action-chips .quick-action-chip:first-child, [id="suggested-q-1"], .suggested-question-btn');
+                if (firstChip) {
+                    firstChip.textContent = `What is the maintenance schedule for ${asset}?`;
+                }
+                // Also set as placeholder in chat input
+                const chatInput = document.getElementById('chat-input');
+                if (chatInput && !chatInput.value) {
+                    chatInput.placeholder = `💬 Ask about ${asset}, fault codes, maintenance schedules…`;
+                }
+            }, 500);
+
+            // Performance Summary KPI cards — personalize empty state sub-text (FIX 9)
+            const kpiSubs = [
+                { id: 'total-queries-sub', text: `Ask your first question about ${asset}` },
+                { id: 'most-searched-asset-sub', text: `Upload ${industry.toUpperCase() || 'equipment'} documentation to populate` },
+                { id: 'verified-rate-sub', text: `Upload documentation to enable verified answers` },
+                { id: 'risk-score-status', text: `Upload ${asset} manual to calculate risk` }
+            ];
+            kpiSubs.forEach(({ id, text }) => {
+                const el = document.getElementById(id);
+                if (el && (el.textContent.includes('Awaiting') || el.textContent.includes('Not enough') || el.textContent.includes('enough data'))) {
+                    el.textContent = text;
+                }
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initializeDashboard();
+        });
+
         function showView(view) {
             const viewId = view + '-view';
             const views = document.querySelectorAll('main > .dashboard-view');
@@ -1803,8 +2826,8 @@
                 'chat': 'Ask Questions',
                 'insights': 'Performance Summary',
                 'assets': 'Asset Registry',
-                'telemetry': 'Live Monitoring',
-                'prognostics': 'Maintenance Forecast',
+                'telemetry': 'Facility Pulse',
+                'prognostics': 'AI Maintenance',
                 'loto': 'Lockout / Tagout',
                 'manuals': 'Manuals',
                 'help': 'Help Center',
@@ -4556,7 +5579,7 @@
         // =============================================
         let onboardingFiles = [];
 
-        async function initializeOnboarding() {
+        async function checkSetupWizard() {
             try {
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (!session) return;
@@ -6226,6 +7249,10 @@
                 // Update status indicators
                 const llmStatusText = document.getElementById('llm-status-text');
                 const llmStatusDot = document.getElementById('llm-status-dot');
+                if (!llmStatusText || !llmStatusDot) {
+                    console.warn('Health UI elements missing, skipping health update');
+                    return;
+                }
                 
                 if (health.gemini_available) {
                     llmStatusText.textContent = manuals && manuals.length > 0 ? 'AI Engine Ready' : 'Awaiting First Manual Upload';
@@ -6412,6 +7439,8 @@
                 { id: 'help-view', url: 'dashboard-pages/help-view.html?v=' + Date.now() },
                 { id: 'manuals-view', url: 'dashboard-pages/manuals-view.html?v=' + Date.now() },
                 { id: 'workorders-view', url: 'dashboard-pages/work-orders-view.html?v=' + Date.now() },
+                { id: 'workorders-view', url: 'dashboard-pages/work-orders-view.html?v=' + Date.now() },
+                { id: 'team-view', url: 'dashboard-pages/team-view.html?v=' + Date.now() },
                 { id: 'handover-view', url: 'dashboard-pages/handover-view.html?v=' + Date.now() }
             ];
 
@@ -6476,6 +7505,58 @@
 
 
         document.addEventListener('DOMContentLoaded', async () => { 
+            // Load user context immediately
+            let session = null;
+            try {
+                const sessionRes = await supabaseClient.auth.getSession();
+                session = sessionRes.data.session;
+            } catch (e) {
+                console.error("Failed to get session:", e);
+            }
+            
+            if (!session) {
+                window.location.href = 'signin.html';
+                return;
+            }
+            
+            const token = session.access_token;
+            try {
+                const response = await fetch(`${window.location.origin}/api/auth/user/context`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error("Failed to load user context");
+                }
+                const context = await response.json();
+                window.userContext = context;
+                
+                if (!context.setup_complete) {
+                    window.location.href = 'setup-wizard.html';
+                    return;
+                }
+                
+                // Apply role-based sidebar rendering
+                applyRoleBasedSidebar(context.role);
+                
+                // Apply header personalization
+                applyHeaderPersonalization(context);
+                
+                // Apply industry terminology
+                applyIndustryTerminology(context.industry);
+                
+                // Apply critical asset propagation
+                applyCriticalAssetPropagation(context.critical_asset);
+                
+                // Personalize empty states
+                personalizeEmptyStates(context);
+            } catch (err) {
+                console.error("User context load error:", err);
+                window.location.href = 'setup-wizard.html';
+                return;
+            }
+
             const chatInput = document.getElementById('chat-input');
             if (chatInput) autoScaleInput(chatInput);
 
@@ -6502,7 +7583,7 @@
             
             // Check if onboarding needed
             setTimeout(() => {
-                initializeOnboarding();
+                // checkSetupWizard(); // Disabled - setup check removed
             }, 500);
             
             // Auto-save on page unload
@@ -6860,3 +7941,61 @@
         }
       })();
     </script>
+
+
+    <script>
+        async function resetAccountForTesting() {
+            if (!confirm('TESTING RESET: This will delete all your facility data and reset your account to fresh state. Your email will remain intact. Are you sure?')) {
+                return;
+            }
+            
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (!session) {
+                    alert('No active session found');
+                    return;
+                }
+                
+                const userId = session.user.id;
+                
+                const { data: profile } = await supabaseClient
+                    .from('profiles')
+                    .select('current_facility_id')
+                    .eq('id', userId)
+                    .single();
+                
+                if (profile && profile.current_facility_id) {
+                    await supabaseClient
+                        .from('facility_members')
+                        .delete()
+                        .eq('facility_id', profile.current_facility_id);
+                    
+                    await supabaseClient
+                        .from('facilities')
+                        .delete()
+                        .eq('id', profile.current_facility_id);
+                    
+                    await supabaseClient
+                        .from('profiles')
+                        .update({
+                            current_facility_id: null,
+                            setup_complete: false,
+                            role: null,
+                            industry: null,
+                            priorities: [],
+                            modules_selected: [],
+                            critical_asset: null
+                        })
+                        .eq('id', userId);
+                }
+                
+                alert('Account reset complete. Redirecting to setup...');
+                window.location.href = 'setup-wizard.html';
+                
+            } catch (error) {
+                console.error('Reset failed:', error);
+                alert('Reset failed: ' + error.message);
+            }
+        }
+    </script>
+

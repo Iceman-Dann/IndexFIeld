@@ -21,13 +21,13 @@ import shutil
 import pathlib
 
 # Import components
-from document_skeleton import SkeletonExtractor, get_relevant_context, skeleton_extractor, extract_skeleton
-from rag_engine import RAGEngine
-from tribal_vault import get_tribal_notes, update_note_status
-from config import settings
+from .document_skeleton import SkeletonExtractor, get_relevant_context, skeleton_extractor, extract_skeleton
+from .rag_engine import RAGEngine
+from .tribal_vault import get_tribal_notes, update_note_status
+from .config import settings
 import requests
-from document_processor import DocumentProcessor
-from vector_store import VectorStore
+from .document_processor import DocumentProcessor
+from .vector_store import VectorStore
 
 app = FastAPI(
     title="IndexField RAG API",
@@ -36,27 +36,30 @@ app = FastAPI(
 )
 
 # Include MPA Routers
-from routes.chat import router as chat_router
+from .routes.auth import router as auth_router
+from .routes.chat import router as chat_router
 # from routes.insights import router as insights_router
-from routes.assets import router as assets_router
-from routes.telemetry import router as telemetry_router
-from routes.vault import router as vault_router
-from routes.field import router as field_router
-from routes.loto import router as loto_router
-from routes.prognostics import router as prognostics_router
-from routes.history import router as history_router
-from routes.help import router as help_router
-from routes.manuals import router as manuals_router
-from routes.qr import router as qr_router
+from .routes.assets import router as assets_router
+from .routes.telemetry import router as telemetry_router
+from .routes.vault import router as vault_router
+from .routes.field import router as field_router
+from .routes.loto import router as loto_router
+from .routes.prognostics import router as prognostics_router
+from .routes.history import router as history_router
+from .routes.help import router as help_router
+from .routes.manuals import router as manuals_router
+from .routes.qr import router as qr_router
 # New feature routers
-from routes.voice import router as voice_router
-from routes.handover import router as handover_router
-from routes.tribal import router as tribal_router
-from routes.workorders import router as workorders_router
-from routes.facility import router as facility_router
-from routes.handover_view import router as handover_view_router
-from routes.workorders_view import router as workorders_view_router
+from .routes.voice import router as voice_router
+from .routes.handover import router as handover_router
+from .routes.tribal import router as tribal_router
+from .routes.workorders import router as workorders_router
+from .routes.facility import router as facility_router
+from .routes.handover_view import router as handover_view_router
+from .routes.workorders_view import router as workorders_view_router
+from .routes.team import router as team_router
 
+app.include_router(auth_router)
 app.include_router(chat_router)
 # app.include_router(insights_router)
 app.include_router(assets_router)
@@ -77,6 +80,8 @@ app.include_router(workorders_router)
 app.include_router(facility_router)
 app.include_router(handover_view_router)
 app.include_router(workorders_view_router)
+app.include_router(team_router)
+
 
 
 # CORS
@@ -119,9 +124,34 @@ async def serve_signin():
 async def serve_dashboard():
     return FileResponse(os.path.join(PROJECT_ROOT, "dashboard.html"))
 
+
+# Serve common UI assets from project root so requests like /favicon.png work
+@app.get("/favicon.png")
+async def serve_favicon():
+    path = os.path.join(PROJECT_ROOT, "favicon.png")
+    if os.path.exists(path):
+        return FileResponse(path)
+    return JSONResponse(status_code=404, content={"detail": "Not Found"})
+
+
+@app.get("/logo.png")
+async def serve_logo_png():
+    path = os.path.join(PROJECT_ROOT, "logo.png")
+    if os.path.exists(path):
+        return FileResponse(path)
+    return JSONResponse(status_code=404, content={"detail": "Not Found"})
+
+
+@app.get("/logo.svg")
+async def serve_logo_svg():
+    path = os.path.join(PROJECT_ROOT, "logo.svg")
+    if os.path.exists(path):
+        return FileResponse(path)
+    return JSONResponse(status_code=404, content={"detail": "Not Found"})
+
 # Security
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 # Ensure directories exist
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
@@ -379,7 +409,10 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
     return encoded_jwt
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
+    import uuid
+    if not credentials:
+        return f"guest_{uuid.uuid4().hex[:8]}"
     token = credentials.credentials
     try:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
@@ -388,7 +421,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             raise HTTPException(status_code=401, detail="Invalid authentication")
         return username
     except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid authentication")
+        return f"guest_{uuid.uuid4().hex[:8]}"
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
@@ -1032,11 +1065,43 @@ async def list_manuals():
 @app.get("/api/manuals", response_model=List[ManualInfo])
 async def list_manuals_api():
     """List uploaded industrial manuals (excludes system/UI assets)."""
-    return [
-        ManualInfo(**m)
-        for m in manuals_registry
-        if is_industrial_document(m.get("filename", ""))
-    ]
+    # Start with in-memory registry
+    results: List[ManualInfo] = []
+    for m in manuals_registry:
+        if is_industrial_document(m.get("filename", "")):
+            try:
+                results.append(ManualInfo(**m))
+            except Exception:
+                # Skip malformed entries
+                continue
+
+    # Also include any locally persisted demo/manual uploads
+    local_path = os.path.join(PROJECT_ROOT, "uploads", "local_manuals.json")
+    try:
+        if os.path.exists(local_path):
+            with open(local_path, "r", encoding="utf-8") as f:
+                local_items = json.load(f)
+            for item in local_items:
+                if not is_industrial_document(item.get("filename", "")):
+                    continue
+                # Map local fields to ManualInfo expected schema
+                mapped = {
+                    "id": item.get("id"),
+                    "filename": item.get("filename"),
+                    "asset_type": item.get("asset_type", "Industrial Equipment"),
+                    "status": item.get("status", "ready"),
+                    "uploaded_at": item.get("created_at", ""),
+                    "page_count": item.get("page_count", 0),
+                    "section_count": item.get("section_count", 0)
+                }
+                try:
+                    results.append(ManualInfo(**mapped))
+                except Exception:
+                    continue
+    except Exception:
+        pass
+
+    return results
 
 @app.get("/manuals/{manual_id}")
 async def get_manual(manual_id: str):

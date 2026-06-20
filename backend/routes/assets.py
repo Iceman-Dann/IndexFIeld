@@ -1,24 +1,267 @@
-from fastapi import APIRouter, Request
-from fastapi.templating import Jinja2Templates
-import os
+"""Asset management routes."""
+from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
+from typing import Optional, List, Dict, Any
+import uuid
+from datetime import datetime
 
-router = APIRouter()
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from ..middleware import get_user_context, format_error_response
+from ..config import get_settings
+from supabase import create_client
 
-# Initialize templates. We add both the project root (to find templates/base.html) 
-# and dashboard-pages (to find the specific fragments).
-templates = Jinja2Templates(directory=[
-    os.path.join(PROJECT_ROOT, "templates"),
-    os.path.join(PROJECT_ROOT, "dashboard-pages")
-])
+router = APIRouter(prefix="/api/assets", tags=["assets"])
+settings = get_settings()
+supabase_key = settings.SUPABASE_SERVICE_ROLE_KEY or settings.SUPABASE_ANON_KEY
+supabase = create_client(settings.SUPABASE_URL, supabase_key)
 
-@router.get("/assets")
-async def serve_assets_page(request: Request):
-    """Serve the assets page using Jinja2 templates."""
-    return templates.TemplateResponse("assets-view.html", {"request": request})
 
-@router.get("/api/assets")
-async def get_assets():
-    """Get all user assets."""
-    # This is a placeholder - implement actual asset retrieval
-    return []
+class AssetCreateRequest(BaseModel):
+    """Request model for creating an asset."""
+    asset_code: str
+    name: str
+    model: Optional[str] = ""
+    location: Optional[str] = ""
+    serial_number: Optional[str] = ""
+    assigned_technician: Optional[str] = None
+
+
+class AssetResponse(BaseModel):
+    """Response model for asset data."""
+    id: str
+    asset_code: str
+    name: str
+    model: str
+    location: str
+    status: str
+    serial_number: str
+    last_maint: Optional[str]
+    next_maint: Optional[str]
+    assigned_technician: Optional[str]
+    qr_token: str
+    created_at: str
+
+
+@router.get("/", response_model=List[AssetResponse])
+async def list_assets(context: dict = Depends(get_user_context)):
+    """List all assets for the user's facility."""
+    facility_id = context.get("facility_id")
+    user_id = context["user_id"]
+    role = context.get("role")
+    
+    if not facility_id:
+        # No facility for demo/guest users — return empty list for UI friendliness
+        return []
+    
+    try:
+        # Build query based on role
+        query = supabase.table("user_assets").select("*").eq("facility_id", facility_id)
+        
+        # Technicians only see assets assigned to them
+        if role == "technician":
+            query = query.eq("assigned_technician", user_id)
+        
+        response = query.execute()
+        
+        assets = [
+            AssetResponse(
+                id=asset["id"],
+                asset_code=asset["asset_code"],
+                name=asset["name"],
+                model=asset.get("model", ""),
+                location=asset.get("location", ""),
+                status=asset["status"],
+                serial_number=asset.get("serial_number", ""),
+                last_maint=asset.get("last_maint"),
+                next_maint=asset.get("next_maint"),
+                assigned_technician=asset.get("assigned_technician"),
+                qr_token=asset["qr_token"],
+                created_at=asset["created_at"]
+            )
+            for asset in response.data
+        ]
+        
+        return assets
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=format_error_response("ASSETS_LIST_FAILED", "Failed to list assets", str(e))
+        )
+
+
+@router.post("/create", response_model=AssetResponse)
+async def create_asset(
+    asset_data: AssetCreateRequest,
+    context: dict = Depends(get_user_context)
+):
+    """Create a new asset."""
+    facility_id = context.get("facility_id")
+    user_id = context["user_id"]
+    
+    if not facility_id:
+        raise HTTPException(
+            status_code=400,
+            detail="No facility associated with user"
+        )
+    
+    try:
+        # Check sandbox limits (max 5 assets for sandbox)
+        facility = context.get("facility")
+        if facility and facility.get("account_type") == "sandbox":
+            # Count current assets
+            count_response = supabase.table("user_assets").select("*", count="exact").eq("facility_id", facility_id).execute()
+            if count_response.count and count_response.count >= 5:
+                raise HTTPException(
+                    status_code=402,
+                    detail=format_error_response("ASSET_LIMIT_REACHED", "Asset limit reached for sandbox account")
+                )
+        
+        asset_id = str(uuid.uuid4())
+        
+        asset_record = {
+            "id": asset_id,
+            "facility_id": facility_id,
+            "user_id": user_id,
+            "asset_code": asset_data.asset_code,
+            "name": asset_data.name,
+            "model": asset_data.model,
+            "location": asset_data.location,
+            "serial_number": asset_data.serial_number,
+            "assigned_technician": asset_data.assigned_technician,
+            "status": "online",
+            "qr_token": "",  # Will be auto-generated by trigger
+            "created_at": datetime.now().isoformat()
+        }
+        
+        response = supabase.table("user_assets").insert(asset_record).execute()
+        
+        if not response.data:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to create asset"
+            )
+        
+        return AssetResponse(**response.data[0])
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=format_error_response("ASSET_CREATE_FAILED", "Failed to create asset", str(e))
+        )
+
+
+@router.get("/{asset_id}", response_model=AssetResponse)
+async def get_asset(
+    asset_id: str,
+    context: dict = Depends(get_user_context)
+):
+    """Get a specific asset."""
+    facility_id = context.get("facility_id")
+    
+    if not facility_id:
+        raise HTTPException(
+            status_code=400,
+            detail="No facility associated with user"
+        )
+    
+    try:
+        response = supabase.table("user_assets").select("*").eq("id", asset_id).eq("facility_id", facility_id).single()
+        
+        if not response.data:
+            raise HTTPException(
+                status_code=404,
+                detail="Asset not found or access denied"
+            )
+        
+        return AssetResponse(**response.data)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=format_error_response("ASSET_GET_FAILED", "Failed to get asset", str(e))
+        )
+
+
+@router.patch("/{asset_id}")
+async def update_asset(
+    asset_id: str,
+    asset_data: Dict[str, Any],
+    context: dict = Depends(get_user_context)
+):
+    """Update an asset."""
+    facility_id = context.get("facility_id")
+    
+    if not facility_id:
+        raise HTTPException(
+            status_code=400,
+            detail="No facility associated with user"
+        )
+    
+    try:
+        # Build update dict with only allowed fields
+        allowed_fields = [
+            "name", "model", "location", "serial_number",
+            "assigned_technician", "status", "last_maint", "next_maint"
+        ]
+        
+        update_data = {k: v for k, v in asset_data.items() if k in allowed_fields}
+        
+        if not update_data:
+            raise HTTPException(
+                status_code=400,
+                detail="No valid fields to update"
+            )
+        
+        supabase.table("user_assets").update(update_data).eq("id", asset_id).eq("facility_id", facility_id).execute()
+        
+        return {"success": True, "message": "Asset updated successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=format_error_response("ASSET_UPDATE_FAILED", "Failed to update asset", str(e))
+        )
+
+
+@router.delete("/{asset_id}")
+async def delete_asset(
+    asset_id: str,
+    context: dict = Depends(get_user_context)
+):
+    """Delete an asset."""
+    facility_id = context.get("facility_id")
+    
+    if not facility_id:
+        raise HTTPException(
+            status_code=400,
+            detail="No facility associated with user"
+    )
+    
+    try:
+        # Check if asset belongs to user's facility
+        response = supabase.table("user_assets").select("*").eq("id", asset_id).eq("facility_id", facility_id).single()
+        
+        if not response.data:
+            raise HTTPException(
+                status_code=404,
+                detail="Asset not found or access denied"
+            )
+        
+        # Delete asset
+        supabase.table("user_assets").delete().eq("id", asset_id).execute()
+        
+        return {"success": True, "message": "Asset deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=format_error_response("ASSET_DELETE_FAILED", "Failed to delete asset", str(e))
+        )

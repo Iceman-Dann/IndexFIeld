@@ -19,12 +19,13 @@ class Settings(BaseSettings):
     DEBUG: str = "False"  # Accept string, will be converted to bool
     
     # CORS
-    CORS_ORIGINS: str = "http://localhost:8000,http://127.0.0.1:8000,http://localhost:8001,http://127.0.0.1:8001,http://127.0.0.1:59127"
+    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:8000,http://127.0.0.1:8000,http://localhost:8001,http://127.0.0.1:8001,http://127.0.0.1:59127"
     CORS_ALLOW_CREDENTIALS: bool = True
     
     # Supabase (Authentication & Database)
-    SUPABASE_URL: Optional[str] = None
-    SUPABASE_ANON_KEY: Optional[str] = None
+    SUPABASE_URL: Optional[str] = 'https://bosexeozaaejrfljwcqt.supabase.co'
+    SUPABASE_ANON_KEY: Optional[str] = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvc2V4ZW96YWFlanJmbGp3Y3F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MTc3NzUsImV4cCI6MjA5NDE5Mzc3NX0.Crpns4oPIe5uKqPmgYsFRTQ1fJgRfON3JcRhfA3qZZU'
+    SUPABASE_SERVICE_ROLE_KEY: Optional[str] = None
     
     
     # Ollama / LLM

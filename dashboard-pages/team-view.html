@@ -1,0 +1,676 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="team-view" class="flex-1 overflow-y-auto p-6">
+    <div class="max-w-7xl mx-auto">
+
+        <!-- Page Header -->
+        <div class="mb-8 flex items-start justify-between flex-wrap gap-4">
+            <div>
+                <h2 class="text-2xl font-bold text-white mb-1">Team Management</h2>
+                <p class="text-sm text-light-slate">Manage who has access to this facility and what they can do.</p>
+            </div>
+            <button id="invite-btn" onclick="openInviteModal()" class="flex items-center gap-2 px-4 py-2 bg-[#F97316] hover:bg-[#EA580C] text-white font-semibold rounded-lg text-sm transition-all shadow-lg">
+                <i class="fas fa-user-plus"></i>
+                Invite Member
+            </button>
+        </div>
+
+        <!-- Top Stats Row -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div class="glass-card rounded-xl p-4 flex flex-col gap-1">
+                <span class="text-[10px] font-bold uppercase tracking-widest text-light-slate">Total Members</span>
+                <span id="stat-total" class="text-3xl font-black text-white font-mono">—</span>
+                <span class="text-[11px] text-light-slate">across all roles</span>
+            </div>
+            <div class="glass-card rounded-xl p-4 flex flex-col gap-1">
+                <span class="text-[10px] font-bold uppercase tracking-widest text-light-slate">Active Now</span>
+                <span id="stat-active" class="text-3xl font-black text-[#22C55E] font-mono">—</span>
+                <span class="text-[11px] text-light-slate">online this session</span>
+            </div>
+            <div class="glass-card rounded-xl p-4 flex flex-col gap-1">
+                <span class="text-[10px] font-bold uppercase tracking-widest text-light-slate">Pending Invites</span>
+                <span id="stat-pending" class="text-3xl font-black text-[#FACC15] font-mono">—</span>
+                <span class="text-[11px] text-light-slate">awaiting acceptance</span>
+            </div>
+            <div class="glass-card rounded-xl p-4 flex flex-col gap-1">
+                <span class="text-[10px] font-bold uppercase tracking-widest text-light-slate">Seat Usage</span>
+                <div class="flex items-end gap-1">
+                    <span id="stat-seats-used" class="text-3xl font-black text-white font-mono">—</span>
+                    <span id="stat-seats-total" class="text-base font-bold text-light-slate font-mono mb-1">/ —</span>
+                </div>
+                <div class="w-full bg-white/10 rounded-full h-1.5 mt-1">
+                    <div id="seat-progress-bar" class="h-1.5 rounded-full bg-[#F97316] transition-all duration-700" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Table -->
+        <div class="glass-card rounded-xl p-6 mb-6">
+            <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fas fa-users text-[#F97316]"></i>
+                    Active Members
+                </h3>
+                <div class="flex items-center gap-3">
+                    <!-- Role filter -->
+                    <select id="role-filter" onchange="filterTeam()" class="text-xs bg-white/5 border border-white/10 text-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#F97316]/50">
+                        <option value="all">All Roles</option>
+                        <option value="Owner">Owner</option>
+                        <option value="Supervisor">Supervisor</option>
+                        <option value="Technician">Technician</option>
+                        <option value="Viewer">Viewer</option>
+                    </select>
+                    <!-- Search -->
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-light-slate text-xs"></i>
+                        <input id="member-search" type="text" placeholder="Search members…" oninput="filterTeam()" class="pl-7 pr-3 py-1.5 bg-white/5 border border-white/10 text-sm text-slate-200 rounded-lg focus:outline-none focus:border-[#F97316]/40 w-48" />
+                    </div>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-white/10">
+                            <th class="text-left pb-3 px-2 text-[11px] font-semibold text-light-slate uppercase tracking-wider">Member</th>
+                            <th class="text-left pb-3 px-2 text-[11px] font-semibold text-light-slate uppercase tracking-wider">Role</th>
+                            <th class="text-left pb-3 px-2 text-[11px] font-semibold text-light-slate uppercase tracking-wider hidden sm:table-cell">Last Active</th>
+                            <th class="text-left pb-3 px-2 text-[11px] font-semibold text-light-slate uppercase tracking-wider hidden md:table-cell">Joined</th>
+                            <th class="text-left pb-3 px-2 text-[11px] font-semibold text-light-slate uppercase tracking-wider hidden lg:table-cell">Activity</th>
+                            <th class="text-right pb-3 px-2 text-[11px] font-semibold text-light-slate uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="team-table-body" class="divide-y divide-white/5">
+                        <!-- populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pending Invites -->
+        <div class="glass-card rounded-xl p-6 mb-6" id="pending-invites-section">
+            <h3 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+                <i class="fas fa-envelope text-[#FACC15]"></i>
+                Pending Invitations
+                <span id="pending-count-badge" class="ml-1 text-[10px] bg-[#FACC15]/15 text-[#FACC15] border border-[#FACC15]/30 px-2 py-0.5 rounded-full font-mono">0</span>
+            </h3>
+            <div id="pending-invites-list" class="space-y-3">
+                <!-- populated by JS -->
+            </div>
+        </div>
+
+        <!-- Role Permissions Reference -->
+        <div class="glass-card rounded-xl p-6">
+            <h3 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+                <i class="fas fa-shield-alt text-[#06B6D4]"></i>
+                Role Permissions
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs">
+                    <thead>
+                        <tr class="border-b border-white/10">
+                            <th class="text-left pb-3 px-2 text-light-slate">Permission</th>
+                            <th class="text-center pb-3 px-2 text-[#F97316]">Owner</th>
+                            <th class="text-center pb-3 px-2 text-[#06B6D4]">Supervisor</th>
+                            <th class="text-center pb-3 px-2 text-[#22C55E]">Technician</th>
+                            <th class="text-center pb-3 px-2 text-light-slate">Viewer</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5 text-slate-300">
+                        <tr>
+                            <td class="py-2.5 px-2">Ask AI Questions</td>
+                            <td class="py-2.5 px-2 text-center text-[#22C55E]">✓</td>
+                            <td class="py-2.5 px-2 text-center text-[#22C55E]">✓</td>
+                            <td class="py-2.5 px-2 text-center text-[#22C55E]">✓</td>
+                            <td class="py-2.5 px-2 text-center text-[#22C55E]">✓</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2.5 px-2">Upload Manuals</td>
+                            <td class="py-2.5 px-2 text-center text-[#22C55E]">✓</td>
+                            <td class="py-2.5 px-2 text-center text-[#22C55E]">✓</td>
+                            <td class="py-2.5 px-2 text-center text-[#22C55E]">✓</td>
+                            <td class="py-2.5 px-2 text-center text-light-slate/30">—</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2.5 px-2">Create Work Orders</td>
+                            <td class="py-2.5 px-2 text-center text-[#22C55E]">✓</td>
+                            <td class="py-2.5 px-2 text-center text-[#22C55E]">✓</td>
+                            <td class="py-2.5 px-2 text-center text-[#22C55E]">✓</td>
+                            <td class="py-2.5 px-2 text-center text-light-slate/30">—</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2.5 px-2">Initiate LOTO Permits</td>
+                            <td class="py-2.5 px-2 text-center text-[#22C55E]">✓</td>
+                            <td class="py-2.5 px-2 text-center text-[#22C55E]">✓</td>
+                            <td class="py-2.5 px-2 text-center text-[#22C55E]">✓</td>
+                            <td class="py-2.5 px-2 text-center text-light-slate/30">—</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2.5 px-2">View Performance Reports</td>
+                            <td class="py-2.5 px-2 text-center text-[#22C55E]">✓</td>
+                            <td class="py-2.5 px-2 text-center text-[#22C55E]">✓</td>
+                            <td class="py-2.5 px-2 text-center text-light-slate/30">—</td>
+                            <td class="py-2.5 px-2 text-center text-light-slate/30">—</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2.5 px-2">Manage Team & Billing</td>
+                            <td class="py-2.5 px-2 text-center text-[#22C55E]">✓</td>
+                            <td class="py-2.5 px-2 text-center text-light-slate/30">—</td>
+                            <td class="py-2.5 px-2 text-center text-light-slate/30">—</td>
+                            <td class="py-2.5 px-2 text-center text-light-slate/30">—</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2.5 px-2">Delete Assets / Manuals</td>
+                            <td class="py-2.5 px-2 text-center text-[#22C55E]">✓</td>
+                            <td class="py-2.5 px-2 text-center text-light-slate/30">—</td>
+                            <td class="py-2.5 px-2 text-center text-light-slate/30">—</td>
+                            <td class="py-2.5 px-2 text-center text-light-slate/30">—</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Invite Modal -->
+<div id="invite-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+    <div class="glass-card rounded-2xl p-6 w-full max-w-md mx-4 border border-[#F97316]/20 shadow-2xl">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h3 class="text-lg font-bold text-white">Invite Team Member</h3>
+                <p class="text-xs text-light-slate mt-0.5">They'll receive an email with a link to join your facility.</p>
+            </div>
+            <button onclick="closeInviteModal()" class="text-light-slate hover:text-white transition p-1">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-light-slate mb-1.5 uppercase tracking-wider">Email Address</label>
+                <input id="invite-email" type="email" placeholder="technician@yourplant.com"
+                    class="w-full px-3 py-2.5 bg-white/5 border border-white/15 rounded-lg text-sm text-white placeholder-light-slate/50 focus:outline-none focus:border-[#F97316]/50 transition" />
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-light-slate mb-1.5 uppercase tracking-wider">Role</label>
+                <select id="invite-role" class="w-full px-3 py-2.5 bg-white/5 border border-white/15 rounded-lg text-sm text-white focus:outline-none focus:border-[#F97316]/50 transition">
+                    <option value="Technician">Technician — Can ask questions, upload manuals, create work orders</option>
+                    <option value="Supervisor">Supervisor — Technician + view reports</option>
+                    <option value="Viewer">Viewer — Read-only access</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-light-slate mb-1.5 uppercase tracking-wider">Personal Note <span class="text-light-slate/40 font-normal normal-case">(optional)</span></label>
+                <textarea id="invite-note" rows="2" placeholder="Hey, I've invited you to IndexField to help manage our plant documentation..."
+                    class="w-full px-3 py-2.5 bg-white/5 border border-white/15 rounded-lg text-sm text-white placeholder-light-slate/50 focus:outline-none focus:border-[#F97316]/50 transition resize-none"></textarea>
+            </div>
+        </div>
+
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeInviteModal()" class="flex-1 py-2.5 bg-white/5 border border-white/10 text-slate-300 rounded-lg text-sm font-medium hover:bg-white/10 transition">
+                Cancel
+            </button>
+            <button onclick="sendInvite()" id="send-invite-btn" class="flex-1 py-2.5 bg-[#F97316] hover:bg-[#EA580C] text-white rounded-lg text-sm font-bold transition flex items-center justify-center gap-2">
+                <i class="fas fa-paper-plane"></i>
+                Send Invite
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Change Role Modal -->
+<div id="change-role-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+    <div class="glass-card rounded-2xl p-6 w-full max-w-sm mx-4 border border-white/10 shadow-2xl">
+        <h3 class="text-base font-bold text-white mb-1">Change Role</h3>
+        <p id="change-role-name" class="text-xs text-light-slate mb-4">—</p>
+        <select id="change-role-select" class="w-full px-3 py-2.5 bg-white/5 border border-white/15 rounded-lg text-sm text-white focus:outline-none focus:border-[#F97316]/50 mb-5">
+            <option value="Owner">Owner</option>
+            <option value="Supervisor">Supervisor</option>
+            <option value="Technician">Technician</option>
+            <option value="Viewer">Viewer</option>
+        </select>
+        <div class="flex gap-3">
+            <button onclick="document.getElementById('change-role-modal').classList.add('hidden')" class="flex-1 py-2 bg-white/5 border border-white/10 text-slate-300 rounded-lg text-sm hover:bg-white/10 transition">Cancel</button>
+            <button onclick="confirmRoleChange()" class="flex-1 py-2 bg-[#F97316] hover:bg-[#EA580C] text-white rounded-lg text-sm font-bold transition">Save</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── Demo / sandbox team data ──────────────────────────────────────────────
+const DEMO_TEAM = [
+    { id: "U1", name: "John Smith",    email: "john@harwick.com",   role: "Owner",      joined: "2025-09-01", last_active: "Just now",   queries: 142, wos: 31, online: true  },
+    { id: "U2", name: "Sarah Connor",  email: "sarah@harwick.com",  role: "Supervisor", joined: "2025-09-15", last_active: "12 min ago", queries: 98,  wos: 18, online: true  },
+    { id: "U3", name: "Alex Rivers",   email: "alex@harwick.com",   role: "Technician", joined: "2025-10-03", last_active: "1 hr ago",   queries: 74,  wos: 22, online: false },
+    { id: "U4", name: "Dana Park",     email: "dana@harwick.com",   role: "Technician", joined: "2025-11-20", last_active: "Yesterday",  queries: 41,  wos: 9,  online: false },
+    { id: "U5", name: "Mike Torres",   email: "mike@harwick.com",   role: "Viewer",     joined: "2026-01-10", last_active: "3 days ago", queries: 12,  wos: 0,  online: false },
+];
+
+const DEMO_PENDING = [
+    { id: "P1", email: "newtech@harwick.com", role: "Technician", sent_at: "2026-06-17", invited_by: "John Smith" },
+    { id: "P2", email: "contractor@vendor.io", role: "Viewer",    sent_at: "2026-06-18", invited_by: "Sarah Connor" },
+];
+
+const PLAN_SEAT_LIMIT = 10;
+
+// Runtime state
+let teamMembers = [];
+let pendingInvites = [];
+let changingRoleForId = null;
+
+// ── Boot ─────────────────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+    loadTeamData();
+});
+
+async function loadTeamData() {
+    // Get session from Supabase
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const token = session?.access_token;
+    
+    if (!token) {
+        // Fallback to demo data if not authenticated
+        teamMembers  = JSON.parse(JSON.stringify(DEMO_TEAM));
+        pendingInvites = JSON.parse(JSON.stringify(DEMO_PENDING));
+        renderAll();
+        return;
+    }
+    
+    // Fetch members with auth header
+    try {
+        const membersRes = await fetch('/api/facility/members', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const membersData = await membersRes.json();
+        teamMembers = membersData.members || [];
+    } catch (e) {
+        console.error('Failed to load members:', e);
+        teamMembers = JSON.parse(JSON.stringify(DEMO_TEAM));
+    }
+    
+    // Fetch pending invites with auth header
+    try {
+        const invitesRes = await fetch('/api/facility/invites', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const invitesData = await invitesRes.json();
+        pendingInvites = invitesData.invites || [];
+    } catch (e) {
+        console.error('Failed to load invites:', e);
+        pendingInvites = JSON.parse(JSON.stringify(DEMO_PENDING));
+    }
+    
+    renderAll();
+}
+
+// ── Render ────────────────────────────────────────────────────────────────
+function renderAll() {
+    renderStats();
+    renderTable(teamMembers);
+    renderPending();
+}
+
+function renderStats() {
+    const total   = teamMembers.length;
+    const active  = teamMembers.filter(m => m.online).length;
+    const pending = pendingInvites.length;
+    const used    = total;
+
+    document.getElementById("stat-total").textContent   = total;
+    document.getElementById("stat-active").textContent  = active;
+    document.getElementById("stat-pending").textContent = pending;
+    document.getElementById("stat-seats-used").textContent  = used;
+    document.getElementById("stat-seats-total").textContent = "/ " + PLAN_SEAT_LIMIT;
+
+    const pct = Math.min(100, Math.round((used / PLAN_SEAT_LIMIT) * 100));
+    const bar = document.getElementById("seat-progress-bar");
+    bar.style.width = pct + "%";
+    bar.className = "h-1.5 rounded-full transition-all duration-700 " +
+        (pct > 85 ? "bg-[#EF4444]" : pct > 60 ? "bg-[#FACC15]" : "bg-[#F97316]");
+}
+
+function renderTable(members) {
+    const tbody = document.getElementById("team-table-body");
+
+    if (!members.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-12 text-center text-sm text-light-slate">No members match this filter.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = members.map(m => {
+        const roleColors = {
+            Owner:      "bg-[#F97316]/15 text-[#F97316] border-[#F97316]/30",
+            Supervisor: "bg-[#06B6D4]/15 text-[#06B6D4] border-[#06B6D4]/30",
+            Technician: "bg-[#22C55E]/15 text-[#22C55E] border-[#22C55E]/30",
+            Viewer:     "bg-white/8 text-light-slate border-white/15",
+        };
+        const avatarColors = {
+            Owner:      "from-[#F97316]/30 to-[#EA580C]/30 border-[#F97316]/30 text-[#F97316]",
+            Supervisor: "from-[#06B6D4]/20 to-[#0284C7]/20 border-[#06B6D4]/30 text-[#06B6D4]",
+            Technician: "from-[#22C55E]/20 to-[#16A34A]/20 border-[#22C55E]/30 text-[#22C55E]",
+            Viewer:     "from-white/5 to-white/10 border-white/10 text-light-slate",
+        };
+        const rc = roleColors[m.role] || roleColors.Viewer;
+        const ac = avatarColors[m.role] || avatarColors.Viewer;
+        const initials = m.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+
+        const onlineDot = m.online
+            ? `<span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#22C55E] border-2 border-[#111827]"></span>`
+            : "";
+
+        const isOwn = m.id === "U1"; // treat first owner as the current user for sandbox
+
+        const actBar = (() => {
+            const max = 150;
+            const wPct = Math.min(100, Math.round((m.wos / max) * 100));
+            const qPct = Math.min(100, Math.round((m.queries / max) * 100));
+            return `
+                <div class="flex flex-col gap-1 min-w-[80px]">
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-[9px] text-light-slate/60 w-4">Q</span>
+                        <div class="flex-1 bg-white/10 rounded-full h-1"><div class="h-1 rounded-full bg-[#06B6D4]" style="width:${qPct}%"></div></div>
+                        <span class="text-[9px] text-light-slate font-mono">${m.queries}</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-[9px] text-light-slate/60 w-4">WO</span>
+                        <div class="flex-1 bg-white/10 rounded-full h-1"><div class="h-1 rounded-full bg-[#F97316]" style="width:${wPct}%"></div></div>
+                        <span class="text-[9px] text-light-slate font-mono">${m.wos}</span>
+                    </div>
+                </div>`;
+        })();
+
+        return `
+        <tr class="hover:bg-white/[0.03] transition group" data-id="${m.id}">
+            <td class="py-3 px-2">
+                <div class="flex items-center gap-3">
+                    <div class="relative flex-shrink-0">
+                        <div class="w-9 h-9 rounded-full bg-gradient-to-br ${ac} border flex items-center justify-center text-xs font-bold">${initials}</div>
+                        ${onlineDot}
+                    </div>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold text-white text-sm truncate">${m.name}</span>
+                            ${isOwn ? '<span class="text-[9px] bg-white/8 text-light-slate border border-white/10 px-1.5 py-0.5 rounded font-mono">YOU</span>' : ""}
+                        </div>
+                        <span class="text-[11px] text-light-slate truncate">${m.email}</span>
+                    </div>
+                </div>
+            </td>
+            <td class="py-3 px-2">
+                <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded border ${rc}">${m.role}</span>
+            </td>
+            <td class="py-3 px-2 text-xs text-light-slate hidden sm:table-cell">${m.last_active}</td>
+            <td class="py-3 px-2 text-xs text-light-slate hidden md:table-cell font-mono">${m.joined}</td>
+            <td class="py-3 px-2 hidden lg:table-cell">${actBar}</td>
+            <td class="py-3 px-2 text-right">
+                ${isOwn ? '<span class="text-[10px] text-light-slate/40 font-mono">—</span>' : `
+                <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition">
+                    <button onclick="openChangeRole('${m.id}')" title="Change role" class="p-1.5 rounded hover:bg-white/10 text-light-slate hover:text-white transition text-xs">
+                        <i class="fas fa-user-tag"></i>
+                    </button>
+                    <button onclick="removeMember('${m.id}')" title="Remove member" class="p-1.5 rounded hover:bg-red-500/15 text-light-slate hover:text-[#EF4444] transition text-xs">
+                        <i class="fas fa-user-times"></i>
+                    </button>
+                </div>`}
+            </td>
+        </tr>`;
+    }).join("");
+}
+
+function renderPending() {
+    const badge = document.getElementById("pending-count-badge");
+    const list  = document.getElementById("pending-invites-list");
+    badge.textContent = pendingInvites.length;
+
+    if (!pendingInvites.length) {
+        list.innerHTML = `<p class="text-sm text-light-slate/60 font-mono">No pending invitations.</p>`;
+        return;
+    }
+
+    const roleColors = {
+        Technician: "text-[#22C55E]",
+        Supervisor: "text-[#06B6D4]",
+        Viewer:     "text-light-slate",
+    };
+
+    list.innerHTML = pendingInvites.map(p => `
+        <div class="flex items-center justify-between p-4 bg-[#FACC15]/5 border border-[#FACC15]/15 rounded-xl">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-8 h-8 rounded-full bg-[#FACC15]/15 border border-[#FACC15]/25 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-envelope text-[#FACC15] text-xs"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-sm font-semibold text-white truncate">${p.email}</p>
+                    <p class="text-[11px] text-light-slate">
+                        Role: <span class="font-bold ${roleColors[p.role] || 'text-light-slate'}">${p.role}</span>
+                        &nbsp;·&nbsp; Invited by ${p.invited_by}
+                        &nbsp;·&nbsp; <span class="font-mono">${p.sent_at}</span>
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 ml-4 flex-shrink-0">
+                <button onclick="resendInvite('${p.id}')" class="text-[11px] px-3 py-1.5 bg-white/5 border border-white/10 text-slate-300 rounded-lg hover:bg-white/10 transition font-medium">Resend</button>
+                <button onclick="cancelInvite('${p.id}')" class="text-[11px] px-3 py-1.5 bg-red-500/10 border border-red-500/20 text-[#EF4444] rounded-lg hover:bg-red-500/20 transition font-medium">Revoke</button>
+            </div>
+        </div>
+    `).join("");
+}
+
+// ── Filtering ─────────────────────────────────────────────────────────────
+function filterTeam() {
+    const roleFilter = document.getElementById("role-filter").value;
+    const search     = document.getElementById("member-search").value.toLowerCase().trim();
+    const filtered   = teamMembers.filter(m => {
+        const roleOk   = roleFilter === "all" || m.role === roleFilter;
+        const searchOk = !search || m.name.toLowerCase().includes(search) || m.email.toLowerCase().includes(search);
+        return roleOk && searchOk;
+    });
+    renderTable(filtered);
+}
+
+// ── Invite Flow ───────────────────────────────────────────────────────────
+function openInviteModal() {
+    document.getElementById("invite-email").value = "";
+    document.getElementById("invite-note").value  = "";
+    document.getElementById("invite-role").value  = "Technician";
+    document.getElementById("invite-modal").classList.remove("hidden");
+    setTimeout(() => document.getElementById("invite-email").focus(), 80);
+}
+
+function closeInviteModal() {
+    document.getElementById("invite-modal").classList.add("hidden");
+}
+
+async function sendInvite() {
+    const email = document.getElementById("invite-email").value.trim();
+    const role  = document.getElementById("invite-role").value;
+    if (!email || !email.includes("@")) {
+        document.getElementById("invite-email").focus();
+        document.getElementById("invite-email").style.borderColor = "#EF4444";
+        setTimeout(() => document.getElementById("invite-email").style.borderColor = "", 1500);
+        return;
+    }
+
+    const btn = document.getElementById("send-invite-btn");
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…';
+    btn.disabled  = true;
+
+    // Get session from Supabase
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const token = session?.access_token;
+
+    // Send to API with auth header
+    try {
+        const response = await fetch('/api/facility/invite', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                invited_email: email,
+                role: role.toLowerCase(),
+                personal_message: document.getElementById("invite-note").value
+            })
+        });
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            closeInviteModal();
+            await loadTeamData();  // Reload data
+            showTeamToast(`Invite sent to ${email}`, "success");
+        } else {
+            showTeamToast(data.detail || "Failed to send invite", "error");
+        }
+    } catch (e) {
+        console.error('Error sending invite:', e);
+        showTeamToast("Error sending invite", "error");
+    }
+    
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Invite';
+    btn.disabled  = false;
+}
+
+// ── Role Change ───────────────────────────────────────────────────────────
+function openChangeRole(memberId) {
+    const m = teamMembers.find(x => x.id === memberId);
+    if (!m) return;
+    changingRoleForId = memberId;
+    document.getElementById("change-role-name").textContent = m.name + " · " + m.email;
+    document.getElementById("change-role-select").value = m.role;
+    document.getElementById("change-role-modal").classList.remove("hidden");
+}
+
+async function confirmRoleChange() {
+    const m = teamMembers.find(x => x.id === changingRoleForId);
+    if (!m) return;
+    const newRole = document.getElementById("change-role-select").value;
+    
+    // Get session from Supabase
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const token = session?.access_token;
+    
+    try {
+        const response = await fetch(`/api/facility/members/${m.id}/role`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ role: newRole.toLowerCase() })
+        });
+        
+        if (response.ok) {
+            m.role = newRole;
+            document.getElementById("change-role-modal").classList.add("hidden");
+            await loadTeamData();
+            showTeamToast(`${m.name}'s role changed to ${newRole}`, "success");
+        } else {
+            const data = await response.json();
+            showTeamToast(data.detail || "Failed to change role", "error");
+        }
+    } catch (e) {
+        console.error('Error changing role:', e);
+        showTeamToast("Error changing role", "error");
+    }
+}
+
+// ── Remove Member ─────────────────────────────────────────────────────────
+async function removeMember(memberId) {
+    const m = teamMembers.find(x => x.id === memberId);
+    if (!m) return;
+    if (!confirm(`Remove ${m.name} from this facility? They will lose all access immediately.`)) return;
+    
+    // Get session from Supabase
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const token = session?.access_token;
+    
+    try {
+        const response = await fetch(`/api/facility/members/${m.id}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            teamMembers = teamMembers.filter(x => x.id !== memberId);
+            renderAll();
+            showTeamToast(`${m.name} has been removed.`, "warn");
+        } else {
+            const data = await response.json();
+            showTeamToast(data.detail || "Failed to remove member", "error");
+        }
+    } catch (e) {
+        console.error('Error removing member:', e);
+        showTeamToast("Error removing member", "error");
+    }
+}
+
+// ── Invite Actions ────────────────────────────────────────────────────────
+async function resendInvite(inviteId) {
+    // Get session from Supabase
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const token = session?.access_token;
+    
+    try {
+        const response = await fetch(`/api/facility/invites/${inviteId}/resend`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            showTeamToast("Invite resent.", "success");
+        } else {
+            const data = await response.json();
+            showTeamToast(data.detail || "Failed to resend invite", "error");
+        }
+    } catch (e) {
+        console.error('Error resending invite:', e);
+        showTeamToast("Error resending invite", "error");
+    }
+}
+
+async function cancelInvite(inviteId) {
+    // Get session from Supabase
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const token = session?.access_token;
+    
+    try {
+        const response = await fetch(`/api/facility/invites/${inviteId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            pendingInvites = pendingInvites.filter(p => p.id !== inviteId);
+            renderStats();
+            renderPending();
+            showTeamToast("Invitation revoked.", "warn");
+        } else {
+            const data = await response.json();
+            showTeamToast(data.detail || "Failed to revoke invite", "error");
+        }
+    } catch (e) {
+        console.error('Error canceling invite:', e);
+        showTeamToast("Error canceling invite", "error");
+    }
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────
+function showTeamToast(msg, type) {
+    if (window.showToast) { window.showToast(msg, type === "success" ? "brand" : "warning"); return; }
+    // fallback local toast
+    const el = document.createElement("div");
+    const color = type === "success" ? "#22C55E" : "#FACC15";
+    el.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 18px;border-radius:10px;border:1px solid ${color}30;background:#1F2937;color:#F8FAFC;font-size:13px;font-weight:600;box-shadow:0 8px 24px #0009;transition:opacity .4s;`;
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(() => { el.style.opacity = "0"; setTimeout(() => el.remove(), 400); }, 2600);
+}
+</script>
+{% endblock %}

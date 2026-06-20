@@ -1,29 +1,25 @@
-<div id="handover-view" class="dashboard-view">
-    <!-- Print Styles Override -->
+<div id="handover-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6">
+    <!-- Print Styles -->
     <style>
         @media print {
-            body * {
-                visibility: hidden;
-            }
-            #print-container, #print-container * {
-                visibility: visible;
-            }
-            #print-container {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                color: #000000 !important;
-                background: #ffffff !important;
-            }
-            .no-print {
-                display: none !important;
-            }
+            body * { visibility: hidden; }
+            #print-container, #print-container * { visibility: visible; }
+            #print-container { position: absolute; left: 0; top: 0; width: 100%; color: #000 !important; background: #fff !important; }
+            .no-print { display: none !important; }
         }
+        .sic-tab-btn { transition: all 0.2s ease; }
+        .sic-tab-btn.active { border-bottom: 2px solid #F97316; color: #F97316; }
+        .sic-tab-content { display: none; }
+        .sic-tab-content.active { display: block; }
+        .shift-log-entry { transition: background 0.15s; }
+        .shift-log-entry:hover { background: rgba(255,255,255,0.03); }
+        @keyframes sic-blink { 0%,100%{opacity:1}50%{opacity:0.4} }
+        .sic-live-dot { animation: sic-blink 1.5s ease-in-out infinite; }
     </style>
 
-    <div class="p-6 max-w-7xl mx-auto space-y-6">
-        <!-- Incoming Handover Banner -->
+    <div class="p-0 max-w-7xl mx-auto space-y-6">
+
+        <!-- INCOMING HANDOVER BANNER -->
         <div id="incoming-handover-banner" class="hidden p-5 bg-[#F97316]/5 border border-[#F97316]/30 border-l-4 border-l-[#F97316] rounded-xl flex items-center justify-between">
             <div class="flex items-center gap-4">
                 <div class="w-10 h-10 rounded-full bg-[#F97316]/10 flex items-center justify-center text-[#F97316]">
@@ -39,17 +35,16 @@
             </button>
         </div>
 
-        <!-- Page Header -->
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <!-- PAGE HEADER -->
+        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-extrabold tracking-tight text-white">SHIFT HANDOVER</h1>
-                <p class="text-sm text-slate-400">AI-generated operational brief for outgoing and incoming shift leads.</p>
+                <h1 class="text-2xl font-extrabold tracking-tight text-white">SHIFT INTELLIGENCE CENTER</h1>
+                <p class="text-sm text-slate-400 mt-1">Pre-shift briefing, live shift log, and AI-generated handover system.</p>
             </div>
-            <div class="flex flex-col sm:flex-row sm:items-center gap-3 self-start md:self-auto">
-                <!-- Monospace Current Shift Status -->
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3 self-start">
                 <div id="current-shift-indicator" class="font-mono text-xs text-slate-400 bg-white/5 border border-white/10 px-4 py-3 rounded-lg flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-[#F97316] animate-pulse"></span>
-                    DAY SHIFT · Started 06:00 · -- elapsed
+                    <span id="sic-shift-label">DAY SHIFT · Started 06:00 · -- elapsed</span>
                 </div>
                 <button onclick="generateHandoverBrief()" id="generate-handover-btn" class="px-5 py-3 bg-[#F97316] text-black font-black uppercase text-xs tracking-widest rounded-lg hover:bg-[#EA580C] transition-all flex items-center gap-2">
                     <i class="fas fa-bolt"></i> GENERATE HANDOVER BRIEF
@@ -57,7 +52,7 @@
             </div>
         </div>
 
-        <!-- KPI Cards Row -->
+        <!-- KPI CARDS -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="glass-card rounded-xl p-5 border border-white/5">
                 <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">Briefs This Week</span>
@@ -83,240 +78,329 @@
             </div>
         </div>
 
-        <!-- Terminal Animation (Hidden initially) -->
-        <div id="handover-terminal" class="hidden glass-card rounded-xl p-6 border border-white/10 bg-[#0d1117]/80">
-            <div class="font-mono text-xs space-y-2.5">
-                <div id="term-line-1" class="hidden text-slate-400 flex items-center gap-2"><span class="text-[#F97316]">[▸]</span> SCANNING SHIFT ACTIVITY LOG...</div>
-                <div id="term-line-2" class="hidden text-slate-400 flex items-center gap-2"><span class="text-[#F97316]">[▸]</span> PULLING OPEN WORK ORDERS...</div>
-                <div id="term-line-3" class="hidden text-slate-400 flex items-center gap-2"><span class="text-[#F97316]">[▸]</span> CHECKING MAINTENANCE STATUS...</div>
-                <div id="term-line-4" class="hidden text-slate-400 flex items-center gap-2"><span class="text-[#F97316]">[▸]</span> REVIEWING ASSET ACCESS HISTORY...</div>
-                <div id="term-line-5" class="hidden text-slate-400 flex items-center gap-2"><span class="text-[#F97316]">[▸]</span> ANALYZING INCIDENT LOG...</div>
-                <div id="term-line-6" class="hidden text-slate-400 flex items-center gap-2"><span class="text-[#F97316]">[▸]</span> CROSS-REFERENCING SAFETY PROCEDURES...</div>
-                <div id="term-line-7" class="hidden text-slate-400 flex items-center gap-2"><span class="text-[#F97316]">[▸]</span> GENERATING INTELLIGENCE BRIEF...</div>
-                <div id="term-line-8" class="hidden text-[#22C55E] font-bold flex items-center gap-2"><span>[✓]</span> HANDOVER BRIEF READY — <span id="term-critical-count">0</span> ITEMS FLAGGED</div>
+        <!-- THREE TAB NAVIGATION -->
+        <div class="glass-card rounded-xl border border-white/10 overflow-hidden">
+            <div class="flex border-b border-white/10 bg-black/20">
+                <button id="sic-tab-btn-briefing" onclick="switchSICTab('briefing')" class="sic-tab-btn active px-6 py-4 text-xs font-black uppercase tracking-widest text-[#F97316] border-b-2 border-[#F97316] border-0 hover:bg-white/5 transition-all flex items-center gap-2">
+                    <i class="fas fa-clipboard-list text-[#F97316]"></i> Pre-Shift Briefing
+                </button>
+                <button id="sic-tab-btn-log" onclick="switchSICTab('log')" class="sic-tab-btn px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400 border-b-2 border-transparent hover:bg-white/5 transition-all flex items-center gap-2">
+                    <i class="fas fa-book-open"></i> Shift Log
+                    <span id="sic-log-count" class="hidden text-[9px] bg-[#F97316]/15 text-[#F97316] px-1.5 py-0.5 rounded font-mono border border-[#F97316]/20">0</span>
+                </button>
+                <button id="sic-tab-btn-handover" onclick="switchSICTab('handover')" class="sic-tab-btn px-6 py-4 text-xs font-black uppercase tracking-widest text-slate-400 border-b-2 border-transparent hover:bg-white/5 transition-all flex items-center gap-2">
+                    <i class="fas fa-handshake"></i> Handover
+                </button>
             </div>
-        </div>
 
-        <!-- Handover Brief Layout -->
-        <div id="handover-brief-container" class="hidden glass-card rounded-xl border border-white/10 bg-[#111827] overflow-hidden">
-            <!-- Brief Header -->
-            <div class="p-6 border-b border-white/10 bg-white/[0.02] space-y-4">
-                <div class="flex items-center justify-between">
+            <!-- ======================== TAB 1: PRE-SHIFT BRIEFING ======================== -->
+            <div id="sic-tab-briefing" class="sic-tab-content active p-6">
+                <!-- Loading state -->
+                <div id="sic-briefing-loading" class="py-12 text-center space-y-4">
+                    <div class="w-12 h-12 rounded-full bg-[#F97316]/10 border border-[#F97316]/20 flex items-center justify-center mx-auto">
+                        <i class="fas fa-spinner fa-spin text-[#F97316] text-lg"></i>
+                    </div>
                     <div>
-                        <h2 class="text-lg font-black tracking-widest text-white font-mono uppercase">SHIFT HANDOVER BRIEF</h2>
-                        <div class="flex items-center gap-3 text-xs text-slate-400 mt-1 font-mono">
-                            <span id="brief-facility">FACILITY NAME</span>
-                            <span>·</span>
-                            <span id="brief-shift-type">SHIFT TYPE</span>
-                            <span>·</span>
-                            <span id="brief-date">DATE</span>
-                        </div>
-                    </div>
-                    <div class="text-right text-[10px] text-slate-500 font-mono">
-                        Generated: <span id="brief-timestamp">Timestamp</span><br>
-                        by: <span id="brief-creator">User</span>
+                        <p class="text-xs font-bold uppercase tracking-widest text-slate-400">Generating Your Pre-Shift Briefing</p>
+                        <p class="text-[10px] text-slate-600 mt-1">Pulling open work orders, maintenance items, and overnight observations...</p>
                     </div>
                 </div>
-                
-                <hr class="border-white/10">
 
-                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-                    <div class="flex flex-col">
-                        <span class="text-[9px] uppercase tracking-widest text-slate-500 font-mono font-bold mb-1">Overall Status</span>
-                        <div>
-                            <span id="brief-overall-status" class="inline-block px-3 py-1.5 rounded text-xs font-bold border">AMBER</span>
+                <!-- Briefing content (hidden until generated) -->
+                <div id="sic-briefing-content" class="hidden space-y-6">
+                    <!-- Greeting -->
+                    <div class="pb-5 border-b border-white/10">
+                        <h2 class="text-lg font-black tracking-widest text-white" id="sic-greeting">GOOD MORNING, TECHNICIAN</h2>
+                        <p class="text-[10px] text-slate-500 font-mono mt-1" id="sic-briefing-meta">Day Shift · Generated —</p>
+                    </div>
+
+                    <div class="border-t border-white/10 pt-4">
+                        <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Your Top 3 Priorities Today:</h3>
+                        <div id="sic-priorities-list" class="space-y-3"></div>
+                    </div>
+
+                    <div class="border-t border-white/10 pt-4">
+                        <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">From Last Shift:</h3>
+                        <div id="sic-last-shift" class="p-4 bg-[#F97316]/5 border border-[#F97316]/20 rounded-xl">
+                            <p class="text-xs text-slate-300" id="sic-last-shift-text">No handover from previous shift.</p>
                         </div>
                     </div>
-                    <div class="flex-1">
-                        <span class="text-[9px] uppercase tracking-widest text-slate-500 font-mono font-bold block mb-1">AI Operational Summary</span>
-                        <p id="brief-ai-summary" class="text-xs italic text-slate-300">"Summary content..."</p>
+
+                    <div id="sic-schedule-section" class="hidden border-t border-white/10 pt-4">
+                        <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">Your Schedule Today:</h3>
+                        <div id="sic-schedule-list" class="space-y-2"></div>
                     </div>
+
+                    <!-- Acknowledge Button -->
+                    <div id="sic-ack-area" class="border-t border-white/10 pt-5">
+                        <button onclick="acknowledgeBriefing()" id="sic-ack-btn" class="w-full py-4 bg-[#22C55E]/15 border border-[#22C55E]/30 text-[#22C55E] font-black uppercase text-xs tracking-widest rounded-xl hover:bg-[#22C55E]/25 transition-all flex items-center justify-center gap-2">
+                            <i class="fas fa-check-circle text-sm"></i> ✓ ACKNOWLEDGE AND START SHIFT
+                        </button>
+                        <div id="sic-ack-confirmed" class="hidden font-mono text-xs text-[#22C55E] font-bold bg-[#22C55E]/10 border border-[#22C55E]/30 px-4 py-3 rounded-lg flex items-center gap-2 justify-center">
+                            <i class="fas fa-check-circle text-sm"></i>
+                            ✓ BRIEFING ACKNOWLEDGED — <span id="sic-ack-time"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty state: no briefing available -->
+                <div id="sic-briefing-empty" class="hidden py-12 text-center space-y-4">
+                    <div class="text-slate-600"><i class="fas fa-clipboard-list text-4xl"></i></div>
+                    <div>
+                        <h4 class="text-xs font-bold uppercase tracking-widest text-slate-400">No Briefing Generated Yet</h4>
+                        <p class="text-[11px] text-slate-500 mt-1">Your pre-shift briefing will auto-generate when you arrive. Click below to generate now.</p>
+                    </div>
+                    <button onclick="requestShiftBriefing()" class="px-6 py-3 bg-[#F97316] text-black font-black uppercase text-xs tracking-widest rounded-lg hover:bg-[#EA580C] transition-all">
+                        <i class="fas fa-bolt mr-1"></i> GENERATE MY BRIEFING
+                    </button>
                 </div>
             </div>
 
-            <!-- Sections Container -->
-            <div class="p-6 space-y-8">
-                <!-- Section 1: Critical Items -->
-                <div id="sec-critical" class="space-y-3">
-                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                        CRITICAL ITEMS REQUIRING ATTENTION
-                        <span id="sec-critical-count" class="px-2 py-0.5 rounded-full text-[9px] bg-red-500/20 text-red-500 border border-red-500/30">0</span>
-                    </h3>
-                    <div id="sec-critical-list" class="space-y-2"></div>
-                </div>
-
-                <!-- Section 2: Work Orders -->
-                <div id="sec-workorders" class="space-y-3">
-                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400" id="sec-workorders-title">
-                        WORK ORDERS · 0 TOTAL
-                    </h3>
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                        <div class="p-4 bg-black/40 border border-white/5 rounded-xl space-y-3">
-                            <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/5 pb-2">Opened This Shift</div>
-                            <div id="wo-opened-list" class="space-y-2"></div>
-                        </div>
-                        <div class="p-4 bg-black/40 border border-white/5 rounded-xl space-y-3">
-                            <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/5 pb-2">In Progress</div>
-                            <div id="wo-progress-list" class="space-y-2"></div>
-                        </div>
-                        <div class="p-4 bg-black/40 border border-white/5 rounded-xl space-y-3">
-                            <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/5 pb-2">Completed</div>
-                            <div id="wo-completed-list" class="space-y-2"></div>
-                        </div>
+            <!-- ======================== TAB 2: SHIFT LOG ======================== -->
+            <div id="sic-tab-log" class="sic-tab-content">
+                <!-- Log Input Area -->
+                <div class="p-6 border-b border-white/10 bg-black/10 space-y-4">
+                    <div class="flex gap-3">
+                        <textarea
+                            id="sic-log-input"
+                            rows="3"
+                            class="glass-input flex-1 px-4 py-3 rounded-lg text-sm text-white placeholder-slate-500 resize-none focus:outline-none"
+                            placeholder="Log a shift note... (what happened, what you observed, what you completed)"
+                        ></textarea>
+                        <button onclick="toggleSICVoice()" id="sic-mic-btn" title="Voice input"
+                            class="w-10 flex-shrink-0 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:border-[#F97316]/40 hover:text-[#F97316] transition-all self-start mt-0" style="height:44px">
+                            <i class="fas fa-microphone text-sm"></i>
+                        </button>
                     </div>
-                </div>
-
-                <!-- Section 3: Assets Accessed -->
-                <div id="sec-assets" class="space-y-3">
-                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400" id="sec-assets-title">
-                        ASSETS ACCESSED THIS SHIFT · 0
-                    </h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-xs">
-                            <thead>
-                                <tr class="border-b border-white/10 text-slate-400">
-                                    <th class="pb-2">Asset Name</th>
-                                    <th class="pb-2 text-center">Queries Asked</th>
-                                    <th class="pb-2 text-center">Work Orders</th>
-                                    <th class="pb-2 text-right">Last Activity</th>
-                                </tr>
-                            </thead>
-                            <tbody id="sec-assets-table-body" class="divide-y divide-white/5"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Section 4: Maintenance Status -->
-                <div id="sec-maintenance" class="space-y-3">
-                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400">MAINTENANCE STATUS</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                        <div class="p-4 bg-black/40 border border-white/5 rounded-xl">
-                            <div class="text-[9px] uppercase tracking-widest text-slate-500 font-bold">Overdue Now</div>
-                            <div class="text-xl font-black font-mono mt-1" id="maint-overdue-count">0 Items</div>
-                        </div>
-                        <div class="p-4 bg-black/40 border border-white/5 rounded-xl">
-                            <div class="text-[9px] uppercase tracking-widest text-slate-500 font-bold">Due This Week</div>
-                            <div class="text-xl font-black font-mono mt-1" id="maint-due-count">0 Items</div>
-                        </div>
-                        <div class="p-4 bg-black/40 border border-white/5 rounded-xl">
-                            <div class="text-[9px] uppercase tracking-widest text-slate-500 font-bold">Completed</div>
-                            <div class="text-xl font-black font-mono mt-1 text-[#22C55E]" id="maint-completed-count">0 this shift</div>
-                        </div>
-                    </div>
-                    <div id="maint-overdue-list" class="space-y-2"></div>
-                </div>
-
-                <!-- Section 5: Knowledge Queries -->
-                <div id="sec-queries" class="space-y-3">
-                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400" id="sec-queries-title">
-                        KNOWLEDGE QUERIES THIS SHIFT · 0
-                    </h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-xs">
-                            <thead>
-                                <tr class="border-b border-white/10 text-slate-400">
-                                    <th class="pb-2">Time</th>
-                                    <th class="pb-2">Question Asked</th>
-                                    <th class="pb-2">Source Found</th>
-                                    <th class="pb-2 text-right">Confidence</th>
-                                </tr>
-                            </thead>
-                            <tbody id="sec-queries-table-body" class="divide-y divide-white/5"></tbody>
-                        </table>
-                    </div>
-                    <div id="queries-gap-callout" class="hidden p-4 bg-yellow-500/5 border border-yellow-500/20 rounded-xl flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center text-yellow-500">
-                                <i class="fas fa-exclamation-triangle"></i>
-                            </div>
-                            <div>
-                                <p class="text-xs font-bold text-yellow-500 uppercase"><span id="gap-count">0</span> QUERIES HAD NO GOOD ANSWER</p>
-                                <p class="text-[10px] text-slate-400">These topics have no uploaded documentation.</p>
-                            </div>
-                        </div>
-                        <button onclick="showView('history')" class="px-3 py-1.5 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 font-bold rounded text-[10px] hover:bg-yellow-500/20 transition-all uppercase tracking-wider">
-                            VIEW IN KNOWLEDGE AUDIT →
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <select id="sic-log-asset" class="glass-input flex-1 min-w-[140px] px-3 py-2 rounded text-sm text-white bg-transparent focus:outline-none">
+                            <option value="">Asset (optional)</option>
+                        </select>
+                        <select id="sic-log-type" class="glass-input px-3 py-2 rounded text-sm text-white bg-transparent focus:outline-none">
+                            <option value="NOTE">NOTE</option>
+                            <option value="OBSERVATION">OBSERVATION</option>
+                            <option value="TASK_COMPLETE">TASK COMPLETE</option>
+                            <option value="SAFETY">SAFETY</option>
+                            <option value="EQUIPMENT_ISSUE">EQUIPMENT ISSUE</option>
+                        </select>
+                        <button onclick="addToShiftLog()" id="sic-add-btn" class="px-6 py-2 bg-[#F97316] text-black font-black uppercase text-xs tracking-widest rounded-lg hover:bg-[#EA580C] transition-all flex items-center gap-2">
+                            <i class="fas fa-plus"></i> ADD TO LOG
                         </button>
                     </div>
                 </div>
 
-                <!-- Section 6: Incidents -->
-                <div id="sec-incidents" class="space-y-3">
-                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400">INCIDENTS THIS SHIFT</h3>
-                    <div id="sec-incidents-list" class="space-y-2"></div>
+                <!-- Filter Bar -->
+                <div class="px-6 py-3 border-b border-white/5 flex items-center gap-2 overflow-x-auto">
+                    <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider mr-1 whitespace-nowrap">Filter:</span>
+                    <button onclick="filterLogEntries('')" class="sic-filter-btn text-[9px] font-bold px-3 py-1 rounded font-mono uppercase tracking-wider bg-[#F97316]/15 text-[#F97316] border border-[#F97316]/20 transition-all whitespace-nowrap" data-filter="">All</button>
+                    <button onclick="filterLogEntries('NOTE')" class="sic-filter-btn text-[9px] font-bold px-3 py-1 rounded font-mono uppercase tracking-wider bg-white/5 text-slate-400 border border-white/10 hover:border-white/20 transition-all whitespace-nowrap" data-filter="NOTE">Notes</button>
+                    <button onclick="filterLogEntries('OBSERVATION')" class="sic-filter-btn text-[9px] font-bold px-3 py-1 rounded font-mono uppercase tracking-wider bg-white/5 text-slate-400 border border-white/10 hover:border-white/20 transition-all whitespace-nowrap" data-filter="OBSERVATION">Observations</button>
+                    <button onclick="filterLogEntries('TASK_COMPLETE')" class="sic-filter-btn text-[9px] font-bold px-3 py-1 rounded font-mono uppercase tracking-wider bg-white/5 text-slate-400 border border-white/10 hover:border-white/20 transition-all whitespace-nowrap" data-filter="TASK_COMPLETE">Completed</button>
+                    <button onclick="filterLogEntries('SAFETY')" class="sic-filter-btn text-[9px] font-bold px-3 py-1 rounded font-mono uppercase tracking-wider bg-white/5 text-slate-400 border border-white/10 hover:border-white/20 transition-all whitespace-nowrap" data-filter="SAFETY">Safety</button>
+                    <button onclick="filterLogEntries('EQUIPMENT_ISSUE')" class="sic-filter-btn text-[9px] font-bold px-3 py-1 rounded font-mono uppercase tracking-wider bg-white/5 text-slate-400 border border-white/10 hover:border-white/20 transition-all whitespace-nowrap" data-filter="EQUIPMENT_ISSUE">Issues</button>
                 </div>
 
-                <!-- Section 7: AI Recommendations -->
-                <div id="sec-recommendations" class="space-y-3">
-                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400">RECOMMENDED PRIORITIES FOR INCOMING SHIFT</h3>
-                    <ol id="sec-recommendations-list" class="space-y-3 text-xs leading-relaxed text-slate-300"></ol>
-                </div>
-            </div>
-
-            <!-- Brief Footer -->
-            <div class="p-6 border-t border-white/10 bg-white/[0.01] flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <!-- Action Buttons -->
-                <div class="flex flex-wrap items-center gap-3">
-                    <button onclick="downloadBriefPDF()" class="px-4 py-2.5 bg-white/5 border border-white/15 text-white font-bold rounded-lg text-xs hover:bg-white/10 transition-all flex items-center gap-2">
-                        <i class="fas fa-download"></i> DOWNLOAD PDF
-                    </button>
-                    <button onclick="copyShareBriefLink()" class="px-4 py-2.5 bg-white/5 border border-white/15 text-white font-bold rounded-lg text-xs hover:bg-white/10 transition-all flex items-center gap-2">
-                        <i class="fas fa-link"></i> COPY SHARE LINK
-                    </button>
-                    <button id="main-acknowledge-btn" onclick="scrollToAcknowledge()" class="px-4 py-2.5 bg-[#22C55E]/15 border border-[#22C55E]/30 text-[#22C55E] font-bold rounded-lg text-xs hover:bg-[#22C55E]/25 transition-all flex items-center gap-2">
-                        <i class="fas fa-check"></i> MARK AS ACKNOWLEDGED
-                    </button>
-                </div>
-
-                <!-- Signature Section -->
-                <div id="signature-input-area" class="flex items-center gap-3 bg-black/40 border border-white/10 p-3 rounded-lg max-w-md w-full ml-auto md:ml-0">
-                    <div class="flex-1">
-                        <input type="text" id="incoming-lead-name" placeholder="Incoming Lead Signature" class="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#F97316]">
+                <!-- Log Feed -->
+                <div id="sic-log-feed" class="divide-y divide-white/5 min-h-[200px]">
+                    <div id="sic-log-empty" class="py-16 text-center space-y-3">
+                        <div class="text-slate-600"><i class="fas fa-book text-3xl"></i></div>
+                        <div>
+                            <h4 class="text-xs font-bold uppercase tracking-widest text-slate-500">SHIFT LOG EMPTY</h4>
+                            <p class="text-[11px] text-slate-600 mt-1 max-w-xs mx-auto">Start logging what happens on your shift — observations, completed tasks, safety notes. Everything here feeds into your shift handover brief.</p>
+                        </div>
                     </div>
-                    <button onclick="submitAcknowledge()" class="px-4 py-2 bg-[#22C55E] text-black font-black uppercase text-xs tracking-wider rounded hover:bg-[#16a34a] transition-all">
-                        SIGN AND ACKNOWLEDGE
-                    </button>
-                </div>
-
-                <!-- Acknowledged Confirmation State -->
-                <div id="signature-confirmed-area" class="hidden font-mono text-xs text-[#22C55E] font-bold bg-[#22C55E]/10 border border-[#22C55E]/30 px-4 py-3 rounded-lg flex items-center gap-2 ml-auto">
-                    <i class="fas fa-check-circle text-sm"></i>
-                    ✓ ACKNOWLEDGED BY <span id="ack-signed-name">NAME</span> AT <span id="ack-signed-time">TIMESTAMP</span>
                 </div>
             </div>
-        </div>
 
-        <!-- Previous Handovers Section -->
-        <div class="glass-card rounded-xl p-6 border border-white/5 space-y-4">
-            <h3 class="text-sm font-bold uppercase tracking-wider text-white">PREVIOUS HANDOVER BRIEFS</h3>
-            
-            <div id="previous-handovers-container" class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr class="border-b border-white/10 text-slate-400">
-                            <th class="pb-3">DATE</th>
-                            <th class="pb-3">SHIFT</th>
-                            <th class="pb-3">OVERALL STATUS</th>
-                            <th class="pb-3">ITEMS FLAGGED</th>
-                            <th class="pb-3">GENERATED BY</th>
-                            <th class="pb-3">ACKNOWLEDGED</th>
-                            <th class="pb-3 text-right">ACTION</th>
-                        </tr>
-                    </thead>
-                    <tbody id="previous-handovers-tbody" class="divide-y divide-white/5"></tbody>
-                </table>
-            </div>
+            <!-- ======================== TAB 3: HANDOVER ======================== -->
+            <div id="sic-tab-handover" class="sic-tab-content">
+                <div class="p-6 space-y-6">
 
-            <!-- Empty State -->
-            <div id="handovers-empty-state" class="hidden py-10 text-center space-y-4">
-                <div class="text-slate-600"><i class="fas fa-handshake text-4xl"></i></div>
-                <div class="max-w-md mx-auto space-y-1">
-                    <h4 class="text-xs font-bold uppercase tracking-widest text-slate-400">NO HANDOVER BRIEFS GENERATED YET</h4>
-                    <p class="text-[11px] text-slate-500">Generate your first brief at the end of your current shift to establish operational continuity.</p>
+                    <!-- Terminal Animation -->
+                    <div id="handover-terminal" class="hidden glass-card rounded-xl p-6 border border-white/10 bg-[#0d1117]/80">
+                        <div class="font-mono text-xs space-y-2.5">
+                            <div id="term-line-1" class="hidden text-slate-400 flex items-center gap-2"><span class="text-[#F97316]">[▸]</span> SCANNING SHIFT ACTIVITY LOG...</div>
+                            <div id="term-line-2" class="hidden text-slate-400 flex items-center gap-2"><span class="text-[#F97316]">[▸]</span> PULLING OPEN WORK ORDERS...</div>
+                            <div id="term-line-3" class="hidden text-slate-400 flex items-center gap-2"><span class="text-[#F97316]">[▸]</span> CHECKING MAINTENANCE STATUS...</div>
+                            <div id="term-line-4" class="hidden text-slate-400 flex items-center gap-2"><span class="text-[#F97316]">[▸]</span> REVIEWING ASSET ACCESS HISTORY...</div>
+                            <div id="term-line-5" class="hidden text-slate-400 flex items-center gap-2"><span class="text-[#F97316]">[▸]</span> ANALYZING INCIDENT LOG...</div>
+                            <div id="term-line-6" class="hidden text-slate-400 flex items-center gap-2"><span class="text-[#F97316]">[▸]</span> CROSS-REFERENCING SAFETY PROCEDURES...</div>
+                            <div id="term-line-7" class="hidden text-slate-400 flex items-center gap-2"><span class="text-[#F97316]">[▸]</span> GENERATING INTELLIGENCE BRIEF...</div>
+                            <div id="term-line-8" class="hidden text-[#22C55E] font-bold flex items-center gap-2"><span>[✓]</span> HANDOVER BRIEF READY — <span id="term-critical-count">0</span> ITEMS FLAGGED</div>
+                        </div>
+                    </div>
+
+                    <!-- Brief Container -->
+                    <div id="handover-brief-container" class="hidden glass-card rounded-xl border border-white/10 bg-[#111827] overflow-hidden">
+                        <!-- Brief Header -->
+                        <div class="p-6 border-b border-white/10 bg-white/[0.02] space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h2 class="text-lg font-black tracking-widest text-white font-mono uppercase">SHIFT HANDOVER BRIEF</h2>
+                                    <div class="flex items-center gap-3 text-xs text-slate-400 mt-1 font-mono">
+                                        <span id="brief-facility">FACILITY NAME</span>
+                                        <span>·</span>
+                                        <span id="brief-shift-type">SHIFT TYPE</span>
+                                        <span>·</span>
+                                        <span id="brief-date">DATE</span>
+                                    </div>
+                                </div>
+                                <div class="text-right text-[10px] text-slate-500 font-mono">
+                                    Generated: <span id="brief-timestamp">—</span><br>
+                                    by: <span id="brief-creator">—</span>
+                                </div>
+                            </div>
+
+                            <hr class="border-white/10">
+
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                                <div class="flex flex-col">
+                                    <span class="text-[9px] uppercase tracking-widest text-slate-500 font-mono font-bold mb-1">Overall Status</span>
+                                    <div>
+                                        <span id="brief-overall-status" class="inline-block px-3 py-1.5 rounded text-xs font-bold border">AMBER</span>
+                                    </div>
+                                </div>
+                                <div class="flex-1">
+                                    <span class="text-[9px] uppercase tracking-widest text-slate-500 font-mono font-bold block mb-1">AI Operational Summary</span>
+                                    <p id="brief-ai-summary" class="text-xs italic text-slate-300">"Summary content..."</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sections Container -->
+                        <div class="p-6 space-y-8">
+                            <!-- Critical Items -->
+                            <div id="sec-critical" class="space-y-3">
+                                <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                    CRITICAL ITEMS REQUIRING ATTENTION
+                                    <span id="sec-critical-count" class="px-2 py-0.5 rounded-full text-[9px] bg-red-500/20 text-red-500 border border-red-500/30">0</span>
+                                </h3>
+                                <div id="sec-critical-list" class="space-y-2"></div>
+                            </div>
+
+                            <!-- Work Orders -->
+                            <div id="sec-workorders" class="space-y-3">
+                                <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400" id="sec-workorders-title">WORK ORDERS · 0 TOTAL</h3>
+                                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                    <div class="p-4 bg-black/40 border border-white/5 rounded-xl space-y-3">
+                                        <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/5 pb-2">Opened This Shift</div>
+                                        <div id="wo-opened-list" class="space-y-2"></div>
+                                    </div>
+                                    <div class="p-4 bg-black/40 border border-white/5 rounded-xl space-y-3">
+                                        <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/5 pb-2">In Progress</div>
+                                        <div id="wo-progress-list" class="space-y-2"></div>
+                                    </div>
+                                    <div class="p-4 bg-black/40 border border-white/5 rounded-xl space-y-3">
+                                        <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/5 pb-2">Completed</div>
+                                        <div id="wo-completed-list" class="space-y-2"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Maintenance Status -->
+                            <div id="sec-maintenance" class="space-y-3">
+                                <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400">MAINTENANCE STATUS</h3>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                                    <div class="p-4 bg-black/40 border border-white/5 rounded-xl">
+                                        <div class="text-[9px] uppercase tracking-widest text-slate-500 font-bold">Overdue Now</div>
+                                        <div class="text-xl font-black font-mono mt-1" id="maint-overdue-count">0 Items</div>
+                                    </div>
+                                    <div class="p-4 bg-black/40 border border-white/5 rounded-xl">
+                                        <div class="text-[9px] uppercase tracking-widest text-slate-500 font-bold">Due This Week</div>
+                                        <div class="text-xl font-black font-mono mt-1" id="maint-due-count">0 Items</div>
+                                    </div>
+                                    <div class="p-4 bg-black/40 border border-white/5 rounded-xl">
+                                        <div class="text-[9px] uppercase tracking-widest text-slate-500 font-bold">Completed</div>
+                                        <div class="text-xl font-black font-mono mt-1 text-[#22C55E]" id="maint-completed-count">0 this shift</div>
+                                    </div>
+                                </div>
+                                <div id="maint-overdue-list" class="space-y-2"></div>
+                            </div>
+
+                            <!-- Observations -->
+                            <div id="sec-observations" class="space-y-3 hidden">
+                                <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400">OBSERVATIONS TO MONITOR</h3>
+                                <div id="sec-observations-list" class="space-y-2"></div>
+                            </div>
+
+                            <!-- Recommendations -->
+                            <div id="sec-recommendations" class="space-y-3">
+                                <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400">RECOMMENDED PRIORITIES FOR INCOMING SHIFT</h3>
+                                <ol id="sec-recommendations-list" class="space-y-3 text-xs leading-relaxed text-slate-300"></ol>
+                            </div>
+
+                            <!-- Log Summary -->
+                            <div id="sec-log-summary" class="space-y-2 hidden">
+                                <h3 class="text-xs font-bold uppercase tracking-widest text-slate-400">SHIFT LOG SUMMARY</h3>
+                                <p id="sec-log-summary-text" class="text-xs text-slate-400 font-mono"></p>
+                            </div>
+                        </div>
+
+                        <!-- Brief Footer -->
+                        <div class="p-6 border-t border-white/10 bg-white/[0.01] flex flex-col md:flex-row md:items-center justify-between gap-6 no-print">
+                            <div class="flex flex-wrap items-center gap-3">
+                                <button onclick="downloadBriefPDF()" class="px-4 py-2.5 bg-white/5 border border-white/15 text-white font-bold rounded-lg text-xs hover:bg-white/10 transition-all flex items-center gap-2">
+                                    <i class="fas fa-download"></i> DOWNLOAD PDF
+                                </button>
+                                <button onclick="markHandoverReady()" id="mark-ready-btn" class="px-4 py-2.5 bg-[#22C55E]/15 border border-[#22C55E]/30 text-[#22C55E] font-bold rounded-lg text-xs hover:bg-[#22C55E]/25 transition-all flex items-center gap-2">
+                                    <i class="fas fa-paper-plane"></i> MARK READY FOR HANDOVER
+                                </button>
+                            </div>
+                            <div id="signature-input-area" class="flex items-center gap-3 bg-black/40 border border-white/10 p-3 rounded-lg max-w-md w-full ml-auto md:ml-0">
+                                <div class="flex-1">
+                                    <input type="text" id="incoming-lead-name" placeholder="Incoming Lead Signature" class="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#F97316]">
+                                </div>
+                                <button onclick="submitAcknowledge()" class="px-4 py-2 bg-[#22C55E] text-black font-black uppercase text-xs tracking-wider rounded hover:bg-[#16a34a] transition-all">
+                                    SIGN AND ACKNOWLEDGE
+                                </button>
+                            </div>
+                            <div id="signature-confirmed-area" class="hidden font-mono text-xs text-[#22C55E] font-bold bg-[#22C55E]/10 border border-[#22C55E]/30 px-4 py-3 rounded-lg flex items-center gap-2 ml-auto">
+                                <i class="fas fa-check-circle text-sm"></i>
+                                ✓ ACKNOWLEDGED BY <span id="ack-signed-name">NAME</span> AT <span id="ack-signed-time">TIMESTAMP</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Previous Handovers -->
+                    <div class="glass-card rounded-xl p-6 border border-white/5 space-y-4">
+                        <div class="flex items-center justify-between flex-wrap gap-3">
+                            <h3 class="text-sm font-bold uppercase tracking-wider text-white">Previous Handover Briefs</h3>
+                            <div class="flex gap-1">
+                                <button onclick="filterHandovers('week')" class="sic-ho-filter text-[9px] font-bold px-2.5 py-1 rounded font-mono uppercase bg-[#F97316]/15 text-[#F97316] border border-[#F97316]/20 transition-all" data-filter="week">This Week</button>
+                                <button onclick="filterHandovers('month')" class="sic-ho-filter text-[9px] font-bold px-2.5 py-1 rounded font-mono uppercase bg-white/5 text-slate-400 border border-white/10 hover:border-white/20 transition-all" data-filter="month">This Month</button>
+                                <button onclick="filterHandovers('all')" class="sic-ho-filter text-[9px] font-bold px-2.5 py-1 rounded font-mono uppercase bg-white/5 text-slate-400 border border-white/10 hover:border-white/20 transition-all" data-filter="all">All</button>
+                            </div>
+                        </div>
+
+                        <div id="previous-handovers-container" class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr class="border-b border-white/10 text-slate-400">
+                                        <th class="pb-3">DATE</th>
+                                        <th class="pb-3">SHIFT</th>
+                                        <th class="pb-3">OVERALL STATUS</th>
+                                        <th class="pb-3">ITEMS FLAGGED</th>
+                                        <th class="pb-3">GENERATED BY</th>
+                                        <th class="pb-3">ACKNOWLEDGED</th>
+                                        <th class="pb-3 text-right">ACTION</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="previous-handovers-tbody" class="divide-y divide-white/5"></tbody>
+                            </table>
+                        </div>
+
+                        <div id="handovers-empty-state" class="hidden py-10 text-center space-y-4">
+                            <div class="text-slate-600"><i class="fas fa-handshake text-4xl"></i></div>
+                            <div class="max-w-md mx-auto space-y-1">
+                                <h4 class="text-xs font-bold uppercase tracking-widest text-slate-400">NO HANDOVER BRIEFS GENERATED YET</h4>
+                                <p class="text-[11px] text-slate-500">Generate your first brief at the end of your current shift to establish operational continuity.</p>
+                            </div>
+                            <button onclick="generateHandoverBrief()" class="px-5 py-2.5 bg-[#F97316] text-black font-black uppercase text-xs tracking-wider rounded-lg hover:bg-[#EA580C] transition-all">
+                                ⚡ GENERATE FIRST BRIEF
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <button onclick="generateHandoverBrief()" class="px-5 py-2.5 bg-[#F97316] text-black font-black uppercase text-xs tracking-wider rounded-lg hover:bg-[#EA580C] transition-all">
-                    ⚡ GENERATE FIRST BRIEF
-                </button>
             </div>
         </div>
     </div>
@@ -332,9 +416,7 @@
             <button onclick="printDrawerBrief()" class="px-4 py-2 bg-white/5 border border-white/15 rounded text-xs font-bold text-white hover:bg-white/10 transition-all flex items-center gap-2">
                 <i class="fas fa-print"></i> Print / Save PDF
             </button>
-            <button onclick="closeHandoverDrawer()" class="px-4 py-2 bg-white/10 border border-white/10 rounded text-xs font-bold text-white hover:bg-white/20 transition-all">
-                Close
-            </button>
+            <button onclick="closeHandoverDrawer()" class="px-4 py-2 bg-white/10 border border-white/10 rounded text-xs font-bold text-white hover:bg-white/20 transition-all">Close</button>
         </div>
     </div>
     <div id="drawer-backdrop" class="hidden fixed inset-0 bg-black/60 z-[99] backdrop-blur-sm" onclick="closeHandoverDrawer()"></div>
@@ -342,3 +424,739 @@
     <!-- Hidden Printer Container -->
     <div id="print-container" class="hidden p-8"></div>
 </div>
+
+<script>
+// =============================================
+// SHIFT INTELLIGENCE CENTER — CONTROLLER
+// =============================================
+(function() {
+    const API = 'http://localhost:8000';
+    let sicCurrentBriefId = null;
+    let sicCurrentBrief = null;
+    let sicLogEntries = [];
+    let sicRecognition = null;
+    let sicIsRecording = false;
+    let sicActiveFilter = '';
+    let allHandovers = [];
+
+    window.initShiftIntelligence = async function() {
+        updateShiftIndicator();
+        await Promise.all([
+            loadSICKPIs(),
+            loadSICAssets(),
+            loadShiftLog(),
+            loadHandoverHistory()
+        ]);
+        requestShiftBriefing();
+    };
+
+    function getToken() {
+        try {
+            const keys = Object.keys(localStorage);
+            for (const k of keys) {
+                if (k.startsWith('sb-') && k.endsWith('-auth-token')) {
+                    const d = JSON.parse(localStorage.getItem(k));
+                    if (d?.access_token) return d.access_token;
+                }
+            }
+            const demo = JSON.parse(localStorage.getItem('indexfield-demo-session') || 'null');
+            if (demo?.access_token) return demo.access_token;
+        } catch(e) {}
+        return null;
+    }
+
+    function getUserName() {
+        return document.getElementById('user-display-name')?.textContent?.trim() || 'Technician';
+    }
+
+    function updateShiftIndicator() {
+        const now = new Date();
+        const h = now.getHours();
+        const shiftStart = h >= 6 && h < 18 ? new Date(now.getFullYear(), now.getMonth(), now.getDate(), 6) : (h >= 18 ? new Date(now.getFullYear(), now.getMonth(), now.getDate(), 18) : new Date(now.getFullYear(), now.getMonth(), now.getDate()-1, 18));
+        const elapsed = now - shiftStart;
+        const elHours = Math.floor(elapsed / 3600000);
+        const elMins = Math.floor((elapsed % 3600000) / 60000);
+        const shift = (h >= 6 && h < 18) ? 'DAY SHIFT' : 'NIGHT SHIFT';
+        const startTime = shiftStart.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false});
+        const el = document.getElementById('sic-shift-label');
+        if (el) el.textContent = `${shift} · Started ${startTime} · ${elHours}h ${elMins}m elapsed`;
+    }
+
+    // ---- TAB NAVIGATION ----
+    window.switchSICTab = function(tab) {
+        ['briefing','log','handover'].forEach(t => {
+            const btn = document.getElementById(`sic-tab-btn-${t}`);
+            const content = document.getElementById(`sic-tab-${t}`);
+            const isActive = t === tab;
+            if (btn) {
+                btn.classList.toggle('active', isActive);
+                btn.style.borderBottom = isActive ? '2px solid #F97316' : '2px solid transparent';
+                btn.style.color = isActive ? '#F97316' : '';
+            }
+            if (content) content.classList.toggle('active', isActive);
+        });
+    };
+
+    // ---- KPIs ----
+    async function loadSICKPIs() {
+        const token = getToken();
+        if (!token) return;
+        try {
+            const res = await fetch(`${API}/api/handover/history`, { headers: {'Authorization':`Bearer ${token}`} });
+            if (!res.ok) return;
+            const data = await res.json();
+            const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
+            const thisWeek = (data||[]).filter(h => h.created_at && new Date(h.created_at) >= weekAgo);
+            const unack = (data||[]).filter(h => !h.acknowledged_by && !h.acknowledged_at);
+            const critical = thisWeek.reduce((sum,h) => sum + ((h.critical_items||[]).length), 0);
+            const statuses = thisWeek.filter(h=>h.overall_status).map(h=>h.overall_status);
+            const avgHealth = statuses.length ? (statuses.reduce((s,v)=>s+(v==='GREEN'?100:v==='AMBER'?65:30),0)/statuses.length).toFixed(0)+'%' : 'N/A';
+            setEl('kpi-briefs-week', thisWeek.length);
+            setEl('kpi-unacknowledged', unack.length);
+            setEl('kpi-critical-flagged', critical);
+            setEl('kpi-avg-health', avgHealth);
+        } catch(e) {}
+    }
+
+    // ---- ASSETS ----
+    async function loadSICAssets() {
+        const token = getToken();
+        if (!token) return;
+        try {
+            const res = await fetch(`${API}/api/assets`, { headers: {'Authorization':`Bearer ${token}`} });
+            if (!res.ok) return;
+            const data = await res.json();
+            const sel = document.getElementById('sic-log-asset');
+            if (!sel) return;
+            (data.assets || data || []).forEach(a => {
+                const opt = document.createElement('option');
+                opt.value = a.id || a.name;
+                opt.textContent = a.name;
+                sel.appendChild(opt);
+            });
+        } catch(e) {}
+    }
+
+    // ---- PRE-SHIFT BRIEFING ----
+    window.requestShiftBriefing = async function() {
+        const token = getToken();
+        if (!token) { showSICBriefingEmpty(); return; }
+        showSICBriefingLoading();
+        try {
+            const res = await fetch(`${API}/api/shift/briefing`, {
+                method:'POST',
+                headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},
+                body:JSON.stringify({})
+            });
+            if (res.status === 402) { showSICBriefingEmpty(); triggerPaywall('shift_briefing'); return; }
+            if (!res.ok) { showSICBriefingEmpty(); return; }
+            const data = await res.json();
+            renderSICBriefing(data);
+        } catch(e) {
+            showSICBriefingEmpty();
+        }
+    };
+
+    function showSICBriefingLoading() {
+        document.getElementById('sic-briefing-loading')?.classList.remove('hidden');
+        document.getElementById('sic-briefing-content')?.classList.add('hidden');
+        document.getElementById('sic-briefing-empty')?.classList.add('hidden');
+    }
+    function showSICBriefingEmpty() {
+        document.getElementById('sic-briefing-loading')?.classList.add('hidden');
+        document.getElementById('sic-briefing-content')?.classList.add('hidden');
+        document.getElementById('sic-briefing-empty')?.classList.remove('hidden');
+    }
+
+    function renderSICBriefing(data) {
+        document.getElementById('sic-briefing-loading')?.classList.add('hidden');
+        document.getElementById('sic-briefing-empty')?.classList.add('hidden');
+        const content = document.getElementById('sic-briefing-content');
+        if (!content) return;
+        content.classList.remove('hidden');
+
+        sicCurrentBriefId = data.id;
+
+        // Greeting
+        const now = new Date();
+        const h = now.getHours();
+        const greeting = h < 12 ? 'GOOD MORNING' : h < 17 ? 'GOOD AFTERNOON' : 'GOOD EVENING';
+        const name = (data.user_name || getUserName()).toUpperCase().split(' ')[0];
+        setEl('sic-greeting', `${greeting}, ${name}`);
+        const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        const dateStr = `${days[now.getDay()]} · Generated ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+        const shiftLabel = (h >= 6 && h < 18) ? 'Day Shift' : 'Night Shift';
+        setEl('sic-briefing-meta', `${shiftLabel} · ${dateStr}`);
+
+        // Priorities
+        const prioritiesList = document.getElementById('sic-priorities-list');
+        if (prioritiesList) {
+            prioritiesList.innerHTML = '';
+            const priorities = data.priorities || [];
+            priorities.forEach((p, i) => {
+                const levelColors = {CRITICAL:'text-red-400',HIGH:'text-[#F97316]',MEDIUM:'text-yellow-400',LOW:'text-slate-400'};
+                const dotColors = {CRITICAL:'bg-red-500',HIGH:'bg-[#F97316]',MEDIUM:'bg-yellow-500',LOW:'bg-slate-500'};
+                const level = (p.level||'MEDIUM').toUpperCase();
+                prioritiesList.insertAdjacentHTML('beforeend', `
+                <div class="flex items-start gap-3 p-4 bg-white/5 border border-white/5 rounded-xl">
+                    <div class="flex flex-col items-center gap-1 flex-shrink-0">
+                        <span class="text-[10px] font-mono text-slate-600">${i+1}.</span>
+                        <span class="w-2.5 h-2.5 rounded-full ${dotColors[level]||'bg-slate-500'}"></span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-[9px] font-bold uppercase tracking-wider ${levelColors[level]||'text-slate-400'}">${level}</span>
+                            <span class="text-xs font-semibold text-white">${escHtml(p.title||p.description||'')}</span>
+                        </div>
+                        ${p.subtitle ? `<p class="text-[10px] text-slate-400">${escHtml(p.subtitle)}</p>` : ''}
+                        ${p.action_id ? `<button onclick="if(typeof showView==='function')showView('workorders')" class="text-[10px] text-[#F97316] hover:underline mt-1 font-mono uppercase tracking-wider">VIEW WORK ORDER →</button>` : ''}
+                    </div>
+                </div>`);
+            });
+            if (!priorities.length) {
+                prioritiesList.innerHTML = '<div class="text-[10px] text-slate-500 font-mono py-2">No high-priority items. Clear shift!</div>';
+            }
+        }
+
+        // Last shift note
+        const lastShiftText = document.getElementById('sic-last-shift-text');
+        if (lastShiftText) lastShiftText.textContent = data.last_shift_summary || 'No handover from previous shift.';
+
+        // Mark as acknowledged if already done
+        if (data.acknowledged_at) {
+            document.getElementById('sic-ack-btn')?.classList.add('hidden');
+            const confirmed = document.getElementById('sic-ack-confirmed');
+            if (confirmed) {
+                confirmed.classList.remove('hidden');
+                document.getElementById('sic-ack-time').textContent = new Date(data.acknowledged_at).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+            }
+        }
+    }
+
+    window.acknowledgeBriefing = async function() {
+        const token = getToken();
+        if (!token || !sicCurrentBriefId) return;
+        try {
+            const now = new Date();
+            const res = await fetch(`${API}/api/shift/briefing/${sicCurrentBriefId}/acknowledge`, {
+                method:'POST',
+                headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},
+                body: JSON.stringify({ acknowledged_at: now.toISOString() })
+            });
+            document.getElementById('sic-ack-btn')?.classList.add('hidden');
+            const confirmed = document.getElementById('sic-ack-confirmed');
+            if (confirmed) {
+                confirmed.classList.remove('hidden');
+                setEl('sic-ack-time', now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}));
+            }
+            // Switch to Shift Log
+            setTimeout(() => switchSICTab('log'), 800);
+            toast('Briefing acknowledged. Starting shift.', 'success');
+        } catch(e) { toast('Failed to acknowledge.','error'); }
+    };
+
+    // ---- SHIFT LOG ----
+    async function loadShiftLog() {
+        const token = getToken();
+        const feed = document.getElementById('sic-log-feed');
+        const emptyEl = document.getElementById('sic-log-empty');
+        if (!token || !feed) return;
+        try {
+            const res = await fetch(`${API}/api/shift/events`, { headers: {'Authorization':`Bearer ${token}`} });
+            if (!res.ok) return;
+            const data = await res.json();
+            sicLogEntries = data || [];
+            renderLogFeed(sicLogEntries);
+        } catch(e) {}
+    }
+
+    function renderLogFeed(entries) {
+        const feed = document.getElementById('sic-log-feed');
+        const emptyEl = document.getElementById('sic-log-empty');
+        if (!feed) return;
+        feed.querySelectorAll('.sic-log-entry').forEach(e => e.remove());
+        const filtered = sicActiveFilter ? entries.filter(e => (e.event_type||'').toUpperCase() === sicActiveFilter) : entries;
+        if (!filtered.length) {
+            if (emptyEl) emptyEl.classList.remove('hidden');
+        } else {
+            if (emptyEl) emptyEl.classList.add('hidden');
+            filtered.forEach(entry => feed.insertAdjacentHTML('afterbegin', buildLogEntry(entry)));
+        }
+        // Update count badge
+        const badge = document.getElementById('sic-log-count');
+        if (badge) {
+            badge.textContent = entries.length;
+            badge.classList.toggle('hidden', entries.length === 0);
+        }
+    }
+
+    function buildLogEntry(entry) {
+        const typeColors = {
+            NOTE:'bg-blue-500/15 text-blue-400 border-blue-500/20',
+            OBSERVATION:'bg-[#F97316]/15 text-[#F97316] border-[#F97316]/20',
+            TASK_COMPLETE:'bg-green-500/15 text-green-400 border-green-500/20',
+            SAFETY:'bg-yellow-500/15 text-yellow-400 border-yellow-500/20',
+            EQUIPMENT_ISSUE:'bg-red-500/15 text-red-400 border-red-500/20',
+            SHIFT_NOTE:'bg-slate-500/15 text-slate-400 border-slate-500/20'
+        };
+        const type = (entry.event_type||'NOTE').toUpperCase();
+        const typeClass = typeColors[type] || 'bg-white/5 text-slate-400 border-white/10';
+        const time = entry.created_at ? new Date(entry.created_at).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false}) : '—';
+        const hasAnalysis = entry.ai_analysis && (entry.ai_analysis.cause || entry.ai_analysis.action);
+        const entryId = `log-${entry.id || Math.random().toString(36).substr(2,6)}`;
+        const showWOBtn = ['OBSERVATION','EQUIPMENT_ISSUE'].includes(type);
+
+        return `
+        <div class="sic-log-entry shift-log-entry" id="${entryId}" data-type="${type}">
+            <div class="px-6 py-4">
+                <div class="flex items-start gap-3">
+                    <div class="flex-shrink-0">
+                        <span class="font-mono text-[#F97316] text-[10px]">${escHtml(time)}</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap mb-1.5">
+                            <span class="text-xs font-semibold text-white">${escHtml(entry.user_name||getUserName())}</span>
+                            ${entry.role ? `<span class="text-[9px] text-slate-500 font-mono">(${escHtml(entry.role)})</span>` : ''}
+                            ${entry.asset_name ? `<button class="text-[9px] text-[#06B6D4] border border-[#06B6D4]/20 rounded px-1.5 py-0.5 font-mono hover:border-[#06B6D4]/40 transition-all">${escHtml(entry.asset_name)}</button>` : ''}
+                            <span class="text-[9px] font-bold px-2 py-0.5 rounded border font-mono uppercase tracking-wider ${typeClass}">${type.replace('_',' ')}</span>
+                        </div>
+                        <p class="text-xs text-slate-300 leading-relaxed">${escHtml(entry.description||'')}</p>
+                        ${hasAnalysis ? `
+                        <button onclick="toggleLogAnalysis('${entryId}')" class="mt-2 text-[9px] font-bold text-[#06B6D4] hover:underline font-mono uppercase tracking-wider">
+                            VIEW ANALYSIS ▼
+                        </button>
+                        <div id="${entryId}-analysis" class="hidden mt-3 p-3 bg-black/20 border border-white/5 rounded-lg space-y-2 text-xs">
+                            ${entry.ai_analysis.cause ? `<div><span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider block mb-0.5">Likely Cause:</span><p class="text-slate-300">${escHtml(entry.ai_analysis.cause)}</p></div>` : ''}
+                            ${entry.ai_analysis.action ? `<div><span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider block mb-0.5">Recommended Action:</span><p class="text-slate-300">${escHtml(entry.ai_analysis.action)}</p></div>` : ''}
+                        </div>` : ''}
+                        ${showWOBtn ? `
+                        <div class="flex items-center gap-2 mt-2">
+                            <button onclick="createWOFromLog('${escHtml(entry.description||'')}')" class="text-[9px] font-bold px-2 py-1 bg-[#F97316]/10 border border-[#F97316]/20 text-[#F97316] rounded font-mono uppercase tracking-wider hover:bg-[#F97316]/20 transition-all">Create Work Order</button>
+                            <button onclick="markLogResolved('${entryId}')" class="text-[9px] font-bold px-2 py-1 bg-green-500/10 border border-green-500/20 text-green-400 rounded font-mono uppercase tracking-wider hover:bg-green-500/20 transition-all">Resolved</button>
+                        </div>` : ''}
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    window.toggleLogAnalysis = function(entryId) {
+        const el = document.getElementById(`${entryId}-analysis`);
+        if (el) el.classList.toggle('hidden');
+    };
+
+    window.addToShiftLog = async function() {
+        const text = document.getElementById('sic-log-input')?.value?.trim();
+        if (!text) { toast('Enter a log note first.','warning'); return; }
+        const token = getToken();
+        if (!token) { toast('Please log in.','error'); return; }
+
+        const assetSel = document.getElementById('sic-log-asset');
+        const assetId = assetSel?.value || null;
+        const type = document.getElementById('sic-log-type')?.value || 'NOTE';
+
+        const btn = document.getElementById('sic-add-btn');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Adding...'; }
+
+        try {
+            const res = await fetch(`${API}/api/shift/events`, {
+                method:'POST',
+                headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},
+                body: JSON.stringify({ event_type: type, description: text, asset_id: assetId })
+            });
+            if (!res.ok) throw new Error((await res.json()).detail||'Failed');
+            const entry = await res.json();
+
+            // If type requires AI analysis, run it
+            if (['OBSERVATION','EQUIPMENT_ISSUE'].includes(type)) {
+                fetch(`${API}/api/facility/observe`, {
+                    method:'POST',
+                    headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},
+                    body: JSON.stringify({ observation: text, asset_id: assetId, log_entry_id: entry.id })
+                }).then(r=>r.json()).then(analysis => {
+                    // Update the entry in feed with analysis
+                    entry.ai_analysis = { cause: analysis.likely_cause, action: analysis.recommended_action };
+                    const feed = document.getElementById('sic-log-feed');
+                    const emptyEl = document.getElementById('sic-log-empty');
+                    if (emptyEl) emptyEl.classList.add('hidden');
+                    sicLogEntries.unshift(entry);
+                    const entryId = `log-${entry.id}`;
+                    const existing = document.getElementById(entryId);
+                    if (existing) existing.outerHTML = buildLogEntry(entry);
+                }).catch(()=>{});
+            } else {
+                sicLogEntries.unshift(entry);
+                const feed = document.getElementById('sic-log-feed');
+                const emptyEl = document.getElementById('sic-log-empty');
+                if (emptyEl) emptyEl.classList.add('hidden');
+                feed.insertAdjacentHTML('afterbegin', buildLogEntry(entry));
+            }
+
+            if (document.getElementById('sic-log-input')) document.getElementById('sic-log-input').value = '';
+            const badge = document.getElementById('sic-log-count');
+            if (badge) { badge.textContent = sicLogEntries.length; badge.classList.remove('hidden'); }
+            toast('Logged.','success');
+        } catch(e) {
+            toast('Failed: '+e.message,'error');
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-plus"></i> ADD TO LOG'; }
+        }
+    };
+
+    window.filterLogEntries = function(filter) {
+        sicActiveFilter = filter;
+        document.querySelectorAll('.sic-filter-btn').forEach(b => {
+            const isActive = b.dataset.filter === filter;
+            b.style.background = isActive ? 'rgba(249,115,22,0.15)' : 'rgba(255,255,255,0.05)';
+            b.style.color = isActive ? '#F97316' : '#94A3B8';
+            b.style.borderColor = isActive ? 'rgba(249,115,22,0.2)' : 'rgba(255,255,255,0.1)';
+        });
+        document.querySelectorAll('.sic-log-entry').forEach(entry => {
+            if (!filter || entry.dataset.type === filter) entry.style.display = '';
+            else entry.style.display = 'none';
+        });
+    };
+
+    window.createWOFromLog = function(desc) {
+        window._prefilledWO = { description: desc, title: desc.substring(0,60) };
+        if (typeof showView==='function') showView('workorders');
+    };
+
+    window.markLogResolved = function(entryId) {
+        const entry = document.getElementById(entryId);
+        if (entry) { entry.style.opacity = '0.5'; entry.style.pointerEvents = 'none'; }
+        toast('Marked as resolved.','success');
+    };
+
+    // ---- VOICE ----
+    window.toggleSICVoice = function() {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) { toast('Voice input not supported.','warning'); return; }
+        if (sicIsRecording) {
+            if (sicRecognition) sicRecognition.stop();
+            sicIsRecording = false;
+            document.getElementById('sic-mic-btn')?.classList.remove('text-[#F97316]','border-[#F97316]/40');
+            return;
+        }
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        sicRecognition = new SR();
+        sicRecognition.continuous = false; sicRecognition.interimResults = false; sicRecognition.lang = 'en-US';
+        sicRecognition.onresult = (e) => {
+            const transcript = e.results[0][0].transcript;
+            const input = document.getElementById('sic-log-input');
+            if (input) input.value += (input.value ? ' ' : '') + transcript;
+        };
+        sicRecognition.onend = () => { sicIsRecording = false; document.getElementById('sic-mic-btn')?.classList.remove('text-[#F97316]','border-[#F97316]/40'); };
+        sicRecognition.start();
+        sicIsRecording = true;
+        document.getElementById('sic-mic-btn')?.classList.add('text-[#F97316]','border-[#F97316]/40');
+    };
+
+    // ---- HANDOVER GENERATION ----
+    window.generateHandoverBrief = async function() {
+        const token = getToken();
+        if (!token) { toast('Please log in.','error'); return; }
+        switchSICTab('handover');
+
+        const btn = document.getElementById('generate-handover-btn');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Generating...'; }
+
+        const terminal = document.getElementById('handover-terminal');
+        if (terminal) terminal.classList.remove('hidden');
+        const termSteps = ['term-line-1','term-line-2','term-line-3','term-line-4','term-line-5','term-line-6','term-line-7'];
+        let stepIdx = 0;
+        const stepTimer = setInterval(() => {
+            if (stepIdx < termSteps.length) { document.getElementById(termSteps[stepIdx])?.classList.remove('hidden'); stepIdx++; }
+        }, 600);
+
+        try {
+            // Use enhanced handover API (falls back to existing)
+            let res = await fetch(`${API}/api/shift/handover`, {
+                method:'POST',
+                headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},
+                body:JSON.stringify({})
+            });
+            if (!res.ok) {
+                // Fallback to existing API
+                res = await fetch(`${API}/api/handover/generate`, {
+                    method:'POST',
+                    headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},
+                    body:JSON.stringify({})
+                });
+            }
+            clearInterval(stepTimer);
+            termSteps.forEach(id => document.getElementById(id)?.classList.remove('hidden'));
+
+            if (res.status === 402) { if (terminal) terminal.classList.add('hidden'); triggerPaywall('handover_generate'); return; }
+            if (!res.ok) throw new Error('Generation failed');
+
+            const data = await res.json();
+            const critCount = (data.critical_items||[]).length;
+            setEl('term-critical-count', critCount);
+            document.getElementById('term-line-8')?.classList.remove('hidden');
+
+            setTimeout(() => {
+                if (terminal) terminal.classList.add('hidden');
+                termSteps.forEach(id => document.getElementById(id)?.classList.add('hidden'));
+                document.getElementById('term-line-8')?.classList.add('hidden');
+                renderHandoverBrief(data);
+            }, 2000);
+
+            await loadHandoverHistory();
+            await loadSICKPIs();
+        } catch(e) {
+            clearInterval(stepTimer);
+            if (terminal) terminal.classList.add('hidden');
+            toast('Failed to generate handover: '+e.message,'error');
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-bolt"></i> GENERATE HANDOVER BRIEF'; }
+        }
+    };
+
+    function renderHandoverBrief(data) {
+        sicCurrentBrief = data;
+        const container = document.getElementById('handover-brief-container');
+        if (!container) return;
+        container.classList.remove('hidden');
+
+        setEl('brief-facility', (data.facility_name||'Facility').toUpperCase());
+        setEl('brief-shift-type', (data.shift_type||'DAY')+' SHIFT');
+        const generatedAt = data.generated_at ? new Date(data.generated_at) : new Date();
+        setEl('brief-date', generatedAt.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}));
+        setEl('brief-timestamp', generatedAt.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}));
+        setEl('brief-creator', data.generated_by_name||getUserName());
+
+        // Status badge
+        const statusBadge = document.getElementById('brief-overall-status');
+        if (statusBadge) {
+            const statusColors = {GREEN:'bg-[#22C55E]/10 text-[#22C55E] border-[#22C55E]/30',AMBER:'bg-[#FACC15]/10 text-[#FACC15] border-[#FACC15]/30',RED:'bg-[#EF4444]/10 text-[#EF4444] border-[#EF4444]/30'};
+            statusBadge.textContent = data.overall_status||'AMBER';
+            statusBadge.className = `inline-block px-3 py-1.5 rounded text-xs font-bold border ${statusColors[data.overall_status]||statusColors.AMBER}`;
+        }
+        setEl('brief-ai-summary', `"${data.summary||'Shift completed.'}"`);
+
+        // Critical items
+        const critList = document.getElementById('sec-critical-list');
+        const critCount = document.getElementById('sec-critical-count');
+        const items = data.critical_items||[];
+        if (critCount) critCount.textContent = items.length;
+        if (critList) {
+            critList.innerHTML = items.length ? items.map(item=>`
+            <div class="p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
+                <div class="flex items-center gap-2 mb-1 flex-wrap">
+                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 font-mono">● ${escHtml(item.severity||'CRITICAL')}</span>
+                    <span class="text-[10px] text-slate-400 font-mono">Asset: ${escHtml(item.asset||'—')}</span>
+                </div>
+                <p class="text-xs text-white font-medium">${escHtml(item.description||'')}</p>
+                <p class="text-[11px] text-slate-300 mt-1 font-mono"><strong class="text-[#F97316]">Action:</strong> ${escHtml(item.recommended_action||'')}</p>
+            </div>`).join('') : '<div class="text-xs text-[#22C55E] font-bold font-mono">NO CRITICAL ITEMS THIS SHIFT</div>';
+        }
+
+        // Work Orders
+        const wos = data.work_orders_summary||[];
+        setEl('sec-workorders-title',`WORK ORDERS · ${wos.length} TOTAL`);
+        const opened = wos.filter(w=>w.status==='OPEN'), inProg = wos.filter(w=>w.status==='IN_PROGRESS'), done = wos.filter(w=>w.status==='COMPLETE');
+        ['wo-opened-list','wo-progress-list','wo-completed-list'].forEach((id,i) => {
+            const el = document.getElementById(id);
+            const list = [opened,inProg,done][i];
+            if (el) el.innerHTML = list.length ? list.map(w=>`
+            <div class="p-2 bg-black/20 border border-white/5 rounded text-xs">
+                <div class="font-mono text-[10px] text-slate-500">${escHtml(w.id||'')}</div>
+                <div class="font-semibold text-white truncate">${escHtml(w.title||'')}</div>
+                <div class="text-[9px] text-slate-400">${escHtml(w.asset_name||'')}</div>
+            </div>`).join('') : '<div class="text-[10px] text-slate-600 font-mono">None</div>';
+        });
+
+        // Maintenance
+        const maint = data.maintenance_status||{};
+        setEl('maint-overdue-count', `${maint.overdue_count||0} Items`);
+        setEl('maint-due-count', `${maint.due_this_week_count||0} Items`);
+        setEl('maint-completed-count', `${maint.completed_count||0} this shift`);
+
+        // Recommendations
+        const recList = document.getElementById('sec-recommendations-list');
+        const recs = data.ai_recommendations||[];
+        if (recList) recList.innerHTML = recs.length ? recs.map(r=>`<li class="p-3 bg-[#F97316]/5 border border-[#F97316]/20 rounded-lg"><strong class="text-[#F97316] block mb-1 font-mono text-[9px] uppercase tracking-wider">PRIORITY</strong>${escHtml(r)}</li>`).join('') : '<li class="text-slate-500 text-[10px] font-mono">No recommendations.</li>';
+
+        // Log summary
+        const logSummary = document.getElementById('sec-log-summary');
+        const logSumText = document.getElementById('sec-log-summary-text');
+        if (sicLogEntries.length > 0 && logSummary && logSumText) {
+            logSummary.classList.remove('hidden');
+            logSumText.textContent = `${sicLogEntries.length} entries logged this shift`;
+        }
+
+        container.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+
+    window.markHandoverReady = async function() {
+        if (!sicCurrentBrief?.id) { toast('Generate a brief first.','warning'); return; }
+        const token = getToken();
+        if (!token) return;
+        try {
+            await fetch(`${API}/api/handover/${sicCurrentBrief.id}/ready`, {
+                method:'POST',
+                headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},
+                body:JSON.stringify({})
+            });
+            const btn = document.getElementById('mark-ready-btn');
+            if (btn) { btn.innerHTML = '<i class="fas fa-check mr-1"></i> READY FOR HANDOVER'; btn.disabled = true; btn.style.opacity='0.7'; }
+            toast('Handover marked as ready. Incoming shift will see notification.','success');
+        } catch(e) { toast('Failed.','error'); }
+    };
+
+    // ---- HANDOVER HISTORY ----
+    async function loadHandoverHistory() {
+        const token = getToken();
+        const tbody = document.getElementById('previous-handovers-tbody');
+        const emptyEl = document.getElementById('handovers-empty-state');
+        if (!token || !tbody) return;
+        try {
+            const res = await fetch(`${API}/api/handover/history`, { headers: {'Authorization':`Bearer ${token}`} });
+            if (!res.ok) return;
+            allHandovers = await res.json() || [];
+            renderHandoverHistory(allHandovers);
+        } catch(e) {}
+    }
+
+    function renderHandoverHistory(handovers) {
+        const tbody = document.getElementById('previous-handovers-tbody');
+        const emptyEl = document.getElementById('handovers-empty-state');
+        if (!tbody) return;
+        if (!handovers.length) {
+            tbody.innerHTML = '';
+            if (emptyEl) emptyEl.classList.remove('hidden');
+            return;
+        }
+        if (emptyEl) emptyEl.classList.add('hidden');
+        const statusColors = {GREEN:'text-[#22C55E]',AMBER:'text-[#FACC15]',RED:'text-[#EF4444]'};
+        tbody.innerHTML = handovers.map(h => {
+            const date = h.generated_at ? new Date(h.generated_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+            const ackBadge = h.acknowledged_by ? `<span class="text-[#22C55E] font-mono text-[9px] font-bold">✓ ${escHtml(h.acknowledged_by)}</span>` : `<span class="text-slate-500 font-mono text-[9px]">Pending</span>`;
+            const statusColor = statusColors[h.overall_status] || 'text-slate-400';
+            return `<tr class="hover:bg-white/5 transition-colors">
+                <td class="px-1 py-3 font-mono text-[10px] text-slate-400">${date}</td>
+                <td class="px-1 py-3 text-[10px] text-slate-300">${escHtml(h.shift_type||'DAY')}</td>
+                <td class="px-1 py-3"><span class="font-bold font-mono text-[10px] ${statusColor}">${escHtml(h.overall_status||'AMBER')}</span></td>
+                <td class="px-1 py-3 text-[10px] text-slate-400 font-mono">${(h.critical_items||[]).length}</td>
+                <td class="px-1 py-3 text-[10px] text-slate-300">${escHtml(h.generated_by_name||'—')}</td>
+                <td class="px-1 py-3">${ackBadge}</td>
+                <td class="px-1 py-3 text-right">
+                    <button onclick="openHandoverDrawer('${h.id}')" class="text-[9px] font-bold px-2.5 py-1 bg-white/5 border border-white/10 text-slate-400 rounded font-mono uppercase hover:text-white hover:border-white/20 transition-all">VIEW →</button>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    window.filterHandovers = function(filter) {
+        document.querySelectorAll('.sic-ho-filter').forEach(b => {
+            const isActive = b.dataset.filter === filter;
+            b.style.background = isActive ? 'rgba(249,115,22,0.15)' : 'rgba(255,255,255,0.05)';
+            b.style.color = isActive ? '#F97316' : '#94A3B8';
+            b.style.borderColor = isActive ? 'rgba(249,115,22,0.2)' : 'rgba(255,255,255,0.1)';
+        });
+        const now = new Date();
+        let filtered = allHandovers;
+        if (filter === 'week') {
+            const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate()-7);
+            filtered = allHandovers.filter(h => h.generated_at && new Date(h.generated_at) >= weekAgo);
+        } else if (filter === 'month') {
+            const monthAgo = new Date(now); monthAgo.setMonth(monthAgo.getMonth()-1);
+            filtered = allHandovers.filter(h => h.generated_at && new Date(h.generated_at) >= monthAgo);
+        }
+        renderHandoverHistory(filtered);
+    };
+
+    // ---- DRAWER ----
+    window.openHandoverDrawer = function(handoverId) {
+        const h = allHandovers.find(x => x.id === handoverId);
+        if (!h) return;
+        const drawer = document.getElementById('handover-drawer');
+        const backdrop = document.getElementById('drawer-backdrop');
+        const contentArea = document.getElementById('drawer-content-area');
+        if (!drawer || !contentArea) return;
+
+        const date = h.generated_at ? new Date(h.generated_at).toLocaleString() : '—';
+        const statusColors = {GREEN:'bg-[#22C55E]/10 text-[#22C55E] border-[#22C55E]/30',AMBER:'bg-[#FACC15]/10 text-[#FACC15] border-[#FACC15]/30',RED:'bg-[#EF4444]/10 text-[#EF4444] border-[#EF4444]/30'};
+        const statusClass = statusColors[h.overall_status] || 'bg-white/10 text-white border-white/20';
+
+        contentArea.innerHTML = `
+        <div class="space-y-4 text-xs">
+            <div class="flex items-center gap-3"><span class="px-3 py-1.5 rounded text-xs font-bold border ${statusClass}">${escHtml(h.overall_status||'AMBER')}</span><p class="text-slate-300 italic">"${escHtml(h.summary||'')}"</p></div>
+            <div class="text-[10px] font-mono text-slate-500">Generated ${date} by ${escHtml(h.generated_by_name||'—')}</div>
+            <div>${h.acknowledged_by ? `<span class="text-[#22C55E] font-mono text-[10px] font-bold">✓ ACKNOWLEDGED BY ${escHtml(h.acknowledged_by).toUpperCase()}</span>` : '<span class="text-slate-500 font-mono text-[10px] uppercase font-bold">PENDING ACKNOWLEDGEMENT</span>'}</div>
+            <hr class="border-white/10">
+            <div class="space-y-2">
+                <h4 class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Critical Items (${(h.critical_items||[]).length})</h4>
+                ${(h.critical_items||[]).length ? (h.critical_items||[]).map(i=>`<div class="p-3 bg-red-500/5 border border-red-500/20 rounded"><p class="font-semibold text-white">${escHtml(i.description||'')}</p><p class="text-slate-400 mt-1 font-mono">${escHtml(i.recommended_action||'')}</p></div>`).join('') : '<p class="text-slate-500 font-mono">No critical items.</p>'}
+            </div>
+            <div class="space-y-2">
+                <h4 class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Recommendations</h4>
+                <ol class="space-y-2">${(h.ai_recommendations||[]).map(r=>`<li class="text-slate-300">${escHtml(r)}</li>`).join('')||'<li class="text-slate-500 font-mono">None.</li>'}</ol>
+            </div>
+        </div>`;
+
+        drawer.classList.remove('hidden');
+        if (backdrop) backdrop.classList.remove('hidden');
+        requestAnimationFrame(() => { drawer.style.transform = 'translateX(0)'; });
+    };
+
+    window.closeHandoverDrawer = function() {
+        const drawer = document.getElementById('handover-drawer');
+        const backdrop = document.getElementById('drawer-backdrop');
+        if (drawer) drawer.style.transform = 'translateX(100%)';
+        setTimeout(() => { if (drawer) drawer.classList.add('hidden'); if (backdrop) backdrop.classList.add('hidden'); }, 300);
+    };
+
+    window.readIncomingHandover = function() {
+        switchSICTab('briefing');
+        document.getElementById('incoming-handover-banner')?.classList.add('hidden');
+    };
+
+    window.submitAcknowledge = async function() {
+        const name = document.getElementById('incoming-lead-name')?.value?.trim();
+        if (!name) { toast('Please enter your name.','warning'); return; }
+        if (!sicCurrentBrief?.id) { toast('No brief to acknowledge.','warning'); return; }
+        const token = getToken();
+        if (!token) return;
+        try {
+            const res = await fetch(`${API}/api/handover/${sicCurrentBrief.id}/acknowledge`, {
+                method:'POST',
+                headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},
+                body:JSON.stringify({name})
+            });
+            if (!res.ok) throw new Error('Failed');
+            const now = new Date();
+            document.getElementById('signature-input-area')?.classList.add('hidden');
+            const confirmed = document.getElementById('signature-confirmed-area');
+            if (confirmed) {
+                confirmed.classList.remove('hidden');
+                setEl('ack-signed-name', name.toUpperCase());
+                setEl('ack-signed-time', now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}));
+            }
+            toast('Handover acknowledged.','success');
+            await loadHandoverHistory();
+        } catch(e) { toast('Failed to acknowledge.','error'); }
+    };
+
+    window.scrollToAcknowledge = function() {
+        const btn = document.getElementById('signature-input-area');
+        if (btn) btn.scrollIntoView({behavior:'smooth'});
+    };
+
+    window.downloadBriefPDF = function() { window.print(); };
+    window.printDrawerBrief = function() { window.print(); };
+
+    // ---- HELPERS ----
+    function setEl(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+    function escHtml(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+    function toast(msg,type='info'){if(typeof window._globalToast==='function'){window._globalToast(msg,type);return;}const c=document.getElementById('toast-container');if(!c){console.log(msg);return;}const colors={success:'bg-green-500/15 border-green-500/30 text-green-300',error:'bg-red-500/15 border-red-500/30 text-red-300',warning:'bg-yellow-500/15 border-yellow-500/30 text-yellow-300',info:'bg-blue-500/15 border-blue-500/30 text-blue-300'};const t=document.createElement('div');t.className=`px-4 py-3 rounded-xl border text-xs font-medium ${colors[type]||colors.info} animate-in shadow-xl`;t.textContent=msg;c.appendChild(t);setTimeout(()=>t.remove(),4000);}
+    function triggerPaywall(f){if(typeof window.showPaywall==='function'){window.showPaywall(f);return;}toast('Upgrade to Pro to unlock unlimited access.','warning');}
+
+    // ---- VIEW INTEGRATION ----
+    const handoverView = document.getElementById('handover-view');
+    if (handoverView) {
+        new MutationObserver(muts=>{for(const m of muts){if(m.type==='attributes'&&m.attributeName==='class'&&!handoverView.classList.contains('hidden')){window.initShiftIntelligence();}}}).observe(handoverView,{attributes:true});
+        if (!handoverView.classList.contains('hidden')) setTimeout(()=>window.initShiftIntelligence(),200);
+    }
+})();
+</script>

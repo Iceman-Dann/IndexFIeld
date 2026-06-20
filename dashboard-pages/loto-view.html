@@ -1,135 +1,1576 @@
 {% extends "base.html" %}
 {% block content %}
-<div id="loto-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6">
-                <div class="w-full">
+<div id="loto-view" class="dashboard-view hidden flex-1 overflow-y-auto p-6 font-mono text-white bg-charcoal">
+    <style>
+        .loto-btn-red {
+            background-color: #EF4444;
+            border: 1px solid #DC2626;
+            color: white;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            transition: all 0.2s ease;
+        }
+        .loto-btn-red:hover:not(:disabled) {
+            background-color: #DC2626;
+            box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+        }
+        .loto-btn-ghost {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background-color: transparent;
+            color: #E2E8F0;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            transition: all 0.2s ease;
+        }
+        .loto-btn-ghost:hover:not(:disabled) {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+        .glass-modal {
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
 
-                    <!-- Phase 1: Terminal Status Header -->
-                    <div class="mb-6">
-                        <div class="flex items-center justify-between mb-4">
+    <div class="max-w-7xl mx-auto space-y-6">
+
+        <!-- PAGE IDENTITY HEADER -->
+        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-extrabold tracking-widest flex items-center gap-3 text-white">
+                    <i class="fas fa-shield-alt text-red-500"></i> LOTO COMMAND CENTER
+                </h1>
+                <p class="text-xs text-slate-400 mt-1">
+                    Procedure documentation, permit logging, and compliance audit trail for your facility lockout/tagout program.
+                </p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="openInitiatePermitModal()" class="loto-btn-red px-4 py-2.5 rounded-lg text-xs uppercase font-bold flex items-center gap-2">
+                    <i class="fas fa-plus"></i> INITIATE LOTO PERMIT
+                </button>
+                <button onclick="exportComplianceReport()" class="loto-btn-ghost px-4 py-2.5 rounded-lg text-xs uppercase font-bold flex items-center gap-2">
+                    <i class="fas fa-file-download"></i> EXPORT COMPLIANCE REPORT
+                </button>
+            </div>
+        </div>
+
+        <!-- FULL-WIDTH SAFETY CRITICAL WARNING BANNER -->
+        <div class="w-full bg-amber-950/40 border border-amber-500/30 rounded-lg p-4 flex gap-3 items-start">
+            <span class="text-amber-500 text-lg mt-0.5">⚠</span>
+            <div class="space-y-1">
+                <h4 class="text-xs font-bold text-amber-500 uppercase tracking-widest font-mono">SAFETY CRITICAL SYSTEM</h4>
+                <p class="text-[10px] text-amber-200/80 leading-relaxed font-mono">
+                    All permit actions are permanently logged with timestamp, operator name, and procedure reference. This system documents your physical LOTO program — it does not replace physical lockout devices.
+                </p>
+            </div>
+        </div>
+
+        <!-- KPI CARDS ROW -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- ACTIVE LOCKOUTS -->
+            <div class="glass-card rounded-xl p-5 border border-white/5 bg-black/20">
+                <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">ACTIVE LOCKOUTS</span>
+                <span id="loto-kpi-active" class="text-3xl font-black font-mono text-[#30D158]">All Clear ●</span>
+                <span class="text-[10px] text-slate-400 block mt-2">Assets currently locked out</span>
+            </div>
+            <!-- PERMITS THIS MONTH -->
+            <div class="glass-card rounded-xl p-5 border border-white/5 bg-black/20">
+                <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">PERMITS THIS MONTH</span>
+                <span id="loto-kpi-month" class="text-3xl font-black font-mono text-white">0 this month</span>
+                <span class="text-[10px] text-slate-400 block mt-2">Total LOTO events logged</span>
+            </div>
+            <!-- COMPLIANCE SCORE -->
+            <div class="glass-card rounded-xl p-5 border border-white/5 bg-black/20">
+                <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">COMPLIANCE SCORE</span>
+                <span id="loto-kpi-compliance" class="text-3xl font-black font-mono text-slate-400">No assets yet</span>
+                <span class="text-[10px] text-slate-400 block mt-2">Procedures documented</span>
+            </div>
+            <!-- AVG LOCKOUT DURATION -->
+            <div class="glass-card rounded-xl p-5 border border-white/5 bg-black/20">
+                <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">AVG LOCKOUT DURATION</span>
+                <span id="loto-kpi-duration" class="text-3xl font-black font-mono text-slate-400">No permits yet</span>
+                <span class="text-[10px] text-slate-400 block mt-2">Mean time locked out</span>
+            </div>
+        </div>
+
+        <!-- MAIN LAYOUT — THREE COLUMN -->
+        <div class="grid grid-cols-1 lg:grid-cols-10 gap-6">
+
+            <!-- LEFT COLUMN: ACTIVE PERMIT BOARD (30%) -->
+            <div class="lg:col-span-3 space-y-4">
+                <div class="border-b border-white/10 pb-2">
+                    <h2 class="text-xs font-black uppercase tracking-widest text-white">ACTIVE PERMITS</h2>
+                    <p class="text-[10px] text-slate-400">Currently logged lockouts</p>
+                </div>
+                <div id="loto-active-permits-list" class="space-y-4 max-h-[600px] overflow-y-auto pr-1">
+                    <!-- Dynamic Permit Cards -->
+                </div>
+            </div>
+
+            <!-- CENTER COLUMN: PROCEDURE RUNNER (40%) -->
+            <div class="lg:col-span-4 space-y-4 bg-black/30 border border-white/5 rounded-xl p-5 flex flex-col min-h-[500px]">
+                <div class="border-b border-white/10 pb-3 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xs font-black uppercase tracking-widest text-white">ISOLATION PROTOCOL</h2>
+                        <p class="text-[10px] text-slate-400">Select asset to load procedure</p>
+                    </div>
+                </div>
+
+                <div id="loto-procedure-container" class="flex-1 flex flex-col justify-between">
+                    <!-- Dropdown selector when no asset / procedure is loaded -->
+                    <div id="loto-select-state" class="flex-1 flex flex-col justify-center items-center p-6 text-center space-y-4">
+                        <i class="fas fa-cogs text-3xl text-slate-600"></i>
+                        <div class="w-full">
+                            <label class="block text-[10px] text-slate-500 uppercase tracking-widest mb-2">Select asset to view LOTO procedure</label>
+                            <select id="loto-asset-selector" onchange="onAssetSelected(this.value)" class="w-full bg-[#1a2233] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:border-[#F97316]/50 focus:outline-none">
+                                <option value="">-- Choose Asset --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Lockout Procedure Loaded Details -->
+                    <div id="loto-runner-state" class="hidden flex-1 flex flex-col justify-between space-y-4">
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-start border-b border-white/5 pb-2">
+                                <div>
+                                    <h3 id="loto-run-asset-name" class="text-sm font-bold text-white uppercase tracking-widest">ASSET NAME</h3>
+                                    <p id="loto-run-procedure-source" class="text-[10px] text-slate-400 font-mono mt-1">Source: —</p>
+                                    <span class="inline-block mt-1.5 text-[8px] font-bold px-2 py-0.5 bg-red-950/40 border border-red-500/30 text-red-400 rounded">OSHA 29 CFR 1910.147 Compliant</span>
+                                </div>
+                                <button id="loto-initiate-with-proc-btn" onclick="openInitiatePermitModal()" class="loto-btn-red text-[10px] px-3 py-1.5 rounded uppercase font-bold">
+                                    INITIATE PERMIT WITH THIS PROCEDURE
+                                </button>
+                            </div>
+
+                            <!-- Live checklist sections -->
+                            <div class="space-y-4 overflow-y-auto max-h-[350px] pr-1" id="loto-checklist-steps">
+                                <!-- Pre-lockout -->
+                                <div class="space-y-2">
+                                    <h4 class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">PRE-LOCKOUT NOTIFICATION</h4>
+                                    <div class="space-y-1.5" id="steps-pre-lockout"></div>
+                                </div>
+                                <!-- Energy isolation -->
+                                <div class="space-y-2">
+                                    <h4 class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">ENERGY ISOLATION</h4>
+                                    <div class="space-y-1.5" id="steps-energy-isolation"></div>
+                                </div>
+                                <!-- Verification -->
+                                <div class="space-y-2">
+                                    <h4 class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">VERIFICATION</h4>
+                                    <div class="space-y-1.5" id="steps-verification"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sign-off block -->
+                        <div class="border-t border-white/10 pt-3 flex justify-between items-center text-[9px] text-slate-400">
                             <div>
-                                <h2 class="text-2xl font-bold font-mono uppercase tracking-widest flex items-center gap-3">
-                                    <i class="fas fa-shield-alt text-yellow-500"></i> Lockout / Tagout
-                                </h2>
-                                <p class="text-[10px] text-light-slate font-mono mt-1">Lockout / Tagout Center // Safety checks and permit review</p>
+                                AUTHORIZED BY: <span class="text-white font-bold" id="loto-run-auth-name">—</span>
                             </div>
-                            <span class="text-[10px] uppercase px-3 py-1.5 bg-yellow-500/10 rounded border border-yellow-500/30 font-mono text-yellow-500 font-bold tracking-widest animate-pulse">SAFETY CRITICAL SYSTEM</span>
-                        </div>
-                        <!-- Warning Banner -->
-                        <div class="mt-4 px-4 py-2 bg-amber-900/20 border border-amber-700/30 rounded-lg">
-                            <p class="text-[10px] font-mono text-amber-400/90 tracking-wide">⚠ ALL LOCKOUT / TAGOUT ACTIONS ARE PERMANENTLY LOGGED WITH TIMESTAMP AND OPERATOR SIGNATURE</p>
-                        </div>
-                        <div class="grid grid-cols-3 gap-4">
-                            <div class="glass-card rounded-xl p-4 border border-yellow-500/20 bg-yellow-500/5">
-                                <div class="text-[10px] text-yellow-500/80 font-mono uppercase tracking-widest mb-1">Active Permits to Work</div>
-                                <div class="text-3xl font-black font-mono text-yellow-500" id="loto-permits-count">0</div>
-                            </div>
-                            <div class="glass-card rounded-xl p-4 border border-[#22C55E]/20 bg-[#22C55E]/5">
-                                <div class="text-[10px] text-[#22C55E]/80 font-mono uppercase tracking-widest mb-1">Secured Isolations (LOTO)</div>
-                                <div class="text-3xl font-black font-mono text-[#22C55E]" id="loto-secured-count">0</div>
-                            </div>
-                            <div class="glass-card rounded-xl p-4 border border-red-500/20 bg-red-500/5">
-                                <div class="text-[10px] text-red-500/80 font-mono uppercase tracking-widest mb-1">Critical Hazard Breaches</div>
-                                <div class="text-3xl font-black font-mono text-red-500" id="loto-breach-count">0</div>
+                            <div>
+                                TIME: <span class="text-white font-mono" id="loto-run-auth-time">—</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Phase 2-5: Three-Zone Tactical Grid -->
-                    <div class="grid grid-cols-[30%_45%_25%] gap-4 h-[calc(100vh-320px)]">
-
-                        <!-- Phase 3: Active Interventions Registry (Left Panel) -->
-                        <div class="glass-card rounded-xl border border-white/10 bg-black/80 overflow-hidden flex flex-col">
-                            <div class="px-4 py-3 bg-black/60 border-b border-white/10 flex items-center justify-between">
-                                <h3 class="font-bold text-white font-mono uppercase text-[11px] tracking-widest"><i class="fas fa-clipboard-list text-yellow-500 mr-2"></i>Active Interventions</h3>
-                                <span class="text-[9px] font-mono text-light-slate cursor-pointer hover:text-yellow-500 transition" id="loto-intervention-count" onclick="injectLotoDemoAssets()" title="Click to inject demo">0 ITEMS ▶</span>
-                            </div>
-                            <div id="loto-intervention-list" class="flex-1 overflow-y-auto p-3 space-y-2">
-                                <div class="flex flex-col items-center justify-center h-full text-center opacity-50">
-                                    <i class="fas fa-hard-hat text-2xl text-yellow-500/30 mb-3"></i>
-                                    <p class="text-[11px] text-white font-mono">NO ACTIVE INTERVENTIONS</p>
-                                    <p class="text-[10px] text-[#94A3B8] font-mono mt-1 max-w-[200px] leading-relaxed">No active maintenance interventions. When an asset requires service, its lockout sequence will appear here.</p>
-                                    <button id="create-intervention-btn" onclick="createNewIntervention()" class="mt-3 px-2.5 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-[9px] text-white font-mono rounded uppercase tracking-wider transition-all duration-200 flex items-center gap-1">
-                                        <i class="fas fa-plus text-[8px]"></i> CREATE NEW INTERVENTION
-                                    </button>
-                                </div>
-                            </div>
+                    <!-- No Procedure Found view -->
+                    <div id="loto-notfound-state" class="hidden flex-1 flex flex-col justify-center items-center p-6 text-center space-y-4">
+                        <i class="fas fa-exclamation-triangle text-3xl text-amber-500"></i>
+                        <h3 class="text-xs font-bold text-white uppercase tracking-widest">NO LOTO PROCEDURE FOUND FOR THIS ASSET</h3>
+                        <p class="text-[10px] text-slate-400 leading-relaxed max-w-[300px]" id="loto-notfound-desc">
+                            No manual has been uploaded containing a lockout procedure for this asset.
+                        </p>
+                        <div class="flex gap-2">
+                            <button onclick="showView('manuals')" class="loto-btn-ghost text-[9px] px-3 py-2 rounded font-bold uppercase">UPLOAD EQUIPMENT MANUAL →</button>
+                            <button onclick="loadGenericProcedure()" class="loto-btn-red text-[9px] px-3 py-2 rounded font-bold uppercase">USE GENERIC OSHA PROCEDURE</button>
                         </div>
-
-                        <!-- Phase 4: AI-Generated Extraction Isolation Protocol (Center Panel) -->
-                        <div class="glass-card rounded-xl border border-white/10 bg-[#0a0a0a] overflow-hidden flex flex-col">
-                            <div class="px-4 py-3 bg-black/60 border-b border-white/10 flex items-center justify-between">
-                                <h3 class="font-bold text-white font-mono uppercase text-[11px] tracking-widest"><i class="fas fa-file-shield text-[#06B6D4] mr-2"></i>Isolation Protocol</h3>
-                                <span id="loto-ai-confidence" class="text-[9px] font-mono text-light-slate/50">SELECT ASSET TO LOAD PROTOCOL</span>
-                            </div>
-                            <div id="loto-protocol-body" class="flex-1 h-full overflow-y-auto p-5 font-mono text-sm flex flex-col justify-center items-center">
-                                <div class="flex-1 flex flex-col items-center justify-center text-center opacity-40 min-h-full">
-                                    <i class="fas fa-file-alt text-4xl text-[#06B6D4]/30 mb-4"></i>
-                                    <p class="text-[11px] text-[#94A3B8] font-bold">AWAITING ASSET SELECTION</p>
-                                    <p class="text-[10px] text-[#94A3B8] mt-1 max-w-[260px]">No active interventions exist yet. Index equipment from Manuals or Asset Registry to begin a safe isolation workflow.</p>
-                                    <div class="mt-5 flex flex-col sm:flex-row gap-2 justify-center">
-                                        <button onclick="showView('manuals')" class="px-3 py-2 bg-[#F97316]/10 border border-[#F97316]/30 text-[#F97316] rounded-lg text-[10px] font-semibold uppercase tracking-widest hover:bg-[#F97316]/20 transition">Manuals</button>
-                                        <button onclick="showView('assets')" class="px-3 py-2 bg-white/5 border border-white/10 text-[#94A3B8] rounded-lg text-[10px] font-semibold uppercase tracking-widest hover:bg-white/10 transition">Asset Registry</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Phase 5: Interlocking Telemetry Verification (Right Panel) -->
-                        <div class="glass-card rounded-xl border border-white/10 bg-black/80 overflow-hidden flex flex-col">
-                            <div class="px-4 py-3 bg-black/60 border-b border-white/10">
-                                <h3 class="font-bold text-white font-mono uppercase text-[11px] tracking-widest"><i class="fas fa-bolt text-red-500 mr-2"></i>Interlock Verification</h3>
-                            </div>
-                            <div class="flex-1 p-4 space-y-3 flex flex-col">
-                                <!-- Voltage -->
-                                <div class="bg-[#111] border border-white/5 rounded-lg p-4 flex flex-col items-center text-center">
-                                    <span class="text-[9px] text-light-slate font-mono uppercase tracking-widest mb-2">Residual Voltage</span>
-                                    <span id="loto-voltage" class="text-3xl font-black font-mono text-light-slate tracking-tighter">--<span class="text-sm text-light-slate ml-1">V</span></span>
-                                    <div class="mt-1 text-[8px] font-mono tracking-wider uppercase text-amber-500/60 flex items-center justify-center gap-1" id="loto-voltage-status">
-                                        Disconnected
-                                        <span class="telemetry-tooltip-trigger cursor-help text-slate-400/70 hover:text-slate-300 transition-colors">
-                                            <i class="fas fa-info-circle text-[8px]"></i>
-                                            <span class="telemetry-tooltip">Expected Topic: plant/floor1/spindle/voltage<br>OPC UA: ns=2;s=Spindle.Voltage</span>
-                                        </span>
-                                    </div>
-                                </div>
-                                <!-- Hydraulic Pressure -->
-                                <div class="bg-[#111] border border-white/5 rounded-lg p-4 flex flex-col items-center text-center">
-                                    <span class="text-[9px] text-light-slate font-mono uppercase tracking-widest mb-2">Hydraulic Pressure</span>
-                                    <span id="loto-pressure" class="text-3xl font-black font-mono text-light-slate tracking-tighter">--<span class="text-sm text-light-slate ml-1">PSI</span></span>
-                                    <div class="mt-1 text-[8px] font-mono tracking-wider uppercase text-amber-500/60 flex items-center justify-center gap-1" id="loto-pressure-status">
-                                        Disconnected
-                                        <span class="telemetry-tooltip-trigger cursor-help text-slate-400/70 hover:text-slate-300 transition-colors">
-                                            <i class="fas fa-info-circle text-[8px]"></i>
-                                            <span class="telemetry-tooltip">Expected Topic: plant/floor1/hydraulic/pressure<br>OPC UA: ns=2;s=Hydraulic.Pressure</span>
-                                        </span>
-                                    </div>
-                                </div>
-                                <!-- Spindle RPM -->
-                                <div class="bg-[#111] border border-white/5 rounded-lg p-4 flex flex-col items-center text-center">
-                                    <span class="text-[9px] text-light-slate font-mono uppercase tracking-widest mb-2">Spindle RPM</span>
-                                    <span id="loto-rpm" class="text-3xl font-black font-mono text-light-slate tracking-tighter">--<span class="text-sm text-light-slate ml-1">RPM</span></span>
-                                    <div class="mt-1 text-[8px] font-mono tracking-wider uppercase text-amber-500/60 flex items-center justify-center gap-1" id="loto-rpm-status">
-                                        Disconnected
-                                        <span class="telemetry-tooltip-trigger cursor-help text-slate-400/70 hover:text-slate-300 transition-colors">
-                                            <i class="fas fa-info-circle text-[8px]"></i>
-                                            <span class="telemetry-tooltip">Expected Topic: plant/floor1/spindle/rpm<br>OPC UA: ns=2;s=Spindle.RPM</span>
-                                        </span>
-                                    </div>
-                                </div>
-                                <!-- Spacer -->
-                                <div class="flex-1"></div>
-                                <!-- Authorization Button -->
-                                <button id="loto-authorize-btn" disabled class="w-full py-4 bg-slate-950 border-2 border-slate-700/30 text-slate-300 font-mono font-bold uppercase text-sm tracking-widest rounded-lg cursor-not-allowed opacity-100 transition-all">
-                                    <i class="fas fa-lock mr-2"></i> AUTHORIZE SAFE ENTRY
-                                </button>
-                                <p id="loto-auth-hint" class="text-[9px] text-[#FF453A] font-black tracking-wider font-mono text-center uppercase">ALL INTERLOCKS MUST READ ZERO BEFORE ENTRY IS AUTHORIZED</p>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
             </div>
-            
-            <!-- Lockout / Tagout View -->
-            
+
+            <!-- RIGHT COLUMN: VERIFICATION AND INTELLIGENCE (30%) -->
+            <div class="lg:col-span-3 space-y-6">
+                <!-- TOP PANEL — MANUAL ENERGY VERIFICATION -->
+                <div class="glass-card rounded-xl border border-white/10 bg-black/20 p-5 space-y-4">
+                    <div>
+                        <h2 class="text-xs font-black uppercase tracking-widest text-white">ENERGY VERIFICATION</h2>
+                        <p class="text-[10px] text-slate-400">Before authorizing safe entry, verify and log each point manually.</p>
+                    </div>
+
+                    <div id="loto-energy-verification-container" class="space-y-3">
+                        <!-- Dynamic Verification checklist or empty text -->
+                        <p id="loto-verification-empty-hint" class="text-[10px] text-slate-500 italic text-center py-4">
+                            Select an asset and initiate a permit to begin energy verification logging.
+                        </p>
+                        <div id="loto-verification-form" class="hidden space-y-3">
+                            <div id="loto-verification-checklist" class="space-y-2.5">
+                                <!-- Checkboxes populated dynamically -->
+                            </div>
+                            <button id="loto-authorize-entry-btn" onclick="submitEnergyVerification()" class="w-full loto-btn-red py-2.5 rounded-lg text-xs uppercase font-bold" disabled>
+                                AUTHORIZE SAFE ENTRY — LOG VERIFICATION
+                            </button>
+                        </div>
+                        <div id="loto-entry-authorized-confirmation" class="hidden bg-[#22C55E]/10 border border-[#22C55E]/30 rounded p-3 text-center space-y-1">
+                            <h4 class="text-[10px] font-bold text-[#22C55E] uppercase tracking-wider">✓ SAFE ENTRY AUTHORIZED</h4>
+                            <p class="text-[9px] text-[#22C55E]/80 font-mono" id="loto-auth-confirm-details">Logged: Ice Man · 10:37</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MIDDLE PANEL — ASSET LOTO HISTORY -->
+                <div class="glass-card rounded-xl border border-white/10 bg-black/20 p-5 space-y-3">
+                    <h2 class="text-xs font-black uppercase tracking-widest text-white" id="loto-history-title">RECENT PERMITS</h2>
+                    <div id="loto-recent-permits-list" class="space-y-2.5 max-h-[200px] overflow-y-auto pr-1">
+                        <!-- Dynamic History list -->
+                    </div>
+                </div>
+
+                <!-- BOTTOM PANEL — COMPLIANCE INTELLIGENCE -->
+                <div class="glass-card rounded-xl border border-white/10 bg-black/20 p-5 space-y-4">
+                    <div>
+                        <h2 class="text-xs font-black uppercase tracking-widest text-white">LOTO COMPLIANCE INTELLIGENCE</h2>
+                        <p class="text-[10px] text-slate-400">AI analysis of your LOTO program.</p>
+                    </div>
+
+                    <button onclick="analyzeCompliance()" id="loto-compliance-btn" class="w-full loto-btn-ghost py-2 rounded-lg text-xs uppercase font-bold flex items-center justify-center gap-2">
+                        <i class="fas fa-bolt text-amber-500"></i> ANALYZE COMPLIANCE
+                    </button>
+
+                    <div id="loto-compliance-findings" class="space-y-3 max-h-[250px] overflow-y-auto pr-1">
+                        <!-- AI Compliance findings -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM SECTION — FULL WIDTH AUDIT LOG -->
+        <div class="glass-card rounded-xl border border-white/10 bg-black/20 p-5 space-y-4">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 pb-3">
+                <div>
+                    <h2 class="text-xs font-black uppercase tracking-widest text-white">PERMIT HISTORY</h2>
+                    <p class="text-[10px] text-slate-400">Complete OSHA compliant lockout history logs</p>
+                </div>
+                <!-- Filters -->
+                <div class="flex flex-wrap items-center gap-3 text-xs">
+                    <!-- Status Filter -->
+                    <select id="filter-loto-status" onchange="loadPermitHistory()" class="bg-slate-900 border border-white/10 rounded px-2.5 py-1 text-slate-300 focus:outline-none">
+                        <option value="">All Statuses</option>
+                        <option value="ACTIVE">ACTIVE</option>
+                        <option value="RELEASED">RELEASED</option>
+                        <option value="INCOMPLETE">INCOMPLETE</option>
+                    </select>
+
+                    <!-- Time Filter -->
+                    <select id="filter-loto-time" onchange="loadPermitHistory()" class="bg-slate-900 border border-white/10 rounded px-2.5 py-1 text-slate-300 focus:outline-none">
+                        <option value="ALL">All Time</option>
+                        <option value="WEEK">This Week</option>
+                        <option value="MONTH">This Month</option>
+                    </select>
+
+                    <!-- Asset Filter -->
+                    <select id="filter-loto-asset" onchange="loadPermitHistory()" class="bg-slate-900 border border-white/10 rounded px-2.5 py-1 text-slate-300 focus:outline-none">
+                        <option value="">All Assets</option>
+                    </select>
+
+                    <!-- Search Bar -->
+                    <input type="text" id="filter-loto-search" oninput="loadPermitHistory()" placeholder="Search permit ID or asset..." class="bg-slate-900 border border-white/10 rounded px-3 py-1 text-slate-300 placeholder-slate-500 focus:outline-none">
+                </div>
+            </div>
+
+            <!-- History Table -->
+            <div class="overflow-x-auto w-full">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                        <tr class="border-b border-white/10 text-slate-500 font-bold font-mono">
+                            <th class="py-2.5 pr-4">PERMIT ID</th>
+                            <th class="py-2.5 pr-4">DATE</th>
+                            <th class="py-2.5 pr-4">ASSET</th>
+                            <th class="py-2.5 pr-4">INITIATED BY</th>
+                            <th class="py-2.5 pr-4">WORK PERFORMED</th>
+                            <th class="py-2.5 pr-4">DURATION</th>
+                            <th class="py-2.5 pr-4">STEPS LOGGED</th>
+                            <th class="py-2.5 pr-4 font-mono">RELEASED BY</th>
+                            <th class="py-2.5">STATUS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="loto-audit-log-tbody" class="divide-y divide-white/5">
+                        <!-- Dynamic history records -->
+                    </tbody>
+                </table>
+                <div id="loto-audit-empty" class="hidden text-center py-8 text-slate-500 italic text-[11px]">
+                    NO PERMIT HISTORY YET<br>
+                    <span class="text-[10px] text-slate-600 block mt-1">Initiate your first LOTO permit above to begin building your compliance audit trail.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- INITIATE PERMIT MODAL -->
+    <div id="loto-initiate-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 hidden">
+        <div class="glass-modal max-w-md w-full rounded-xl p-6 space-y-4 font-mono text-white">
+            <div class="flex justify-between items-center border-b border-white/10 pb-2">
+                <h3 class="text-xs font-bold text-red-500 uppercase tracking-widest">INITIATING LOTO PERMIT</h3>
+                <button onclick="closeInitiatePermitModal()" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="space-y-2 text-xs">
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Asset:</span>
+                    <span id="init-modal-asset" class="font-bold text-white">—</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Procedure:</span>
+                    <span id="init-modal-procedure" class="text-white truncate max-w-[250px]">—</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Initiated by:</span>
+                    <span id="init-modal-user" class="text-white">—</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Time:</span>
+                    <span id="init-modal-time" class="text-white">—</span>
+                </div>
+            </div>
+
+            <!-- Additional Techs -->
+            <div class="space-y-2">
+                <label class="block text-[10px] text-slate-500 uppercase tracking-widest">Additional technicians on this lockout:</label>
+                <div class="flex gap-2">
+                    <input type="text" id="init-modal-tech-input" placeholder="Technician Name" class="flex-1 bg-slate-900 border border-white/10 rounded px-3 py-1.5 text-xs focus:outline-none">
+                    <button onclick="addInitiateTechnician()" class="loto-btn-ghost px-3 text-xs uppercase font-bold">+ Add</button>
+                </div>
+                <div id="init-modal-tech-list" class="flex flex-wrap gap-1.5"></div>
+            </div>
+
+            <!-- Work performed -->
+            <div class="space-y-2">
+                <label class="block text-[10px] text-slate-500 uppercase tracking-widest">Work to be performed (required):</label>
+                <textarea id="init-modal-description" rows="3" required placeholder="Describe task..." class="w-full bg-slate-900 border border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-red-500"></textarea>
+            </div>
+
+            <!-- Est Duration -->
+            <div class="space-y-2">
+                <label class="block text-[10px] text-slate-500 uppercase tracking-widest">Estimated duration:</label>
+                <div class="grid grid-cols-5 gap-1.5 text-[9px] font-bold">
+                    <button type="button" onclick="setEstDuration('1 HR')" class="duration-btn bg-slate-900 border border-white/10 py-1.5 rounded uppercase tracking-wider text-center text-slate-300">1 HR</button>
+                    <button type="button" onclick="setEstDuration('2 HR')" class="duration-btn bg-slate-900 border border-white/10 py-1.5 rounded uppercase tracking-wider text-center text-slate-300">2 HR</button>
+                    <button type="button" onclick="setEstDuration('4 HR')" class="duration-btn bg-slate-900 border border-white/10 py-1.5 rounded uppercase tracking-wider text-center text-slate-300">4 HR</button>
+                    <button type="button" onclick="setEstDuration('8 HR')" class="duration-btn bg-slate-900 border border-white/10 py-1.5 rounded uppercase tracking-wider text-center text-slate-300">8 HR</button>
+                    <button type="button" id="duration-btn-custom" onclick="promptCustomDuration()" class="duration-btn bg-slate-900 border border-white/10 py-1.5 rounded uppercase tracking-wider text-center text-slate-300">CUSTOM</button>
+                </div>
+            </div>
+
+            <button onclick="submitInitiatePermit()" class="w-full loto-btn-red py-3 rounded-lg text-xs uppercase font-bold">
+                INITIATE LOCKOUT — START LOGGING
+            </button>
+        </div>
+    </div>
+
+    <!-- RELEASE PERMIT MODAL -->
+    <div id="loto-release-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 hidden">
+        <div class="glass-modal max-w-md w-full rounded-xl p-6 space-y-4 font-mono text-white">
+            <div class="flex justify-between items-center border-b border-white/10 pb-2">
+                <h3 class="text-xs font-bold text-red-500 uppercase tracking-widest">RELEASE LOTO PERMIT</h3>
+                <button onclick="closeReleasePermitModal()" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="space-y-2 text-xs">
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Asset:</span>
+                    <span id="rel-modal-asset" class="font-bold text-white">—</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Initiated:</span>
+                    <span id="rel-modal-initiated" class="text-white">—</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Duration:</span>
+                    <span id="rel-modal-duration" class="text-white font-mono">—</span>
+                </div>
+            </div>
+
+            <!-- Release Checklist -->
+            <div class="space-y-2.5 border-t border-b border-white/5 py-3">
+                <label class="block text-[10px] text-red-400 font-bold uppercase tracking-widest">RELEASE CHECKLIST:</label>
+                <div class="space-y-2 text-xs text-slate-300">
+                    <label class="flex items-start gap-2.5 cursor-pointer">
+                        <input type="checkbox" onchange="onReleaseChecklistChange()" class="rel-chk-item mt-0.5 rounded border-white/10 bg-slate-900 text-red-500 focus:ring-0">
+                        <span>All work is complete</span>
+                    </label>
+                    <label class="flex items-start gap-2.5 cursor-pointer">
+                        <input type="checkbox" onchange="onReleaseChecklistChange()" class="rel-chk-item mt-0.5 rounded border-white/10 bg-slate-900 text-red-500 focus:ring-0">
+                        <span>All tools removed from equipment</span>
+                    </label>
+                    <label class="flex items-start gap-2.5 cursor-pointer">
+                        <input type="checkbox" onchange="onReleaseChecklistChange()" class="rel-chk-item mt-0.5 rounded border-white/10 bg-slate-900 text-red-500 focus:ring-0">
+                        <span>All employees clear of equipment</span>
+                    </label>
+                    <label class="flex items-start gap-2.5 cursor-pointer">
+                        <input type="checkbox" onchange="onReleaseChecklistChange()" class="rel-chk-item mt-0.5 rounded border-white/10 bg-slate-900 text-red-500 focus:ring-0">
+                        <span>Physical locks removed</span>
+                    </label>
+                    <label class="flex items-start gap-2.5 cursor-pointer">
+                        <input type="checkbox" onchange="onReleaseChecklistChange()" class="rel-chk-item mt-0.5 rounded border-white/10 bg-slate-900 text-red-500 focus:ring-0">
+                        <span>Equipment restored to safe state</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="space-y-2 text-xs">
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Released by:</span>
+                    <span id="rel-modal-user" class="text-white font-bold">—</span>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-[10px] text-slate-500 uppercase tracking-widest">Notes (optional):</label>
+                    <input type="text" id="rel-modal-notes" class="w-full bg-slate-900 border border-white/10 rounded px-3 py-1.5 text-xs text-white focus:outline-none">
+                </div>
+            </div>
+
+            <button id="loto-confirm-release-btn" onclick="submitReleasePermit()" class="w-full loto-btn-red py-3 rounded-lg text-xs uppercase font-bold" disabled>
+                CONFIRM RELEASE
+            </button>
+        </div>
+    </div>
+
+    <!-- Print styling container -->
+    <div id="loto-print-container" class="hidden font-mono text-black bg-white p-8 space-y-6"></div>
+
+    <script>
+        (function() {
+            // Page state variables
+            let selectedAssetId = "";
+            let loadedProcedure = null;
+            let activePermits = [];
+            let allPermits = [];
+            let assets = [];
+            let additionalTechs = [];
+            let selectedDuration = "1 HR";
+            let releasePermitId = null;
+            let liveTimerInterval = null;
+
+            // Initialize Page
+            window.addEventListener('load', () => {
+                const interval = setInterval(() => {
+                    const lotoEl = document.getElementById('loto-view');
+                    if (lotoEl && typeof getAuthToken === 'function') {
+                        clearInterval(interval);
+                        initLOTOView();
+                    }
+                }, 200);
+            });
+
+            async function initLOTOView() {
+                // Initial loads
+                await Promise.all([
+                    loadAssets(),
+                    refreshPermitsList()
+                ]);
+
+                // Check URL Params for work order mapping
+                handleUrlParams();
+
+                // Live timer for active lockouts
+                if (liveTimerInterval) clearInterval(liveTimerInterval);
+                liveTimerInterval = setInterval(updateActiveTimers, 1000);
+            }
+
+            async function loadAssets() {
+                try {
+                    const token = getAuthToken();
+                    const res = await fetch('/api/assets/', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!res.ok) throw new Error('Failed to load assets');
+                    assets = await res.json();
+                    
+                    const selector = document.getElementById('loto-asset-selector');
+                    const filterAsset = document.getElementById('filter-loto-asset');
+                    
+                    if (selector) {
+                        selector.innerHTML = '<option value="">-- Choose Asset --</option>';
+                        assets.forEach(a => {
+                            selector.insertAdjacentHTML('beforeend', `<option value="${a.id}">${a.name}</option>`);
+                        });
+                    }
+
+                    if (filterAsset) {
+                        filterAsset.innerHTML = '<option value="">All Assets</option>';
+                        assets.forEach(a => {
+                            filterAsset.insertAdjacentHTML('beforeend', `<option value="${a.id}">${a.name}</option>`);
+                        });
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            async function refreshPermitsList() {
+                try {
+                    const token = getAuthToken();
+                    const res = await fetch('/api/loto/permits', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!res.ok) throw new Error('Failed to fetch LOTO permits');
+                    allPermits = await res.json();
+                    activePermits = allPermits.filter(p => p.status === 'ACTIVE');
+
+                    // Compute KPI values
+                    updateKPIs();
+
+                    // Render columns
+                    renderActivePermits();
+                    loadPermitHistory();
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            function updateKPIs() {
+                // Active count
+                const activeCount = activePermits.length;
+                const activeKPI = document.getElementById('loto-kpi-active');
+                if (activeKPI) {
+                    activeKPI.textContent = activeCount;
+                    if (activeCount > 0) {
+                        activeKPI.className = "text-3xl font-black font-mono text-[#FF453A] animate-pulse";
+                    } else {
+                        activeKPI.className = "text-3xl font-black font-mono text-[#30D158]";
+                    }
+                }
+
+                // Month count
+                const thisMonthPermits = allPermits.filter(p => {
+                    const d = new Date(p.initiated_at);
+                    const now = new Date();
+                    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                });
+                const monthKPI = document.getElementById('loto-kpi-month');
+                if (monthKPI) monthKPI.textContent = thisMonthPermits.length;
+
+                // Compliance Score
+                const totalAssets = assets.length || 1;
+                // Simple score mapping: assets with documents / total assets
+                const complianceScore = Math.min(100, Math.round((allPermits.length / totalAssets) * 100));
+                const compKPI = document.getElementById('loto-kpi-compliance');
+                if (compKPI) compKPI.textContent = `${complianceScore}%`;
+
+                // Avg lockout duration
+                const releasedPermits = allPermits.filter(p => p.status === 'RELEASED' || p.status === 'INCOMPLETE');
+                let totalHours = 0;
+                releasedPermits.forEach(p => {
+                    const init = new Date(p.initiated_at);
+                    const rel = new Date(p.released_at);
+                    totalHours += (rel - init) / (1000 * 60 * 60);
+                });
+                const avg = releasedPermits.length ? (totalHours / releasedPermits.length).toFixed(1) : "0.0";
+                const durKPI = document.getElementById('loto-kpi-duration');
+                if (durKPI) durKPI.textContent = `${avg} hrs`;
+            }
+
+            function renderActivePermits() {
+                const list = document.getElementById('loto-active-permits-list');
+                if (!list) return;
+
+                if (activePermits.length === 0) {
+                    list.innerHTML = `
+                        <div class="bg-black/20 border border-[#30D158]/20 rounded-xl p-6 text-center space-y-2">
+                            <span class="text-[#30D158] font-bold text-xs">● ALL CLEAR</span>
+                            <p class="text-[10px] text-slate-400 font-mono leading-relaxed">
+                                No active lockouts.<br>All assets currently operational.
+                            </p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Sort descending by duration (longest elapsed on top)
+                const sorted = [...activePermits].sort((a, b) => {
+                    return new Date(a.initiated_at) - new Date(b.initiated_at);
+                });
+
+                list.innerHTML = "";
+                sorted.forEach(p => {
+                    const durationStr = calculateElapsed(p.initiated_at);
+                    
+                    // Count steps
+                    const procedure = p.procedure_content || {};
+                    let totalSteps = 0;
+                    for (const section in procedure) {
+                        if (Array.isArray(procedure[section])) {
+                            totalSteps += procedure[section].length;
+                        }
+                    }
+                    const completedSteps = Object.keys(p.steps_completed || {}).length;
+                    const allDone = completedSteps >= totalSteps && totalSteps > 0;
+
+                    const card = `
+                        <div class="glass-card border border-red-500/20 bg-red-950/5 rounded-xl p-4 space-y-3 font-mono">
+                            <div class="flex justify-between items-center">
+                                <span class="text-red-500 text-[10px] font-bold flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span> LOCKED OUT
+                                </span>
+                                <span class="text-[9px] text-slate-500">#${p.id.substring(0,8)}</span>
+                            </div>
+                            <hr class="border-white/10">
+                            <div>
+                                <h3 class="text-xs font-bold text-white uppercase tracking-widest">${p.asset_name}</h3>
+                                <div class="text-[10px] text-slate-400 space-y-1 mt-2">
+                                    <div>Initiated: ${p.initiated_by} · ${formatTime(p.initiated_at)}</div>
+                                    <div>Duration: <span class="text-red-400 live-timer" data-start="${p.initiated_at}">${durationStr}</span> elapsed</div>
+                                    <div class="truncate">Procedure: ${p.procedure_source}</div>
+                                    <div>All steps completed: <span class="${allDone ? 'text-green-500' : 'text-amber-500'}">${allDone ? '✓' : '✗'} (${completedSteps}/${totalSteps})</span></div>
+                                </div>
+                            </div>
+                            <div class="flex gap-2 pt-1">
+                                <button onclick="viewPermitProcedure('${p.id}')" class="flex-1 loto-btn-ghost text-[9px] py-1.5 rounded uppercase font-bold">VIEW PROCEDURE</button>
+                                <button onclick="openReleasePermitModal('${p.id}')" class="flex-1 loto-btn-red text-[9px] py-1.5 rounded uppercase font-bold">RELEASE PERMIT</button>
+                            </div>
+                        </div>
+                    `;
+                    list.insertAdjacentHTML('beforeend', card);
+                });
+            }
+
+            function updateActiveTimers() {
+                document.querySelectorAll('.live-timer').forEach(el => {
+                    const start = el.getAttribute('data-start');
+                    if (start) {
+                        el.textContent = calculateElapsed(start);
+                    }
+                });
+            }
+
+            function calculateElapsed(startIso) {
+                const start = new Date(startIso);
+                const diff = new Date() - start;
+                const hrs = Math.floor(diff / (1000 * 60 * 60));
+                const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                return `${hrs}h ${mins}m`;
+            }
+
+            function formatTime(iso) {
+                if (!iso) return "—";
+                const d = new Date(iso);
+                return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+            }
+
+            // Url parameter handlers
+            function handleUrlParams() {
+                const params = new URLSearchParams(window.location.search);
+                const assetId = params.get('asset');
+                const woId = params.get('wo');
+
+                if (assetId) {
+                    // Preselect dropdown
+                    const sel = document.getElementById('loto-asset-selector');
+                    if (sel) {
+                        sel.value = assetId;
+                        onAssetSelected(assetId);
+                    }
+
+                    // Pre-fill initiation modal if work order ID present
+                    if (woId) {
+                        // Pre-fill note with WO title
+                        const descField = document.getElementById('init-modal-description');
+                        if (descField) {
+                            descField.value = `LOTO permit initiated from Work Order WO-${woId}.`;
+                        }
+
+                        // Render Work Order Integration Banner
+                        const banner = `
+                            <div class="bg-red-950/20 border border-red-500/30 rounded p-3 text-xs text-red-400 font-mono tracking-wide uppercase flex items-center justify-between mb-4">
+                                <span>⚠ LOTO INITIATED FROM WORK ORDER WO-${woId}</span>
+                                <span class="text-[10px] text-slate-400">WO-${woId}</span>
+                            </div>
+                        `;
+                        const mainContainer = document.getElementById('loto-view').firstElementChild;
+                        if (mainContainer) {
+                            mainContainer.insertAdjacentHTML('afterbegin', banner);
+                        }
+                    }
+                }
+            }
+
+            // Procedure Loading RAG Pipeline
+            window.onAssetSelected = async function(assetId) {
+                selectedAssetId = assetId;
+                if (!assetId) {
+                    document.getElementById('loto-select-state').classList.remove('hidden');
+                    document.getElementById('loto-runner-state').classList.add('hidden');
+                    document.getElementById('loto-notfound-state').classList.add('hidden');
+                    document.getElementById('loto-verification-empty-hint').classList.remove('hidden');
+                    document.getElementById('loto-verification-form').classList.add('hidden');
+                    return;
+                }
+
+                // Hide states
+                document.getElementById('loto-select-state').classList.add('hidden');
+                document.getElementById('loto-runner-state').classList.add('hidden');
+                document.getElementById('loto-notfound-state').classList.add('hidden');
+
+                // Load LOTO history
+                loadRecentPermits(assetId);
+
+                // Call API
+                try {
+                    const token = getAuthToken();
+                    const res = await fetch('/api/loto/procedure', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ asset_id: assetId })
+                    });
+                    
+                    if (!res.ok) throw new Error('API failed');
+                    const data = await res.json();
+                    
+                    if (data.not_found) {
+                        document.getElementById('loto-notfound-state').classList.remove('hidden');
+                        document.getElementById('loto-notfound-desc').textContent = `No manual has been uploaded for ${data.asset_name} containing a lockout procedure.`;
+                    } else {
+                        loadedProcedure = data;
+                        renderProcedure(data);
+                    }
+                } catch (e) {
+                    console.error(e);
+                    showToast('Failed to load asset procedure: ' + e.message, 'danger');
+                }
+            };
+
+            function renderProcedure(data, isLive = false, activePermit = null) {
+                document.getElementById('loto-runner-state').classList.remove('hidden');
+                document.getElementById('loto-run-asset-name').textContent = data.asset_name;
+                document.getElementById('loto-run-procedure-source').textContent = `Source: ${data.procedure_source}`;
+
+                const stepsContainer = document.getElementById('loto-checklist-steps');
+                const preList = document.getElementById('steps-pre-lockout');
+                const isoList = document.getElementById('steps-energy-isolation');
+                const verList = document.getElementById('steps-verification');
+
+                preList.innerHTML = "";
+                isoList.innerHTML = "";
+                verList.innerHTML = "";
+
+                // Fetch username & time
+                document.getElementById('loto-run-auth-name').textContent = getUserDisplayName();
+                document.getElementById('loto-run-auth-time').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                const content = data.procedure_content || {};
+
+                // Determine if permit is active for this asset
+                const activeP = activePermit || activePermits.find(p => p.asset_id === selectedAssetId);
+                const stepsLog = activeP ? (activeP.steps_completed || {}) : null;
+
+                // Configure initiate button
+                const initBtn = document.getElementById('loto-initiate-with-proc-btn');
+                if (activeP) {
+                    initBtn.classList.add('hidden');
+                    // Show Energy Verification Panel on right column
+                    setupEnergyVerification(activeP);
+                } else {
+                    initBtn.classList.remove('hidden');
+                    document.getElementById('loto-verification-empty-hint').classList.remove('hidden');
+                    document.getElementById('loto-verification-form').classList.add('hidden');
+                    document.getElementById('loto-entry-authorized-confirmation').classList.add('hidden');
+                }
+
+                // Populate Pre-lockout
+                if (Array.isArray(content.pre_lockout)) {
+                    content.pre_lockout.forEach((step, idx) => {
+                        const stepId = `pre_${idx}`;
+                        const checked = stepsLog && stepsLog[stepId] ? 'checked' : '';
+                        const disabled = !activeP ? 'disabled' : '';
+                        const timeStr = stepsLog && stepsLog[stepId] ? `<span class="text-[8px] text-slate-500 block ml-6">Checked by ${stepsLog[stepId].completed_by} · ${formatTime(stepsLog[stepId].completed_at)}</span>` : '';
+                        
+                        preList.insertAdjacentHTML('beforeend', `
+                            <div class="space-y-0.5">
+                                <label class="flex items-start gap-2.5 cursor-pointer text-xs text-slate-300">
+                                    <input type="checkbox" onchange="togglePermitStep('${activeP?.id}', '${stepId}', this.checked)" ${checked} ${disabled} class="mt-0.5 rounded border-white/10 bg-slate-900 text-red-500 focus:ring-0">
+                                    <span>${step}</span>
+                                </label>
+                                ${timeStr}
+                            </div>
+                        `);
+                    });
+                }
+
+                // Populate Energy isolation
+                if (Array.isArray(content.energy_isolation)) {
+                    content.energy_isolation.forEach((step, idx) => {
+                        const stepId = `iso_${idx}`;
+                        const checked = stepsLog && stepsLog[stepId] ? 'checked' : '';
+                        const disabled = !activeP ? 'disabled' : '';
+                        const timeStr = stepsLog && stepsLog[stepId] ? `<span class="text-[8px] text-slate-500 block ml-6">Checked by ${stepsLog[stepId].completed_by} · ${formatTime(stepsLog[stepId].completed_at)}</span>` : '';
+                        
+                        isoList.insertAdjacentHTML('beforeend', `
+                            <div class="space-y-0.5">
+                                <label class="flex items-start gap-2.5 cursor-pointer text-xs text-slate-300">
+                                    <input type="checkbox" onchange="togglePermitStep('${activeP?.id}', '${stepId}', this.checked)" ${checked} ${disabled} class="mt-0.5 rounded border-white/10 bg-slate-900 text-red-500 focus:ring-0">
+                                    <span>${step}</span>
+                                </label>
+                                ${timeStr}
+                            </div>
+                        `);
+                    });
+                }
+
+                // Populate Verification
+                if (Array.isArray(content.verification)) {
+                    content.verification.forEach((step, idx) => {
+                        const stepId = `ver_${idx}`;
+                        const checked = stepsLog && stepsLog[stepId] ? 'checked' : '';
+                        const disabled = !activeP ? 'disabled' : '';
+                        const timeStr = stepsLog && stepsLog[stepId] ? `<span class="text-[8px] text-slate-500 block ml-6">Checked by ${stepsLog[stepId].completed_by} · ${formatTime(stepsLog[stepId].completed_at)}</span>` : '';
+                        
+                        verList.insertAdjacentHTML('beforeend', `
+                            <div class="space-y-0.5">
+                                <label class="flex items-start gap-2.5 cursor-pointer text-xs text-slate-300">
+                                    <input type="checkbox" onchange="togglePermitStep('${activeP?.id}', '${stepId}', this.checked)" ${checked} ${disabled} class="mt-0.5 rounded border-white/10 bg-slate-900 text-red-500 focus:ring-0">
+                                    <span>${step}</span>
+                                </label>
+                                ${timeStr}
+                            </div>
+                        `);
+                    });
+                }
+            }
+
+            window.loadGenericProcedure = function() {
+                const mockGeneric = {
+                    asset_name: assets.find(a => a.id === selectedAssetId)?.name || "Selected Asset",
+                    procedure_source: "OSHA 1910.147 Standard Guide",
+                    procedure_content: {
+                        pre_lockout: [
+                            "Notify all affected employees of intended lockout",
+                            "Identify all energy sources for this equipment",
+                            "Obtain authorized lockout devices"
+                        ],
+                        energy_isolation: [
+                            "1. Shut down using normal stopping procedure",
+                            "2. Isolate main electrical breaker supply point",
+                            "3. Apply personal lockout clasp/padlock and tags",
+                            "4. Release any stored residual/pneumatic/mechanical energy",
+                            "5. Verify zero energy state at all isolation points"
+                        ],
+                        verification: [
+                            "Attempt normal operation to verify isolation (controls should not respond)",
+                            "Verify zero pressure or voltage on all gauges/meters",
+                            "Document energy zero state achieved"
+                        ]
+                    }
+                };
+                loadedProcedure = mockGeneric;
+                document.getElementById('loto-notfound-state').classList.add('hidden');
+                renderProcedure(mockGeneric);
+            };
+
+            window.viewPermitProcedure = function(permitId) {
+                const permit = activePermits.find(p => p.id === permitId);
+                if (!permit) return;
+
+                selectedAssetId = permit.asset_id;
+                loadedProcedure = {
+                    asset_name: permit.asset_name,
+                    procedure_source: permit.procedure_source,
+                    procedure_content: permit.procedure_content
+                };
+
+                const selector = document.getElementById('loto-asset-selector');
+                if (selector) selector.value = permit.asset_id;
+
+                document.getElementById('loto-select-state').classList.add('hidden');
+                document.getElementById('loto-notfound-state').classList.add('hidden');
+                
+                renderProcedure(loadedProcedure, true, permit);
+                loadRecentPermits(permit.asset_id);
+            };
+
+            // Active Permit Steps completion Logging
+            window.togglePermitStep = async function(permitId, stepId, completed) {
+                try {
+                    const token = getAuthToken();
+                    const res = await fetch(`/api/loto/permits/${permitId}/step`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ step_id: stepId, completed })
+                    });
+                    if (!res.ok) throw new Error('API update failed');
+                    
+                    // Reload active permits without drawing runner state from scratch
+                    await refreshPermitsList();
+                    
+                    // Re-render only checklist details keeping checks updated
+                    const activeP = activePermits.find(p => p.id === permitId);
+                    if (activeP) {
+                        renderProcedure(loadedProcedure, true, activeP);
+                    }
+                } catch (e) {
+                    console.error(e);
+                    showToast('Failed to log step action: ' + e.message, 'danger');
+                }
+            };
+
+            // Initiate Permit Modal
+            window.openInitiatePermitModal = function() {
+                if (!selectedAssetId || !loadedProcedure) {
+                    showToast("Please select an asset and load a procedure first.", "warning");
+                    return;
+                }
+
+                // Check paywall
+                if (allPermits.length >= 1 && getUserAccountType() === 'sandbox') {
+                    triggerPaywall('loto_permits');
+                    return;
+                }
+
+                document.getElementById('init-modal-asset').textContent = loadedProcedure.asset_name;
+                document.getElementById('init-modal-procedure').textContent = loadedProcedure.procedure_source;
+                document.getElementById('init-modal-user').textContent = getUserDisplayName();
+                document.getElementById('init-modal-time').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                additionalTechs = [];
+                renderModalTechs();
+                
+                document.getElementById('init-modal-description').value = "";
+                setEstDuration("1 HR");
+
+                document.getElementById('loto-initiate-modal').classList.remove('hidden');
+            };
+
+            window.closeInitiatePermitModal = function() {
+                document.getElementById('loto-initiate-modal').classList.add('hidden');
+            };
+
+            window.addInitiateTechnician = function() {
+                const inp = document.getElementById('init-modal-tech-input');
+                const val = inp.value.trim();
+                if (val && !additionalTechs.includes(val)) {
+                    additionalTechs.push(val);
+                    inp.value = "";
+                    renderModalTechs();
+                }
+            };
+
+            window.removeModalTech = function(idx) {
+                additionalTechs.splice(idx, 1);
+                renderModalTechs();
+            };
+
+            function renderModalTechs() {
+                const list = document.getElementById('init-modal-tech-list');
+                list.innerHTML = "";
+                additionalTechs.forEach((t, i) => {
+                    list.insertAdjacentHTML('beforeend', `
+                        <span class="inline-flex items-center gap-1 bg-white/5 border border-white/10 rounded px-2 py-0.5 text-[9px] text-white">
+                            ${t}
+                            <button onclick="removeModalTech(${i})" class="text-red-400 hover:text-white"><i class="fas fa-times"></i></button>
+                        </span>
+                    `);
+                });
+            }
+
+            window.setEstDuration = function(dur) {
+                selectedDuration = dur;
+                document.querySelectorAll('.duration-btn').forEach(btn => {
+                    if (btn.textContent === dur) {
+                        btn.className = "duration-btn bg-red-600 border border-red-500 py-1.5 rounded uppercase tracking-wider text-center text-white font-bold";
+                    } else {
+                        btn.className = "duration-btn bg-slate-900 border border-white/10 py-1.5 rounded uppercase tracking-wider text-center text-slate-300";
+                    }
+                });
+            };
+
+            window.promptCustomDuration = function() {
+                const val = prompt("Enter custom duration (e.g. 12 HR, 3 DAYS):");
+                if (val) {
+                    const btn = document.getElementById('duration-btn-custom');
+                    btn.textContent = val.toUpperCase();
+                    setEstDuration(val.toUpperCase());
+                }
+            };
+
+            window.submitInitiatePermit = async function() {
+                const desc = document.getElementById('init-modal-description').value.trim();
+                if (!desc) {
+                    showToast("Work description is required.", "warning");
+                    return;
+                }
+
+                try {
+                    const token = getAuthToken();
+                    const res = await fetch('/api/loto/initiate', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            asset_id: selectedAssetId,
+                            work_description: desc,
+                            estimated_duration: selectedDuration,
+                            additional_technicians: additionalTechs,
+                            procedure_content: loadedProcedure
+                        })
+                    });
+
+                    if (res.status === 402) {
+                        closeInitiatePermitModal();
+                        triggerPaywall('loto_permits');
+                        return;
+                    }
+
+                    if (!res.ok) throw new Error('Failed to initiate LOTO permit');
+                    const data = await res.json();
+
+                    closeInitiatePermitModal();
+                    showToast('Lockout permit initiated successfully!', 'success');
+
+                    // Refresh active permits
+                    await refreshPermitsList();
+
+                    // Reload running checklist for active permit
+                    renderProcedure(loadedProcedure, true, data);
+
+                } catch (e) {
+                    console.error(e);
+                    showToast('Failed to initiate LOTO permit: ' + e.message, 'danger');
+                }
+            };
+
+            // Energy Verification Panel
+            function setupEnergyVerification(permit) {
+                document.getElementById('loto-verification-empty-hint').classList.add('hidden');
+                
+                // Show Entry verification confirmation if already verified
+                if (permit.safe_entry_authorized_by) {
+                    document.getElementById('loto-verification-form').classList.add('hidden');
+                    const confirmEl = document.getElementById('loto-entry-authorized-confirmation');
+                    confirmEl.classList.remove('hidden');
+                    document.getElementById('loto-auth-confirm-details').textContent = `Logged: ${permit.safe_entry_authorized_by} · ${formatTime(permit.safe_entry_authorized_at)}`;
+                    return;
+                }
+
+                // Otherwise, render logging checklist
+                document.getElementById('loto-entry-authorized-confirmation').classList.add('hidden');
+                const form = document.getElementById('loto-verification-form');
+                form.classList.remove('hidden');
+
+                const checklist = document.getElementById('loto-verification-checklist');
+                checklist.innerHTML = "";
+
+                // Static verification points
+                const points = [
+                    { id: 'v_hydraulic', name: 'Hydraulic pressure at zero', method: 'Visual gauge check' },
+                    { id: 'v_electrical', name: 'Electrical isolation confirmed', method: 'Voltage meter check' },
+                    { id: 'v_stored', name: 'All stored energy released', method: 'Manual bleed complete' }
+                ];
+
+                // Detect pneumatic from procedure text and include it optionally
+                const procedureText = JSON.stringify(permit.procedure_content || {});
+                if (procedureText.toLowerCase().includes('pneumatic') || procedureText.toLowerCase().includes('air line')) {
+                    points.push({ id: 'v_pneumatic', name: 'Pneumatic lines depressurized', method: 'Pressure drop audit' });
+                }
+
+                points.forEach(p => {
+                    checklist.insertAdjacentHTML('beforeend', `
+                        <div class="space-y-1">
+                            <label class="flex items-start gap-2.5 cursor-pointer text-xs text-slate-300">
+                                <input type="checkbox" onchange="onEnergyChecklistChange()" class="energy-chk-item mt-0.5 rounded border-white/10 bg-slate-900 text-red-500 focus:ring-0" data-id="${p.id}" data-name="${p.name}" data-method="${p.method}">
+                                <span>${p.name}</span>
+                            </label>
+                            <span class="text-[8px] text-slate-500 block ml-6">Method: ${p.method}</span>
+                        </div>
+                    `);
+                });
+
+                document.getElementById('loto-authorize-entry-btn').disabled = true;
+            };
+
+            window.onEnergyChecklistChange = function() {
+                const total = document.querySelectorAll('.energy-chk-item').length;
+                const checked = document.querySelectorAll('.energy-chk-item:checked').length;
+                document.getElementById('loto-authorize-entry-btn').disabled = (checked < total);
+            };
+
+            window.submitEnergyVerification = async function() {
+                const items = [];
+                document.querySelectorAll('.energy-chk-item:checked').forEach(chk => {
+                    items.push({
+                        item_id: chk.getAttribute('data-id'),
+                        item_name: chk.getAttribute('data-name'),
+                        verified_by: getUserDisplayName(),
+                        method: chk.getAttribute('data-method')
+                    });
+                });
+
+                const activeP = activePermits.find(p => p.asset_id === selectedAssetId);
+                if (!activeP) return;
+
+                try {
+                    const token = getAuthToken();
+                    const res = await fetch(`/api/loto/permits/${activeP.id}/verify-energy`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ verification_items: items })
+                    });
+                    if (!res.ok) throw new Error('API error');
+                    const data = await res.json();
+
+                    showToast('Safe entry authorized and logged!', 'success');
+                    await refreshPermitsList();
+
+                    // Re-render energy verification panel state
+                    setupEnergyVerification(data);
+                } catch (e) {
+                    console.error(e);
+                    showToast('Failed to authorize entry: ' + e.message, 'danger');
+                }
+            };
+
+            // Release Permit Modal
+            window.openReleasePermitModal = function(permitId) {
+                releasePermitId = permitId;
+                const permit = activePermits.find(p => p.id === permitId);
+                if (!permit) return;
+
+                document.getElementById('rel-modal-asset').textContent = permit.asset_name;
+                document.getElementById('rel-modal-initiated').textContent = `${permit.initiated_by} · ${formatTime(permit.initiated_at)}`;
+                document.getElementById('rel-modal-duration').textContent = calculateElapsed(permit.initiated_at);
+                document.getElementById('rel-modal-user').textContent = getUserDisplayName();
+                document.getElementById('rel-modal-notes').value = "";
+
+                // Reset checklists
+                document.querySelectorAll('.rel-chk-item').forEach(chk => chk.checked = false);
+                document.getElementById('loto-confirm-release-btn').disabled = true;
+
+                document.getElementById('loto-release-modal').classList.remove('hidden');
+            };
+
+            window.closeReleasePermitModal = function() {
+                document.getElementById('loto-release-modal').classList.add('hidden');
+            };
+
+            window.onReleaseChecklistChange = function() {
+                const total = document.querySelectorAll('.rel-chk-item').length;
+                const checked = document.querySelectorAll('.rel-chk-item:checked').length;
+                document.getElementById('loto-confirm-release-btn').disabled = (checked < total);
+            };
+
+            window.submitReleasePermit = async function() {
+                const notes = document.getElementById('rel-modal-notes').value.trim();
+                const checklist = [
+                    "All work is complete",
+                    "All tools removed from equipment",
+                    "All employees clear of equipment",
+                    "Physical locks removed",
+                    "Equipment restored to safe state"
+                ];
+
+                try {
+                    const token = getAuthToken();
+                    const res = await fetch(`/api/loto/permits/${releasePermitId}/release`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ release_checklist: checklist, release_notes: notes })
+                    });
+                    if (!res.ok) throw new Error('API error');
+                    const data = await res.json();
+
+                    closeReleasePermitModal();
+                    
+                    if (data.status === 'INCOMPLETE') {
+                        showToast('Permit released with INCOMPLETE steps warning.', 'warning');
+                    } else {
+                        showToast('LOTO Permit released successfully.', 'success');
+                    }
+
+                    // Reload permits
+                    await refreshPermitsList();
+
+                    // If route contains WO mapping, offer to update Work Order status
+                    const params = new URLSearchParams(window.location.search);
+                    const woId = params.get('wo');
+                    if (woId) {
+                        setTimeout(() => {
+                            if (confirm(`Permit released. Update Work Order WO-${woId} status to IN PROGRESS?`)) {
+                                updateWorkOrderStatus(woId, "IN_PROGRESS");
+                            }
+                        }, 500);
+                    }
+
+                    // Re-render procedure runner view
+                    if (selectedAssetId) {
+                        onAssetSelected(selectedAssetId);
+                    }
+                } catch (e) {
+                    console.error(e);
+                    showToast('Failed to release permit: ' + e.message, 'danger');
+                }
+            };
+
+            async function updateWorkOrderStatus(woId, status) {
+                try {
+                    const token = getAuthToken();
+                    const res = await fetch(`/api/workorders/${woId}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ status })
+                    });
+                    if (res.ok) {
+                        showToast(`Work Order WO-${woId} marked IN PROGRESS.`, 'success');
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            // Asset LOTO History
+            async function loadRecentPermits(assetId) {
+                const title = document.getElementById('loto-history-title');
+                const asset = assets.find(a => a.id === assetId);
+                title.textContent = `RECENT PERMITS — ${(asset?.name || 'Asset').toUpperCase()}`;
+
+                const list = document.getElementById('loto-recent-permits-list');
+                list.innerHTML = "";
+
+                try {
+                    const token = getAuthToken();
+                    const res = await fetch(`/api/loto/permits?asset_id=${assetId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const data = await res.json();
+                    
+                    const completed = data.filter(p => p.status !== 'ACTIVE').slice(0, 5);
+                    if (completed.length === 0) {
+                        list.innerHTML = `<p class="text-[10px] text-slate-500 italic text-center py-4">No previous lockout records for this asset.</p>`;
+                        return;
+                    }
+
+                    completed.forEach(p => {
+                        const date = new Date(p.initiated_at).toLocaleDateString([], { month: 'short', day: 'numeric' });
+                        const init = new Date(p.initiated_at);
+                        const rel = new Date(p.released_at);
+                        const diffMins = Math.round((rel - init) / (1000 * 60));
+                        const durationStr = `${Math.floor(diffMins / 60)}h ${diffMins % 60}m`;
+                        
+                        list.insertAdjacentHTML('beforeend', `
+                            <div class="border-b border-white/5 pb-2 text-[10px] space-y-0.5">
+                                <div class="flex justify-between text-white">
+                                    <span class="font-bold">${date} · ${p.initiated_by}</span>
+                                    <span class="text-slate-400 font-mono">${durationStr}</span>
+                                </div>
+                                <div class="text-slate-400 truncate">${p.work_description}</div>
+                                <div class="text-[9px] text-slate-500">Released by: ${p.released_by || '—'}</div>
+                            </div>
+                        `);
+                    });
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            // Compliance Intelligence
+            window.analyzeCompliance = async function() {
+                // Check paywall
+                if (getUserAccountType() === 'sandbox') {
+                    // Let's implement one-time analysis check using a localStorage key for sandbox users
+                    const checked = localStorage.getItem('loto_compliance_checked');
+                    if (checked) {
+                        triggerPaywall('loto_compliance_audit');
+                        return;
+                    }
+                    localStorage.setItem('loto_compliance_checked', 'true');
+                }
+
+                const btn = document.getElementById('loto-compliance-btn');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>ANALYZING...';
+
+                try {
+                    const token = getAuthToken();
+                    const res = await fetch('/api/loto/compliance-check', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    if (!res.ok) throw new Error('API failed');
+                    const findings = await res.json();
+
+                    const container = document.getElementById('loto-compliance-findings');
+                    container.innerHTML = "";
+
+                    const severityColors = {
+                        CRITICAL: 'text-red-500 bg-red-950/20 border-red-500/30',
+                        HIGH: 'text-orange-400 bg-orange-950/20 border-orange-500/30',
+                        MEDIUM: 'text-yellow-500 bg-yellow-950/20 border-yellow-500/30',
+                        LOW: 'text-green-500 bg-green-950/20 border-green-500/30'
+                    };
+
+                    findings.forEach(f => {
+                        const col = severityColors[f.severity] || 'text-slate-400 bg-slate-900 border-white/5';
+                        container.insertAdjacentHTML('beforeend', `
+                            <div class="border border-white/10 rounded-lg p-3 space-y-2 text-[10px] font-mono">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-bold uppercase tracking-wider ${col} border px-2 py-0.5 rounded">${f.severity}</span>
+                                </div>
+                                <div class="text-white font-bold uppercase">${f.title}</div>
+                                <p class="text-slate-400 leading-relaxed">${f.description}</p>
+                                <p class="text-amber-500 italic font-bold">${f.risk}</p>
+                                <button onclick="handleFindingAction('${f.action_text}')" class="loto-btn-ghost w-full py-1 text-[9px] rounded font-bold uppercase">${f.action_text} →</button>
+                            </div>
+                        `);
+                    });
+                } catch (e) {
+                    console.error(e);
+                    showToast('Failed compliance intelligence run: ' + e.message, 'danger');
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-bolt text-amber-500"></i> ANALYZE COMPLIANCE';
+                }
+            };
+
+            window.handleFindingAction = function(action) {
+                if (action.includes('UPLOAD')) {
+                    showView('manuals');
+                } else if (action.includes('REVIEW PROCEDURE')) {
+                    // Load procedure runner with selected asset
+                    const asset = assets.find(a => a.name.toLowerCase().includes('boiler'));
+                    if (asset) {
+                        const sel = document.getElementById('loto-asset-selector');
+                        if (sel) {
+                            sel.value = asset.id;
+                            onAssetSelected(asset.id);
+                        }
+                    }
+                } else {
+                    showView('workorders');
+                }
+            };
+
+            // Permit Audit History Table
+            window.loadPermitHistory = function() {
+                const statusF = document.getElementById('filter-loto-status').value;
+                const timeF = document.getElementById('filter-loto-time').value;
+                const assetF = document.getElementById('filter-loto-asset').value;
+                const searchF = document.getElementById('filter-loto-search').value.toLowerCase();
+
+                let filtered = [...allPermits];
+
+                if (statusF) filtered = filtered.filter(p => p.status === statusF);
+                if (assetF) filtered = filtered.filter(p => p.asset_id === assetF);
+                
+                if (timeF === 'WEEK') {
+                    const oneWeek = 7 * 24 * 60 * 60 * 1000;
+                    filtered = filtered.filter(p => (new Date() - new Date(p.initiated_at)) <= oneWeek);
+                } else if (timeF === 'MONTH') {
+                    const oneMonth = 30 * 24 * 60 * 60 * 1000;
+                    filtered = filtered.filter(p => (new Date() - new Date(p.initiated_at)) <= oneMonth);
+                }
+
+                if (searchF) {
+                    filtered = filtered.filter(p => 
+                        p.id.toLowerCase().includes(searchF) ||
+                        p.asset_name.toLowerCase().includes(searchF) ||
+                        p.work_description.toLowerCase().includes(searchF)
+                    );
+                }
+
+                const tbody = document.getElementById('loto-audit-log-tbody');
+                const empty = document.getElementById('loto-audit-empty');
+                tbody.innerHTML = "";
+
+                // Paywall check: sandbox users cannot access permit history beyond first permit
+                const isSandbox = (getUserAccountType() === 'sandbox');
+                if (isSandbox && filtered.length > 1) {
+                    // Truncate to first permit only
+                    filtered = filtered.slice(0, 1);
+                }
+
+                if (filtered.length === 0) {
+                    empty.classList.remove('hidden');
+                    return;
+                }
+                empty.classList.add('hidden');
+
+                const statusBadges = {
+                    ACTIVE: 'bg-red-500/20 text-red-400 border border-red-500/30',
+                    RELEASED: 'bg-green-500/20 text-green-400 border border-green-500/30',
+                    INCOMPLETE: 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                };
+
+                filtered.forEach(p => {
+                    const date = new Date(p.initiated_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+                    
+                    // Duration calculation
+                    let duration = "Active";
+                    if (p.status !== 'ACTIVE') {
+                        const init = new Date(p.initiated_at);
+                        const rel = new Date(p.released_at);
+                        const diffMins = Math.round((rel - init) / (1000 * 60));
+                        duration = `${Math.floor(diffMins / 60)}h ${diffMins % 60}m`;
+                    }
+
+                    // Count steps
+                    const procedure = p.procedure_content || {};
+                    let totalSteps = 0;
+                    for (const section in procedure) {
+                        if (Array.isArray(procedure[section])) {
+                            totalSteps += procedure[section].length;
+                        }
+                    }
+                    const completedSteps = Object.keys(p.steps_completed || {}).length;
+
+                    tbody.insertAdjacentHTML('beforeend', `
+                        <tr class="hover:bg-white/5 border-b border-white/5 transition font-mono">
+                            <td class="py-3 pr-4 font-bold text-slate-400">${p.id.substring(0,8)}...</td>
+                            <td class="py-3 pr-4">${date}</td>
+                            <td class="py-3 pr-4 font-bold text-white uppercase">${p.asset_name}</td>
+                            <td class="py-3 pr-4">${p.initiated_by}</td>
+                            <td class="py-3 pr-4 max-w-[200px] truncate" title="${p.work_description}">${p.work_description}</td>
+                            <td class="py-3 pr-4 font-bold text-white">${duration}</td>
+                            <td class="py-3 pr-4">${completedSteps}/${totalSteps} steps</td>
+                            <td class="py-3 pr-4">${p.released_by || '—'}</td>
+                            <td class="py-3">
+                                <span class="text-[9px] font-bold px-2 py-0.5 rounded ${statusBadges[p.status] || 'bg-white/5 text-slate-400'}">${p.status}</span>
+                            </td>
+                        </tr>
+                    `);
+                });
+
+                if (isSandbox && allPermits.length > 1) {
+                    tbody.insertAdjacentHTML('beforeend', `
+                        <tr class="border-t border-white/10 bg-red-950/10">
+                            <td colspan="9" class="py-4 text-center text-[10px] text-red-400 uppercase tracking-widest font-bold">
+                                ⚠ HISTORY LOG LIMIT REACHED FOR SANDBOX ACCOUNT · <span onclick="triggerPaywall('loto_permits')" class="underline cursor-pointer hover:text-white">UPGRADE TO ENTERPRISE</span> TO UNLOCK FULL AUDIT TRAIL
+                            </td>
+                        </tr>
+                    `);
+                }
+            }
+
+            // Export PDF OSHA Audit Report
+            window.exportComplianceReport = async function() {
+                // Paywall check
+                if (getUserAccountType() === 'sandbox') {
+                    triggerPaywall('loto_permits_export');
+                    return;
+                }
+
+                try {
+                    const token = getAuthToken();
+                    const res = await fetch('/api/loto/export', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            date_from: null,
+                            date_to: null
+                        })
+                    });
+                    if (!res.ok) throw new Error('API failed');
+                    const data = await res.json();
+
+                    // Generate formatted print display as iframe suitable for OS pdf export
+                    const printBox = document.getElementById('loto-print-container');
+                    printBox.innerHTML = `
+                        <div class="space-y-8 font-mono text-black bg-white p-8 max-w-4xl mx-auto border-4 border-black">
+                            <div class="text-center space-y-2 border-b-4 border-black pb-4">
+                                <h1 class="text-2xl font-black tracking-widest">OSHA LOCKOUT / TAGOUT COMPLIANCE AUDIT TRAIL</h1>
+                                <p class="text-xs">FACILITY: ${data.facility_name.toUpperCase()} · GENERATED: ${new Date(data.generated_at).toLocaleString()}</p>
+                                <p class="text-xs font-bold border border-black p-1 uppercase inline-block">DO NOT DESTROY — SUITABLE FOR SAFETY COMPLIANCE RECORDS</p>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4 text-xs">
+                                <div><strong>Audit Range:</strong> ${data.date_range}</div>
+                                <div><strong>Total Logged Permits:</strong> ${data.total_permits_audited}</div>
+                            </div>
+
+                            <table class="w-full text-left text-xs border-collapse border border-black">
+                                <thead>
+                                    <tr class="bg-black text-white uppercase font-bold">
+                                        <th class="border border-black p-2">Permit ID</th>
+                                        <th class="border border-black p-2">Asset Name</th>
+                                        <th class="border border-black p-2">Initiated By</th>
+                                        <th class="border border-black p-2">Released By</th>
+                                        <th class="border border-black p-2">Duration</th>
+                                        <th class="border border-black p-2">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.permits.map(p => {
+                                        let duration = "Active";
+                                        if (p.status !== 'ACTIVE') {
+                                            const init = new Date(p.initiated_at);
+                                            const rel = new Date(p.released_at);
+                                            const diffMins = Math.round((rel - init) / (1000 * 60));
+                                            duration = `${Math.floor(diffMins / 60)}h ${diffMins % 60}m`;
+                                        }
+                                        return `
+                                            <tr>
+                                                <td class="border border-black p-2 font-bold">${p.id.substring(0,8)}</td>
+                                                <td class="border border-black p-2 font-bold">${p.asset_name}</td>
+                                                <td class="border border-black p-2">${p.initiated_by} · ${new Date(p.initiated_at).toLocaleDateString()}</td>
+                                                <td class="border border-black p-2">${p.released_by || '—'}</td>
+                                                <td class="border border-black p-2 font-bold">${duration}</td>
+                                                <td class="border border-black p-2 font-bold uppercase">${p.status}</td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+
+                    // Trigger window print
+                    const originalContent = document.body.innerHTML;
+                    const printContent = printBox.innerHTML;
+                    document.body.innerHTML = printContent;
+                    window.print();
+                    document.body.innerHTML = originalContent;
+
+                    // Rebind window load actions
+                    window.location.reload();
+                } catch (e) {
+                    console.error(e);
+                    showToast('Failed to export compliance document: ' + e.message, 'danger');
+                }
+            };
+
+            // Helper session info extractors
+            function getUserDisplayName() {
+                if (typeof window.currentUserContext === 'object' && window.currentUserContext?.profile?.full_name) {
+                    return window.currentUserContext.profile.full_name;
+                }
+                return "Ice Man";
+            }
+
+            function getUserAccountType() {
+                if (typeof window.currentUserContext === 'object' && window.currentUserContext?.profile?.account_type) {
+                    return window.currentUserContext.profile.account_type;
+                }
+                return "sandbox";
+            }
+
+        })();
+    </script>
+</div>
 {% endblock %}

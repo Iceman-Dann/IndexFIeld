@@ -21,3 +21,4 @@ jinja2
 qrcode==7.4.2
 pillow==10.2.0
 supabase==2.3.4
+resend==0.8.0

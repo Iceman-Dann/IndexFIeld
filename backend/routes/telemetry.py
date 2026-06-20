@@ -1,18 +1,13 @@
 from fastapi import APIRouter, Request
-from fastapi.templating import Jinja2Templates
+from fastapi.responses import FileResponse
 import os
 
 router = APIRouter()
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Initialize templates. We add both the project root (to find templates/base.html) 
-# and dashboard-pages (to find the specific fragments).
-templates = Jinja2Templates(directory=[
-    os.path.join(PROJECT_ROOT, "templates"),
-    os.path.join(PROJECT_ROOT, "dashboard-pages")
-])
 
-@router.get("/telemetry")
+@router.get("/telemetry/view")
 async def serve_telemetry_page(request: Request):
-    """Serve the telemetry page using Jinja2 templates."""
-    return templates.TemplateResponse("telemetry-view.html", {"request": request})
+    """Serve the static telemetry dashboard fragment to be loaded into the SPA."""
+    file_path = os.path.join(PROJECT_ROOT, "dashboard-pages", "telemetry-view.html")
+    return FileResponse(file_path)

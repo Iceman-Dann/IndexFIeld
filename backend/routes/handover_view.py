@@ -3,26 +3,31 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import HTMLResponse
 from typing import Optional
 from supabase import create_client
-from config import settings
+from ..config import settings
 import os
 
 router = APIRouter()
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Verify JWT token and return user info from Supabase."""
+async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
+    """Return guest user when no valid credentials are provided."""
     from jose import jwt, JWTError
-    
+    import uuid
+
+    if not credentials:
+        guest_id = f"guest_{uuid.uuid4().hex[:8]}"
+        return {"user_id": guest_id, "token": f"guest_token_{guest_id}", "is_guest": True}
+
     try:
         token = credentials.credentials
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
         user_id = payload.get("sub")
         if user_id is None:
             raise HTTPException(status_code=401, detail="Invalid authentication")
-        
         return {"user_id": user_id, "token": token}
     except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid authentication")
+        guest_id = f"guest_{uuid.uuid4().hex[:8]}"
+        return {"user_id": guest_id, "token": f"guest_token_{guest_id}", "is_guest": True}
 
 @router.get("/handover", response_class=HTMLResponse)
 async def serve_handover_view(current_user: dict = Depends(get_current_user)):
